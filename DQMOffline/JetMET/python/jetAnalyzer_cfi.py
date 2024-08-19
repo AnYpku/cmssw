@@ -80,7 +80,8 @@ jetDQMAnalyzerAk4CaloUncleaned = DQMEDAnalyzer('JetAnalyzer',
     # DCS
     #                             
     DCSFilterForJetMonitoring = cms.PSet(
-      DetectorTypes = cms.untracked.string("ecal:hbhe:hf"),
+      DetectorTypes = cms.untracked.string("hbhe:hf:pixel:sistrip"),
+      #DetectorTypes = cms.untracked.string("ecal:hbhe:hf"),    
       #DebugOn = cms.untracked.bool(True),
       alwaysPass = cms.untracked.bool(False)
     )
