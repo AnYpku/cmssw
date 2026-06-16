@@ -18,7 +18,7 @@
 #include "L1Trigger/L1TMuon/interface/L1TMuonGlobalParamsHelper.h"
 #include "L1Trigger/L1TMuon/interface/L1TMuonGlobalParams_PUBLIC.h"
 
-#include <bitset>
+#include <fmt/format.h>
 
 // include ROOT
 #include "TH1F.h"
@@ -72,7 +72,7 @@ namespace {
         leg.SetLineColor(0);
         leg.SetFillColor(0);
 
-        input1.SetStats(0);
+        input1.SetStats(false);
         input1.SetMaximum(5);
         input1.SetXTitle("InputBits");
         input1.SetYTitle("Bit value");
@@ -93,13 +93,11 @@ namespace {
         leg.Draw();
         lzero.Draw();
 
-        tl.DrawLatexNDC(
-            0.12,
-            0.85,
-            (fmt::v8::format(
-                 "fwVersion: {}, bx Min, Max: {}, {}", l1tmgph.fwVersion(), payload->bxMin(), payload->bxMax()))
-                .c_str());
-        tl.DrawLatexNDC(0.1, 0.92, (fmt::v8::format("{}, iov: {}", tag.name, IOVsince)).c_str());
+        auto const label_fw =
+            fmt::format("fwVersion: {}, bx Min, Max: {}, {}", l1tmgph.fwVersion(), payload->bxMin(), payload->bxMax());
+        auto const label_tag = fmt::format("{}, iov: {}", tag.name, IOVsince);
+        tl.DrawLatexNDC(0.12, 0.85, label_fw.c_str());
+        tl.DrawLatexNDC(0.10, 0.92, label_tag.c_str());
         tl.DrawLatexNDC(0.07, 0.59, "1");
         tl.DrawLatexNDC(0.07, 0.27, "1");
 

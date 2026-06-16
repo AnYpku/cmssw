@@ -24,14 +24,11 @@
 #include "FWCore/Framework/interface/stream/Contexts.h"
 #include "FWCore/Framework/interface/stream/AbilityChecker.h"
 #include "FWCore/Framework/interface/stream/EDProducerBase.h"
+#include "FWCore/Framework/interface/stream/EDProducerAdaptor.h"
 #include "FWCore/Framework/interface/stream/ProducingModuleHelper.h"
 
 namespace edm {
-
-  class WaitingTaskWithArenaHolder;
-
   namespace stream {
-
     template <typename... T>
     class EDProducer : public AbilityToImplementor<T>::Type...,
                        public std::conditional<CheckAbility<edm::module::Abilities::kAccumulator, T...>::kHasIt or
@@ -70,11 +67,10 @@ namespace edm {
       bool hasAbilityToProduceInEndLumis() const final { return HasAbilityToProduceInEndLumis<T...>::value; }
 
     private:
-      void doAcquire_(Event const& ev, EventSetup const& es, WaitingTaskWithArenaHolder& holder) final {
-        doAcquireIfNeeded(this, ev, es, holder);
+      void doAcquire_(Event const& ev, EventSetup const& es, WaitingTaskHolder&& holder) final {
+        doAcquireIfNeeded(this, ev, es, std::move(holder));
       }
     };
-
   }  // namespace stream
 }  // namespace edm
 

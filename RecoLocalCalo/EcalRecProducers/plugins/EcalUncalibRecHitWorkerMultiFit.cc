@@ -50,7 +50,7 @@
 class EcalUncalibRecHitWorkerMultiFit final : public EcalUncalibRecHitWorkerBaseClass {
 public:
   EcalUncalibRecHitWorkerMultiFit(const edm::ParameterSet&, edm::ConsumesCollector& c);
-  EcalUncalibRecHitWorkerMultiFit(){};
+  EcalUncalibRecHitWorkerMultiFit() {}
 
 private:
   void set(const edm::EventSetup& es) override;
@@ -608,6 +608,7 @@ void EcalUncalibRecHitWorkerMultiFit::run(const edm::Event& evt,
       } else if (timealgo_ == weightsMethod) {
         //  weights method on the PU subtracted pulse shape
         std::vector<double> amplitudes;
+        amplitudes.reserve(activeBX.size());
         for (unsigned int ibx = 0; ibx < activeBX.size(); ++ibx)
           amplitudes.push_back(uncalibRecHit.outOfTimeAmplitude(ibx));
 

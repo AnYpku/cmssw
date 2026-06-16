@@ -22,14 +22,14 @@
 #include "FWCore/Utilities/interface/InputTag.h"
 
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
-#include "Geometry/CommonDetUnit/interface/TrackerGeomDet.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetType.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/TrackerGeomDet.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetType.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
@@ -183,7 +183,7 @@ void Phase2OTMonitorRecHit::analyze(const edm::Event& iEvent, const edm::EventSe
         layerMEs_[key].localPosXY_S->Fill(lp.x(), lp.y());
       }
     }  //end loop over rechits of a detId
-  }    //End loop over DetSetVector
+  }  //End loop over DetSetVector
 
   //fill nRecHits per event
   numberRecHits_->Fill(nTotrechitsinevt);

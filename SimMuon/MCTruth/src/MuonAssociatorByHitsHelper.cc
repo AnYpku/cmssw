@@ -6,7 +6,7 @@
 #include "DataFormats/SiStripDetId/interface/StripSubdetector.h"
 #include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "SimMuon/MCTruth/interface/MuonAssociatorByHitsHelper.h"
 #include <sstream>
@@ -823,8 +823,8 @@ MuonAssociatorByHitsHelper::IndexAssociation MuonAssociatorByHitsHelper::associa
           }
         }
       }  // loop over TrackingParticle's
-    }    // if(n_matching_simhits != 0)
-  }      // loop over reco Tracks
+    }  // if(n_matching_simhits != 0)
+  }  // loop over reco Tracks
 
   if (!any_trackingParticle_matched) {
     edm::LogVerbatim("MuonAssociatorByHitsHelper")

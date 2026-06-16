@@ -3,6 +3,7 @@
 <use name="DataFormats/GeometryVector"/>
 <use name="DataFormats/SiStripDetId"/>
 <use name="DataFormats/TrackerRecHit2D"/>
+<use name="FWCore/AbstractServices"/>
 <use name="FWCore/Framework"/>
 <use name="FWCore/MessageLogger"/>
 <use name="FWCore/ParameterSet"/>
@@ -10,7 +11,7 @@
 <use name="FWCore/ServiceRegistry"/>
 <use name="FWCore/Utilities"/>
 <use name="FastSimulation/Utilities"/>
-<use name="Geometry/CommonDetUnit"/>
+<use name="Geometry/CommonTopologies"/>
 <use name="Geometry/Records"/>
 <use name="Geometry/TrackerGeometryBuilder"/>
 <use name="SimDataFormats/TrackingHit"/>

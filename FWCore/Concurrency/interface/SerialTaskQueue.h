@@ -66,13 +66,14 @@
 namespace edm {
   class SerialTaskQueue {
   public:
-    SerialTaskQueue() : m_taskChosen(false), m_pauseCount{0} {}
+    SerialTaskQueue() : m_pauseCount{0}, m_taskChosen{false}, m_pickingNextTask{false} {}
 
     SerialTaskQueue(SerialTaskQueue&& iOther)
         : m_tasks(std::move(iOther.m_tasks)),
+          m_pauseCount(iOther.m_pauseCount.exchange(0)),
           m_taskChosen(iOther.m_taskChosen.exchange(false)),
-          m_pauseCount(iOther.m_pauseCount.exchange(0)) {
-      assert(m_tasks.empty() and m_taskChosen == false);
+          m_pickingNextTask(false) {
+      assert(m_tasks.empty() and m_taskChosen == false and iOther.m_pickingNextTask == false);
     }
     SerialTaskQueue(const SerialTaskQueue&) = delete;
     const SerialTaskQueue& operator=(const SerialTaskQueue&) = delete;
@@ -116,7 +117,7 @@ namespace edm {
        * \param[in] iAction Must be a functor that takes no arguments and return no values.
        */
     template <typename T>
-    void push(oneapi::tbb::task_group&, const T& iAction);
+    void push(oneapi::tbb::task_group&, T&& iAction);
 
   private:
     /** Base class for all tasks held by the SerialTaskQueue */
@@ -139,7 +140,8 @@ namespace edm {
     template <typename T>
     class QueuedTask : public TaskBase {
     public:
-      QueuedTask(oneapi::tbb::task_group& iGroup, const T& iAction) : TaskBase(&iGroup), m_action(iAction) {}
+      QueuedTask(oneapi::tbb::task_group& iGroup, T&& iAction)
+          : TaskBase(&iGroup), m_action(std::forward<T>(iAction)) {}
 
     private:
       void execute() final;
@@ -159,13 +161,14 @@ namespace edm {
 
     // ---------- member data --------------------------------
     oneapi::tbb::concurrent_queue<TaskBase*> m_tasks;
-    std::atomic<bool> m_taskChosen;
     std::atomic<unsigned long> m_pauseCount;
+    std::atomic<bool> m_taskChosen;
+    std::atomic<bool> m_pickingNextTask;
   };
 
   template <typename T>
-  void SerialTaskQueue::push(oneapi::tbb::task_group& iGroup, const T& iAction) {
-    QueuedTask<T>* pTask{new QueuedTask<T>{iGroup, iAction}};
+  void SerialTaskQueue::push(oneapi::tbb::task_group& iGroup, T&& iAction) {
+    QueuedTask<T>* pTask{new QueuedTask<T>{iGroup, std::forward<T>(iAction)}};
     pushTask(pTask);
   }
 

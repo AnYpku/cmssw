@@ -1,7 +1,6 @@
-// Author: Felice Pantaleo, Wahid Redjeb, Aurora Perego (CERN) - felice.pantaleo@cern.ch, wahid.redjeb@cern.ch, aurora.perego@cern.ch
-// Date: 12/2023
+// Author: Felice Pantaleo, Wahid Redjeb, Aurora Perego (CERN) - felice.pantaleo@cern.ch, wahid.redjeb@cern.ch, aurora.perego@cern.ch Date: 12/2023
 #include <memory>  // unique_ptr
-#include "CommonTools/RecoAlgos/interface/MultiVectorManager.h"
+#include "DataFormats/Common/interface/MultiSpan.h"
 #include "FWCore/Framework/interface/stream/EDProducer.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
@@ -32,37 +31,43 @@
 #include "RecoHGCal/TICL/interface/TICLInterpretationAlgoBase.h"
 #include "RecoHGCal/TICL/plugins/TICLInterpretationPluginFactory.h"
 #include "RecoHGCal/TICL/plugins/GeneralInterpretationAlgo.h"
+#include "RecoHGCal/TICL/plugins/GNNInterpretationAlgo.h"
 
 #include "RecoParticleFlow/PFProducer/interface/PFMuonAlgo.h"
 
-#include "RecoHGCal/TICL/interface/GlobalCache.h"
 #include "CommonTools/Utils/interface/StringCutObjectSelector.h"
 
 #include "TrackingTools/TrajectoryState/interface/TrajectoryStateTransform.h"
 #include "TrackingTools/GeomPropagators/interface/Propagator.h"
 #include "TrackingTools/Records/interface/TrackingComponentsRecord.h"
 #include "TrackingTools/TrajectoryState/interface/TrajectoryStateClosestToBeamLine.h"
-#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/GlobalTrackingGeometry.h"
 
 #include "MagneticField/Engine/interface/MagneticField.h"
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 
+#include "RecoHGCal/TICL/interface/TICLONNXGlobalCache.h"
+
 #include "Geometry/HGCalCommonData/interface/HGCalDDDConstants.h"
 #include "Geometry/Records/interface/IdealGeometryRecord.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
+#include "RecoHGCal/TICL/interface/TracksterInferenceAlgoFactory.h"
 
 #include "TrackstersPCA.h"
 
 using namespace ticl;
 
-class TICLCandidateProducer : public edm::stream::EDProducer<> {
+class TICLCandidateProducer
+    : public edm::stream::EDProducer<edm::GlobalCache<ticl::TICLONNXGlobalCache>, edm::stream::WatchRuns> {
 public:
-  explicit TICLCandidateProducer(const edm::ParameterSet &ps);
-  ~TICLCandidateProducer() override{};
+  explicit TICLCandidateProducer(const edm::ParameterSet &ps, const ticl::TICLONNXGlobalCache *);
+  ~TICLCandidateProducer() override {}
   void produce(edm::Event &, const edm::EventSetup &) override;
   static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
   void beginRun(edm::Run const &iEvent, edm::EventSetup const &es) override;
+  static std::unique_ptr<ticl::TICLONNXGlobalCache> initializeGlobalCache(const edm::ParameterSet &iConfig);
+  static void globalEndJob(const ticl::TICLONNXGlobalCache *);
 
 private:
   void dumpCandidate(const TICLCandidate &) const;
@@ -82,6 +87,8 @@ private:
 
   const edm::EDGetTokenT<std::vector<reco::CaloCluster>> clusters_token_;
   const edm::EDGetTokenT<edm::ValueMap<std::pair<float, float>>> clustersTime_token_;
+  const bool regressionAndPid_;
+  std::unique_ptr<TracksterInferenceAlgoBase> inferenceAlgo_;
 
   std::vector<edm::EDGetTokenT<std::vector<float>>> original_masks_tokens_;
 
@@ -113,10 +120,11 @@ private:
   static constexpr float timeRes = 0.02f;
 };
 
-TICLCandidateProducer::TICLCandidateProducer(const edm::ParameterSet &ps)
+TICLCandidateProducer::TICLCandidateProducer(const edm::ParameterSet &ps, const ticl::TICLONNXGlobalCache *cache)
     : clusters_token_(consumes<std::vector<reco::CaloCluster>>(ps.getParameter<edm::InputTag>("layer_clusters"))),
       clustersTime_token_(
           consumes<edm::ValueMap<std::pair<float, float>>>(ps.getParameter<edm::InputTag>("layer_clustersTime"))),
+      regressionAndPid_(ps.getParameter<bool>("regressionAndPid")),
       tracks_token_(consumes<std::vector<reco::Track>>(ps.getParameter<edm::InputTag>("tracks"))),
       muons_token_(consumes<std::vector<reco::Muon>>(ps.getParameter<edm::InputTag>("muons"))),
       useMTDTiming_(ps.getParameter<bool>("useMTDTiming")),
@@ -168,6 +176,30 @@ TICLCandidateProducer::TICLCandidateProducer(const edm::ParameterSet &ps)
   if (useMTDTiming_) {
     inputTimingToken_ = consumes<MtdHostCollection>(ps.getParameter<edm::InputTag>("timingSoA"));
   }
+  // Initialize inference algorithm using the factory.
+  // Do not build the inference plugin if it is disabled or if no model is configured (empty string => no session loaded).
+  if (regressionAndPid_) {
+    const std::string inferencePlugin = ps.getParameter<std::string>("inferenceAlgo");
+    if (!inferencePlugin.empty()) {
+      const edm::ParameterSet inferencePSet =
+          ps.getParameter<edm::ParameterSet>("pluginInferenceAlgo" + inferencePlugin);
+
+      // If the plugin config exposes model paths as std::string with default "",
+      // the cache will only contain sessions for non-empty paths.
+      const bool hasSingleModel = inferencePSet.existsAs<std::string>("onnxModelPath", true) &&
+                                  !inferencePSet.getParameter<std::string>("onnxModelPath").empty();
+      const bool hasPIDModel = inferencePSet.existsAs<std::string>("onnxPIDModelPath", true) &&
+                               !inferencePSet.getParameter<std::string>("onnxPIDModelPath").empty();
+      const bool hasEnergyModel = inferencePSet.existsAs<std::string>("onnxEnergyModelPath", true) &&
+                                  !inferencePSet.getParameter<std::string>("onnxEnergyModelPath").empty();
+
+      // Only instantiate the plugin if at least one model path is configured.
+      if (hasSingleModel || hasPIDModel || hasEnergyModel) {
+        inferenceAlgo_ = std::unique_ptr<TracksterInferenceAlgoBase>(
+            TracksterInferenceAlgoFactory::get()->create(inferencePlugin, inferencePSet, cache));
+      }
+    }
+  }
 
   produces<std::vector<TICLCandidate>>();
 
@@ -179,6 +211,13 @@ TICLCandidateProducer::TICLCandidateProducer(const edm::ParameterSet &ps)
   generalInterpretationAlgo_ =
       TICLGeneralInterpretationPluginFactory::get()->create(algoType, interpretationPSet, consumesCollector());
 }
+
+std::unique_ptr<ticl::TICLONNXGlobalCache> TICLCandidateProducer::initializeGlobalCache(
+    const edm::ParameterSet &iConfig) {
+  return ticl::TICLONNXGlobalCache::initialize(iConfig);
+}
+
+void TICLCandidateProducer::globalEndJob(const ticl::TICLONNXGlobalCache *) {}
 
 void TICLCandidateProducer::beginRun(edm::Run const &iEvent, edm::EventSetup const &es) {
   edm::ESHandle<HGCalDDDConstants> hdc = es.getHandle(hdc_token_);
@@ -192,7 +231,7 @@ void TICLCandidateProducer::beginRun(edm::Run const &iEvent, edm::EventSetup con
   generalInterpretationAlgo_->initialize(hgcons_, rhtools_, bfield_, propagator_);
 
   trackingGeometry_ = es.getHandle(trackingGeometry_token_);
-};
+}
 
 void filterTracks(edm::Handle<std::vector<reco::Track>> tkH,
                   const edm::Handle<std::vector<reco::Muon>> &muons_h,
@@ -214,7 +253,7 @@ void filterTracks(edm::Handle<std::vector<reco::Track>> tkH,
     }
 
     // don't consider tracks below 2 GeV for linking
-    if (std::sqrt(tk.p() * tk.p() + ticl::mpion2) < tkEnergyCut_) {
+    if (std::sqrt(tk.p() * tk.p() + mpion2) < tkEnergyCut_) {
       maskTracks[i] = false;
       continue;
     }
@@ -261,11 +300,11 @@ void TICLCandidateProducer::produce(edm::Event &evt, const edm::EventSetup &es) 
   auto resultMask = std::make_unique<std::vector<float>>(original_global_mask);
 
   std::vector<edm::Handle<std::vector<Trackster>>> general_tracksters_h(general_tracksters_tokens_.size());
-  MultiVectorManager<Trackster> generalTrackstersManager;
+  edm::MultiSpan<Trackster> generalTrackstersSpan;
   for (unsigned int i = 0; i < general_tracksters_tokens_.size(); ++i) {
     evt.getByToken(general_tracksters_tokens_[i], general_tracksters_h[i]);
-    //Fill MultiVectorManager
-    generalTrackstersManager.addVector(*general_tracksters_h[i]);
+    //Fill MultiSpan
+    generalTrackstersSpan.add(*general_tracksters_h[i]);
   }
   //now get the general_tracksterlinks_tokens_
   std::vector<edm::Handle<std::vector<std::vector<unsigned>>>> general_tracksterlinks_h(
@@ -278,7 +317,7 @@ void TICLCandidateProducer::produce(edm::Event &evt, const edm::EventSetup &es) 
       auto &links_vector = generalTracksterLinksGlobalId.back();
       links_vector.resize((*general_tracksterlinks_h[i])[j].size());
       for (unsigned int k = 0; k < links_vector.size(); ++k) {
-        links_vector[k] = generalTrackstersManager.getGlobalIndex(i, (*general_tracksterlinks_h[i])[j][k]);
+        links_vector[k] = generalTrackstersSpan.globalIndex(i, (*general_tracksterlinks_h[i])[j][k]);
       }
     }
   }
@@ -291,7 +330,7 @@ void TICLCandidateProducer::produce(edm::Event &evt, const edm::EventSetup &es) 
                                                                        es,
                                                                        layerClusters,
                                                                        layerClustersTimes,
-                                                                       generalTrackstersManager,
+                                                                       generalTrackstersSpan,
                                                                        generalTracksterLinksGlobalId,
                                                                        tracks_h,
                                                                        maskTracks);
@@ -305,8 +344,16 @@ void TICLCandidateProducer::produce(edm::Event &evt, const edm::EventSetup &es) 
 
   generalInterpretationAlgo_->makeCandidates(input, inputTiming_h, *resultTracksters, trackstersInTrackIndices);
 
-  assignPCAtoTracksters(
-      *resultTracksters, layerClusters, layerClustersTimes, rhtools_.getPositionLayer(rhtools_.lastLayerEE()).z(), true);
+  assignPCAtoTracksters(*resultTracksters,
+                        layerClusters,
+                        layerClustersTimes,
+                        rhtools_.getPositionLayer(rhtools_.lastLayerEE()).z(),
+                        rhtools_,
+                        true);
+  if (regressionAndPid_) {
+    // Run inference algorithm
+    inferenceAlgo_->runInference(layerClusters, *resultTracksters, rhtools_);
+  }
 
   std::vector<bool> maskTracksters(resultTracksters->size(), true);
   edm::OrphanHandle<std::vector<Trackster>> resultTracksters_h = evt.put(std::move(resultTracksters));
@@ -322,16 +369,16 @@ void TICLCandidateProducer::produce(edm::Event &evt, const edm::EventSetup &es) 
         maskTracksters[tracksterId] = false;
       } else {
         //charged candidates track only
-        edm::Ptr<Trackster> tracksterPtr;
-        TICLCandidate chargedCandidate(trackPtr, tracksterPtr);
         auto trackRef = edm::Ref<reco::TrackCollection>(tracks_h, iTrack);
         const int muId = PFMuonAlgo::muAssocToTrack(trackRef, *muons_h);
         const reco::MuonRef muonRef = reco::MuonRef(muons_h, muId);
         if (muonRef.isNonnull() and muonRef->isGlobalMuon()) {
           // create muon candidate
+          edm::Ptr<Trackster> tracksterPtr;
+          TICLCandidate chargedCandidate(trackPtr, tracksterPtr);
           chargedCandidate.setPdgId(13 * trackPtr.get()->charge());
+          resultCandidates->push_back(chargedCandidate);
         }
-        resultCandidates->push_back(chargedCandidate);
       }
     }
   }
@@ -348,6 +395,15 @@ void TICLCandidateProducer::produce(edm::Event &evt, const edm::EventSetup &es) 
 
   auto getPathLength =
       [&](const reco::Track &track, float zVal) {
+        // Bail out early if inner/outer surfaces are not available
+        if (!track.innerOk() || !track.outerOk()) {
+          if (edm::isDebugEnabled()) {
+            LogDebug("TICLCandidateProducer")
+                << "Not able to use the track to compute the path length. A straight line will be used instead.";
+          }
+          return 0.f;
+        }
+
         const auto &fts_inn = trajectoryStateTransform::innerFreeState(track, bFieldProd);
         const auto &fts_out = trajectoryStateTransform::outerFreeState(track, bFieldProd);
         const auto &surf_inn = trajectoryStateTransform::innerStateOnSurface(track, *trackingGeometry_, bFieldProd);
@@ -405,6 +461,8 @@ void TICLCandidateProducer::assignTimeToCandidates(std::vector<TICLCandidate> &r
     float invTimeErr = 0.f;
     float timeErr = -1.f;
 
+    const int trackIndex =
+        cand.trackPtr().isNonnull() ? (cand.trackPtr().get() - (edm::Ptr<reco::Track>(track_h, 0)).get()) : -1;
     for (const auto &tr : cand.tracksters()) {
       if (tr->timeError() > 0) {
         const auto invTimeESq = pow(tr->timeError(), -2);
@@ -412,8 +470,7 @@ void TICLCandidateProducer::assignTimeToCandidates(std::vector<TICLCandidate> &r
         const auto y = tr->barycenter().Y();
         const auto z = tr->barycenter().Z();
         auto path = std::sqrt(x * x + y * y + z * z);
-        if (cand.trackPtr().get() != nullptr) {
-          const auto &trackIndex = cand.trackPtr().get() - (edm::Ptr<reco::Track>(track_h, 0)).get();
+        if (trackIndex != -1) {
           if (useMTDTiming_ and inputTimingView.timeErr()[trackIndex] > 0) {
             const auto xMtd = inputTimingView.posInMTD_x()[trackIndex];
             const auto yMtd = inputTimingView.posInMTD_y()[trackIndex];
@@ -444,7 +501,6 @@ void TICLCandidateProducer::assignTimeToCandidates(std::vector<TICLCandidate> &r
 
     if (useMTDTiming_ and cand.charge()) {
       // Check MTD timing availability
-      const auto &trackIndex = cand.trackPtr().get() - (edm::Ptr<reco::Track>(track_h, 0)).get();
       const bool assocQuality = inputTimingView.MVAquality()[trackIndex] > timingQualityThreshold_;
       if (assocQuality) {
         const auto timeHGC = cand.time();
@@ -474,6 +530,9 @@ void TICLCandidateProducer::fillDescriptions(edm::ConfigurationDescriptions &des
   edm::ParameterSetDescription desc;
   edm::ParameterSetDescription interpretationDesc;
   interpretationDesc.addNode(edm::PluginDescription<TICLGeneralInterpretationPluginFactory>("type", "General", true));
+  edm::ParameterSetDescription inferenceDesc;
+  inferenceDesc.addNode(edm::PluginDescription<TracksterInferenceAlgoFactory>("type", "TracksterInferenceByPFN", true));
+  desc.add<edm::ParameterSetDescription>("pluginInferenceAlgoTracksterInferenceByPFN", inferenceDesc);
   desc.add<edm::ParameterSetDescription>("interpretationDescPSet", interpretationDesc);
   desc.add<std::vector<edm::InputTag>>("egamma_tracksters_collections", {edm::InputTag("ticlTracksterLinks")});
   desc.add<std::vector<edm::InputTag>>("egamma_tracksterlinks_collections", {edm::InputTag("ticlTracksterLinks")});
@@ -494,6 +553,8 @@ void TICLCandidateProducer::fillDescriptions(edm::ConfigurationDescriptions &des
   desc.add<std::string>("cutTk",
                         "1.48 < abs(eta) < 3.0 && pt > 1. && quality(\"highPurity\") && "
                         "hitPattern().numberOfLostHits(\"MISSING_OUTER_HITS\") < 5");
+  desc.add<bool>("regressionAndPid", true);
+  desc.add<std::string>("inferenceAlgo", "TracksterInferenceByPFN");
   descriptions.add("ticlCandidateProducer", desc);
 }
 

@@ -15,7 +15,7 @@
 #include "RecoVertex/KalmanVertexFit/interface/KalmanVertexFitter.h"
 
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
-#include "Geometry/CommonDetUnit/interface/TrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/TrackingGeometry.h"
 
 #include "MagneticField/Engine/interface/MagneticField.h"
 
@@ -659,8 +659,8 @@ reco::PFDisplacedVertex::VertexTrackType PFDisplacedVertexFinder::getVertexTrack
 }
 
 unsigned PFDisplacedVertexFinder::commonTracks(const PFDisplacedVertex& v1, const PFDisplacedVertex& v2) const {
-  vector<Track> vt1 = v1.refittedTracks();
-  vector<Track> vt2 = v2.refittedTracks();
+  const vector<Track>& vt1 = v1.refittedTracks();
+  const vector<Track>& vt2 = v2.refittedTracks();
 
   unsigned commonTracks = 0;
 

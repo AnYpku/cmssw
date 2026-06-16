@@ -26,7 +26,7 @@
 #include "FWCore/Framework/interface/one/EDAnalyzer.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 #include "Geometry/CommonTopologies/interface/StripTopology.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/TrackerGeometryBuilder/interface/StripGeomDetUnit.h"
@@ -39,8 +39,8 @@ public:
 
 private:
   void beginRun(const edm::Run&, const edm::EventSetup& iSetup) override;
-  void analyze(const edm::Event&, const edm::EventSetup&) override{};
-  void endRun(const edm::Run&, const edm::EventSetup& iSetup) override{};
+  void analyze(const edm::Event&, const edm::EventSetup&) override {}
+  void endRun(const edm::Run&, const edm::EventSetup& iSetup) override {}
 
 private:
   std::ofstream outputFile_;

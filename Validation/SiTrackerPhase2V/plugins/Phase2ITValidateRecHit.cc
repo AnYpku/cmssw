@@ -29,10 +29,10 @@
 #include "DataFormats/TrackerRecHit2D/interface/SiPixelRecHitCollection.h"
 #include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
 #include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
-#include "Geometry/CommonDetUnit/interface/TrackerGeomDet.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetType.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/TrackerGeomDet.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetType.h"
 //--- for SimHit association
 #include "SimDataFormats/Track/interface/SimTrackContainer.h"
 #include "SimDataFormats/TrackingHit/interface/PSimHit.h"
@@ -147,7 +147,7 @@ void Phase2ITValidateRecHit::fillITHistos(const edm::Event& iEvent,
             }
           }
         }  //end loop over PSimhitcontainers
-      }    //end loop over simHits
+      }  //end loop over simHits
       if (!simhitClosest)
         continue;
 
@@ -155,7 +155,7 @@ void Phase2ITValidateRecHit::fillITHistos(const edm::Event& iEvent,
       fillRechitHistos(simhitClosest, &rechit, selectedSimTrackMap, nrechitLayerMap_primary);
 
     }  //end loop over rechits of a detId
-  }    //End loop over DetSetVector
+  }  //End loop over DetSetVector
 
   //fill nRecHit counter per layer
   for (const auto& lme : nrechitLayerMap_primary) {
@@ -168,7 +168,7 @@ void Phase2ITValidateRecHit::fillDescriptions(edm::ConfigurationDescriptions& de
   edm::ParameterSetDescription desc;
 
   // call the base fillPsetDescription for the plots bookings
-  Phase2ITValidateRecHitBase::fillPSetDescription(desc);
+  Phase2ITValidateRecHitBase::fillPSetDescription(desc, false);
 
   //to be used in TrackerHitAssociator
   desc.add<bool>("associatePixel", true);

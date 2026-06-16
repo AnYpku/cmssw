@@ -18,16 +18,15 @@
  */
 
 #include "DataFormats/ParticleFlowCandidate/interface/PFCandidateFwd.h"
+#include "DataFormats/JetReco/interface/JetFwd.h"
 #include "FWCore/Framework/interface/ConsumesCollector.h"
 #include "RecoTauTag/RecoTau/interface/RecoTauPluginsCommon.h"
 
 #include <vector>
 
-namespace reco {
+#include "DataFormats/TauReco/interface/PFRecoTauChargedHadronFwd.h"
 
-  // Forward declarations
-  class Jet;
-  class PFRecoTauChargedHadron;
+namespace reco {
 
   namespace tau {
 

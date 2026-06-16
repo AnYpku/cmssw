@@ -9,7 +9,7 @@
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/Utilities/interface/Exception.h"
 #include "Alignment/CommonAlignment/interface/AlignableNavigator.h"
-#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/GlobalTrackingGeometry.h"
 #include "TrackingTools/PatternTools/interface/Trajectory.h"
 #include "TrackingTools/TrackFitters/interface/TrajectoryStateCombiner.h"
 #include "DataFormats/DetId/interface/DetId.h"
@@ -95,6 +95,18 @@ public:
   TMatrixD choleskyCorrMatrix(DetId chamberId);
 
 private:
+  //Due to large constructor code, UBSAN with GCC14 hangs and never returns
+  //Moving large constructor code to a private function fixes this issue
+  void init(edm::ESHandle<TransientTrackingRecHitBuilder> builder,
+            edm::ESHandle<MagneticField> magneticField,
+            edm::ESHandle<GlobalTrackingGeometry> globalGeometry,
+            edm::ESHandle<DetIdAssociator> muonDetIdAssociator_,
+            edm::ESHandle<Propagator> prop,
+            const Trajectory *traj,
+            const reco::Track *recoTrack,
+            AlignableNavigator *navigator,
+            double maxResidual);
+
   TrajectoryStateCombiner m_tsoscomb;
 
   int m_tracker_numHits;

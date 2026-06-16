@@ -53,9 +53,26 @@ namespace edm {
     }
   }  // namespace signalslot
 
-  void ActivityRegistry::connectGlobals(ActivityRegistry& iOther) {
+  void ActivityRegistry::connect(ActivityRegistry& iOther) {
+    postServicesConstructionSignal_.connect(std::cref(iOther.postServicesConstructionSignal_));
+    preEventSetupModulesConstructionSignal_.connect(std::cref(iOther.preEventSetupModulesConstructionSignal_));
+    postEventSetupModulesConstructionSignal_.connect(std::cref(iOther.postEventSetupModulesConstructionSignal_));
+    preESModuleConstructionSignal_.connect(std::cref(iOther.preESModuleConstructionSignal_));
+    postESModuleConstructionSignal_.connect(std::cref(iOther.postESModuleConstructionSignal_));
+    preModulesAndSourceConstructionSignal_.connect(std::cref(iOther.preModulesAndSourceConstructionSignal_));
+    postModulesAndSourceConstructionSignal_.connect(std::cref(iOther.postModulesAndSourceConstructionSignal_));
+    preFinishScheduleSignal_.connect(std::cref(iOther.preFinishScheduleSignal_));
+    postFinishScheduleSignal_.connect(std::cref(iOther.postFinishScheduleSignal_));
+    prePrincipalsCreationSignal_.connect(std::cref(iOther.prePrincipalsCreationSignal_));
+    postPrincipalsCreationSignal_.connect(std::cref(iOther.postPrincipalsCreationSignal_));
+    preScheduleConsistencyCheckSignal_.connect(std::cref(iOther.preScheduleConsistencyCheckSignal_));
+    postScheduleConsistencyCheckSignal_.connect(std::cref(iOther.postScheduleConsistencyCheckSignal_));
     preallocateSignal_.connect(std::cref(iOther.preallocateSignal_));
+    preEventSetupConfigurationFinalizedSignal_.connect(std::cref(iOther.preEventSetupConfigurationFinalizedSignal_));
+    postEventSetupConfigurationFinalizedSignal_.connect(std::cref(iOther.postEventSetupConfigurationFinalizedSignal_));
     eventSetupConfigurationSignal_.connect(std::cref(iOther.eventSetupConfigurationSignal_));
+    preModulesInitializationFinalizedSignal_.connect(std::cref(iOther.preModulesInitializationFinalizedSignal_));
+    postModulesInitializationFinalizedSignal_.connect(std::cref(iOther.postModulesInitializationFinalizedSignal_));
     beginProcessingSignal_.connect(std::cref(iOther.beginProcessingSignal_));
     endProcessingSignal_.connect(std::cref(iOther.endProcessingSignal_));
     postBeginJobSignal_.connect(std::cref(iOther.postBeginJobSignal_));
@@ -85,6 +102,12 @@ namespace edm {
     preCloseFileSignal_.connect(std::cref(iOther.preCloseFileSignal_));
     postCloseFileSignal_.connect(std::cref(iOther.postCloseFileSignal_));
 
+    preOpenOutputFilesSignal_.connect(std::cref(iOther.preOpenOutputFilesSignal_));
+    postOpenOutputFilesSignal_.connect(std::cref(iOther.postOpenOutputFilesSignal_));
+
+    preCloseOutputFilesSignal_.connect(std::cref(iOther.preCloseOutputFilesSignal_));
+    postCloseOutputFilesSignal_.connect(std::cref(iOther.postCloseOutputFilesSignal_));
+
     preSourceConstructionSignal_.connect(std::cref(iOther.preSourceConstructionSignal_));
     postSourceConstructionSignal_.connect(std::cref(iOther.postSourceConstructionSignal_));
 
@@ -95,10 +118,9 @@ namespace edm {
     esSyncIOVQueuingSignal_.connect(std::cref(iOther.esSyncIOVQueuingSignal_));
     preESSyncIOVSignal_.connect(std::cref(iOther.preESSyncIOVSignal_));
     postESSyncIOVSignal_.connect(std::cref(iOther.postESSyncIOVSignal_));
-  }
 
-  void ActivityRegistry::connectLocals(ActivityRegistry& iOther) {
     preBeginJobSignal_.connect(std::cref(iOther.preBeginJobSignal_));
+    lookupInitializationCompleteSignal_.connect(std::cref(iOther.lookupInitializationCompleteSignal_));
 
     preBeginStreamSignal_.connect(std::cref(iOther.preBeginStreamSignal_));
     postBeginStreamSignal_.connect(std::cref(iOther.postBeginStreamSignal_));
@@ -259,25 +281,34 @@ namespace edm {
     postESModuleRegistrationSignal_.connect(std::cref(iOther.postESModuleRegistrationSignal_));
   }
 
-  void ActivityRegistry::connect(ActivityRegistry& iOther) {
-    connectGlobals(iOther);
-    connectLocals(iOther);
-  }
-
-  void ActivityRegistry::connectToSubProcess(ActivityRegistry& iOther) {
-    connectGlobals(iOther);       // child sees parents global signals
-    iOther.connectLocals(*this);  // parent see childs global signals
-  }
-
   void ActivityRegistry::copySlotsFrom(ActivityRegistry& iOther) {
+    copySlotsToFrom(postServicesConstructionSignal_, iOther.postServicesConstructionSignal_);
+    copySlotsToFrom(preEventSetupModulesConstructionSignal_, iOther.preEventSetupModulesConstructionSignal_);
+    copySlotsToFromReverse(postEventSetupModulesConstructionSignal_, iOther.postEventSetupModulesConstructionSignal_);
+    copySlotsToFrom(preESModuleConstructionSignal_, iOther.preESModuleConstructionSignal_);
+    copySlotsToFromReverse(postESModuleConstructionSignal_, iOther.postESModuleConstructionSignal_);
+    copySlotsToFrom(preModulesAndSourceConstructionSignal_, iOther.preModulesAndSourceConstructionSignal_);
+    copySlotsToFromReverse(postModulesAndSourceConstructionSignal_, iOther.postModulesAndSourceConstructionSignal_);
+    copySlotsToFrom(preFinishScheduleSignal_, iOther.preFinishScheduleSignal_);
+    copySlotsToFromReverse(postFinishScheduleSignal_, iOther.postFinishScheduleSignal_);
+    copySlotsToFrom(prePrincipalsCreationSignal_, iOther.prePrincipalsCreationSignal_);
+    copySlotsToFromReverse(postPrincipalsCreationSignal_, iOther.postPrincipalsCreationSignal_);
+    copySlotsToFrom(preScheduleConsistencyCheckSignal_, iOther.preScheduleConsistencyCheckSignal_);
+    copySlotsToFromReverse(postScheduleConsistencyCheckSignal_, iOther.postScheduleConsistencyCheckSignal_);
     copySlotsToFrom(preallocateSignal_, iOther.preallocateSignal_);
+    copySlotsToFrom(preEventSetupConfigurationFinalizedSignal_, iOther.preEventSetupConfigurationFinalizedSignal_);
+    copySlotsToFromReverse(postEventSetupConfigurationFinalizedSignal_,
+                           iOther.postEventSetupConfigurationFinalizedSignal_);
     copySlotsToFrom(eventSetupConfigurationSignal_, iOther.eventSetupConfigurationSignal_);
+    copySlotsToFrom(preModulesInitializationFinalizedSignal_, iOther.preModulesInitializationFinalizedSignal_);
+    copySlotsToFromReverse(postModulesInitializationFinalizedSignal_, iOther.postModulesInitializationFinalizedSignal_);
     copySlotsToFrom(beginProcessingSignal_, iOther.beginProcessingSignal_);
     copySlotsToFrom(endProcessingSignal_, iOther.endProcessingSignal_);
     copySlotsToFrom(preBeginJobSignal_, iOther.preBeginJobSignal_);
     copySlotsToFrom(postBeginJobSignal_, iOther.postBeginJobSignal_);
     copySlotsToFromReverse(preEndJobSignal_, iOther.preEndJobSignal_);
     copySlotsToFromReverse(postEndJobSignal_, iOther.postEndJobSignal_);
+    copySlotsToFrom(lookupInitializationCompleteSignal_, iOther.lookupInitializationCompleteSignal_);
 
     copySlotsToFromReverse(jobFailureSignal_, iOther.jobFailureSignal_);
 
@@ -301,6 +332,12 @@ namespace edm {
 
     copySlotsToFrom(preCloseFileSignal_, iOther.preCloseFileSignal_);
     copySlotsToFromReverse(postCloseFileSignal_, iOther.postCloseFileSignal_);
+
+    copySlotsToFrom(preOpenOutputFilesSignal_, iOther.preOpenOutputFilesSignal_);
+    copySlotsToFromReverse(postOpenOutputFilesSignal_, iOther.postOpenOutputFilesSignal_);
+
+    copySlotsToFrom(preCloseOutputFilesSignal_, iOther.preCloseOutputFilesSignal_);
+    copySlotsToFromReverse(postCloseOutputFilesSignal_, iOther.postCloseOutputFilesSignal_);
 
     copySlotsToFrom(preBeginStreamSignal_, iOther.preBeginStreamSignal_);
     copySlotsToFromReverse(postBeginStreamSignal_, iOther.postBeginStreamSignal_);

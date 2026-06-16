@@ -24,19 +24,20 @@
 #include "FWCore/Framework/interface/ProducerBase.h"
 #include "FWCore/Framework/interface/EDConsumerBase.h"
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/stream/EDProducerAdaptor.h"
 #include "DataFormats/Provenance/interface/ModuleDescription.h"
+#include "DataFormats/Provenance/interface/ParentageID.h"
 #include "FWCore/ParameterSet/interface/ParameterSetfwd.h"
 #include "FWCore/Utilities/interface/ProductResolverIndex.h"
+#include "FWCore/Utilities/interface/StreamID.h"
 
 // forward declarations
 namespace edm {
   template <typename T>
   class WorkerT;
   class ProductRegistry;
-  class ThinnedAssociationsHelper;
-  class WaitingTaskWithArenaHolder;
   class EventForTransformer;
+  class WaitingTaskHolder;
+  class ServiceWeakToken;
 
   namespace stream {
     class EDProducerAdaptorBase;
@@ -65,17 +66,11 @@ namespace edm {
 
     private:
       virtual void beginStream(StreamID) {}
-      virtual void beginRun(edm::Run const&, edm::EventSetup const&) {}
-      virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) {}
       virtual void produce(Event&, EventSetup const&) = 0;
-      virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) {}
-      virtual void endRun(edm::Run const&, edm::EventSetup const&) {}
       virtual void endStream() {}
 
-      virtual void registerThinnedAssociations(ProductRegistry const&, ThinnedAssociationsHelper&) {}
-
-      virtual void doAcquire_(Event const&, EventSetup const&, WaitingTaskWithArenaHolder&) = 0;
-      virtual size_t transformIndex_(edm::BranchDescription const& iBranch) const noexcept;
+      virtual void doAcquire_(Event const&, EventSetup const&, WaitingTaskHolder&&) = 0;
+      virtual size_t transformIndex_(edm::ProductDescription const& iBranch) const noexcept;
       virtual ProductResolverIndex transformPrefetch_(std::size_t iIndex) const noexcept;
       virtual void transformAsync_(WaitingTaskHolder iTask,
                                    std::size_t iIndex,
@@ -93,5 +88,4 @@ namespace edm {
 
   }  // namespace stream
 }  // namespace edm
-
 #endif

@@ -19,8 +19,8 @@
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 
-#include "Geometry/CommonDetUnit/interface/GeomDetType.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDetType.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 
 #include "RecoTracker/PixelLowPtUtilities/interface/ClusterShapeHitFilter.h"
 
@@ -52,7 +52,7 @@ public:
   ~ClusterShapeExtractor();
   virtual void beginRun(const edm::Run& run, const edm::EventSetup& es) override;
   virtual void analyze(const edm::Event& ev, const edm::EventSetup& es) override;
-  virtual void endRun(const edm::Run& run, const edm::EventSetup& es) override{};
+  virtual void endRun(const edm::Run& run, const edm::EventSetup& es) override {}
   virtual void endJob() override;
 
 private:

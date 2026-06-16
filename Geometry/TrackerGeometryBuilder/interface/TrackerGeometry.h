@@ -1,9 +1,11 @@
 #ifndef Geometry_TrackerGeometryBuilder_TrackerGeometry_H
 #define Geometry_TrackerGeometryBuilder_TrackerGeometry_H
 
-#include "Geometry/CommonDetUnit/interface/TrackingGeometry.h"
-#include "Geometry/CommonDetUnit/interface/GeomDetEnumerators.h"
-#include "Geometry/CommonDetUnit/interface/TrackerGeomDet.h"
+#include <cassert>
+
+#include "Geometry/CommonTopologies/interface/TrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/GeomDetEnumerators.h"
+#include "Geometry/CommonTopologies/interface/TrackerGeomDet.h"
 
 class GeometricDet;
 
@@ -77,8 +79,14 @@ public:
   unsigned int numberOfLayers(int subdet) const;
   bool isThere(GeomDetEnumerators::SubDetector subdet) const;
 
-  unsigned int offsetDU(SubDetector sid) const { return theOffsetDU[sid]; }
-  unsigned int endsetDU(SubDetector sid) const { return theEndsetDU[sid]; }
+  unsigned int offsetDU(SubDetector sid) const {
+    assert(0 <= sid && sid < 7);
+    return theOffsetDU[sid];
+  }
+  unsigned int endsetDU(SubDetector sid) const {
+    assert(0 <= sid && sid < 7);
+    return theEndsetDU[sid];
+  }
   // Magic : better be called at the right moment...
   void setOffsetDU(SubDetector sid) { theOffsetDU[sid] = detUnits().size(); }
   void setEndsetDU(SubDetector sid) { theEndsetDU[sid] = detUnits().size(); }

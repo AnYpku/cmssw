@@ -1,7 +1,7 @@
 #ifndef Geometry_TrackerGeometryBuilder_StripGeomDetUnit_H
 #define Geometry_TrackerGeometryBuilder_StripGeomDetUnit_H
 
-#include "Geometry/CommonDetUnit/interface/TrackerGeomDet.h"
+#include "Geometry/CommonTopologies/interface/TrackerGeomDet.h"
 #include "DataFormats/DetId/interface/DetId.h"
 #include "Geometry/TrackerGeometryBuilder/interface/ProxyStripTopology.h"
 
@@ -35,10 +35,10 @@ public:
   /// the proxy topology (through topology() and specificTopology()) which includes
   /// corrections for the surface deformations, and once via the GeomDetType
   /// (through type().topology() and the like).
-  virtual StripGeomDetType const& specificType() const;
+  StripGeomDetType const& specificType() const;
 
   /// Returns a reference to the strip proxy topology
-  virtual const StripTopology& specificTopology() const;
+  const StripTopology& specificTopology() const;
 
   /// Return pointer to surface deformation.
   const SurfaceDeformation* surfaceDeformation() const override { return theTopology->surfaceDeformation(); }

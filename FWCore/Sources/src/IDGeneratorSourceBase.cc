@@ -2,6 +2,7 @@
 ----------------------------------------------------------------------*/
 
 #include <cerrno>
+#include <chrono>
 
 #include "DataFormats/Provenance/interface/LuminosityBlockAuxiliary.h"
 #include "DataFormats/Provenance/interface/RunAuxiliary.h"
@@ -112,8 +113,8 @@ namespace edm {
   }
 
   template <typename BASE>
-  void IDGeneratorSourceBase<BASE>::beginJob() {
-    BASE::beginJob();
+  void IDGeneratorSourceBase<BASE>::beginJob(ProductRegistry const& iReg) {
+    BASE::beginJob(iReg);
     // Initialize cannot be called from the constructor, because it is a virtual function
     // that needs to be invoked from a derived class if the derived class overrides it.
     initialize(eventID_, presentTime_, timeBetweenEvents_);
@@ -135,26 +136,26 @@ namespace edm {
   template <typename BASE>
   typename BASE::ItemTypeInfo IDGeneratorSourceBase<BASE>::getNextItemType() {
     if (BASE::state() == BASE::ItemType::IsInvalid) {
-      return noFiles() ? BASE::ItemType::IsStop : BASE::ItemType::IsFile;
+      return noFiles() ? BASE::ItemTypeInfo::isStop() : BASE::ItemTypeInfo::isFile();
     }
     if (BASE::newRun()) {
-      return BASE::ItemType::IsRun;
+      return BASE::ItemTypeInfo::isRun();
     }
     if (BASE::newLumi()) {
-      return BASE::ItemType::IsLumi;
+      return BASE::ItemTypeInfo::isLumi();
     }
     if (BASE::eventCached()) {
-      return BASE::ItemType::IsEvent;
+      return BASE::ItemTypeInfo::isEvent();
     }
     EventID oldEventID = eventID_;
     advanceToNext(eventID_, presentTime_);
     if (eventCreationDelay_ > 0) {
-      usleep(eventCreationDelay_);
+      std::this_thread::sleep_for(std::chrono::microseconds(eventCreationDelay_));
     }
     size_t index = fileIndex();
     bool another = setRunAndEventInfo(eventID_, presentTime_, eType_);
     if (!another) {
-      return BASE::ItemType::IsStop;
+      return BASE::ItemTypeInfo::isStop();
     }
     bool newFile = (fileIndex() > index);
     BASE::setEventCached();
@@ -162,15 +163,15 @@ namespace edm {
       // New Run
       BASE::setNewRun();
       BASE::setNewLumi();
-      return newFile ? BASE::ItemType::IsFile : BASE::ItemType::IsRun;
+      return newFile ? BASE::ItemTypeInfo::isFile() : BASE::ItemTypeInfo::isRun();
     }
     // Same Run
     if (BASE::newLumi() || eventID_.luminosityBlock() != oldEventID.luminosityBlock()) {
       // New Lumi
       BASE::setNewLumi();
-      return newFile ? BASE::ItemType::IsFile : BASE::ItemType::IsLumi;
+      return newFile ? BASE::ItemTypeInfo::isFile() : BASE::ItemTypeInfo::isLumi();
     }
-    return newFile ? BASE::ItemType::IsFile : BASE::ItemType::IsEvent;
+    return newFile ? BASE::ItemTypeInfo::isFile() : BASE::ItemTypeInfo::isEvent();
   }
 
   template <typename BASE>

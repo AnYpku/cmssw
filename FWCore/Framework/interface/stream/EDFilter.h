@@ -24,11 +24,10 @@
 #include "FWCore/Framework/interface/stream/Contexts.h"
 #include "FWCore/Framework/interface/stream/AbilityChecker.h"
 #include "FWCore/Framework/interface/stream/EDFilterBase.h"
+#include "FWCore/Framework/interface/stream/EDFilterAdaptor.h"
 #include "FWCore/Framework/interface/stream/ProducingModuleHelper.h"
 
 namespace edm {
-
-  class WaitingTaskWithArenaHolder;
 
   namespace stream {
 
@@ -66,8 +65,8 @@ namespace edm {
       bool hasAbilityToProduceInEndLumis() const final { return HasAbilityToProduceInEndLumis<T...>::value; }
 
     private:
-      void doAcquire_(Event const& ev, EventSetup const& es, WaitingTaskWithArenaHolder& holder) final {
-        doAcquireIfNeeded(this, ev, es, holder);
+      void doAcquire_(Event const& ev, EventSetup const& es, WaitingTaskHolder&& holder) final {
+        doAcquireIfNeeded(this, ev, es, std::move(holder));
       }
     };
 

@@ -74,7 +74,7 @@ void MuonTrajectoryCleaner::clean(TrajectoryContainer& trajC,
           if (((*m1).recHit()->globalPosition() - (*m2).recHit()->globalPosition()).mag() < 10e-5)
             match++;
         }  // end for( m2 ... )
-      }    // end for( m1 ... )
+      }  // end for( m1 ... )
 
       // FIXME Set Boff/on via cfg!
       double chi2_dof_i = (*iter)->ndof() > 0 ? (*iter)->chiSquared() / (*iter)->ndof() : (*iter)->chiSquared() / 1e-10;
@@ -195,9 +195,7 @@ void MuonTrajectoryCleaner::clean(TrajectoryContainer& trajC,
       seedToSeedsMap = std::make_unique<L2SeedAssoc>(seedsHandle, seedsHandle);
     }
 
-    int seedcnt(0);
-
-    for (map<int, vector<int> >::iterator itmap = seedmap.begin(); itmap != seedmap.end(); ++itmap, ++seedcnt) {
+    for (map<int, vector<int> >::iterator itmap = seedmap.begin(); itmap != seedmap.end(); ++itmap) {
       edm::RefToBase<TrajectorySeed> tmpSeedRef1 = trajC[(*itmap).first]->seedRef();
       edm::Ref<L2MuonTrajectorySeedCollection> tmpL2SeedRef1 =
           tmpSeedRef1.castTo<edm::Ref<L2MuonTrajectorySeedCollection> >();

@@ -17,12 +17,12 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Utilities/interface/EDGetToken.h"
 #include "FWCore/Utilities/interface/Exception.h"
-#include "Geometry/CommonDetUnit/interface/GeomDetType.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
-#include "Geometry/CommonDetUnit/interface/TrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/GeomDetType.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/TrackingGeometry.h"
 #include "Geometry/CommonTopologies/interface/StripTopology.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
 #include "Geometry/TrackerGeometryBuilder/interface/StripGeomDetUnit.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 
@@ -557,8 +557,8 @@ void SiStripGainsCalibTreeWorker::checkBookAPVColls(const TrackerGeometry* bareT
           Index++;
           histograms.NStripAPVs++;
         }  // loop on APVs
-      }    // if is Strips
-    }      // loop on dets
+      }  // if is Strips
+    }  // loop on dets
 
     for (unsigned int i = 0; i < Det.size();
          i++) {  //Make two loop such that the Pixel information is added at the end --> make transition simpler
@@ -605,10 +605,10 @@ void SiStripGainsCalibTreeWorker::checkBookAPVColls(const TrackerGeometry* bareT
             histograms.NPixelDets++;
 
           }  // loop on ROC cols
-        }    // loop on ROC rows
-      }      // if Pixel
-    }        // loop on Dets
-  }          //if (!bareTkGeomPtr_) ...
+        }  // loop on ROC rows
+      }  // if Pixel
+    }  // loop on Dets
+  }  //if (!bareTkGeomPtr_) ...
 }
 
 //********************************************************************************//

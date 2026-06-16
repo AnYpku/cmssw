@@ -3,7 +3,7 @@
   <use name="FWCore/Framework"/>
 </library>
 
-<library file="MockEventProcessor.cc,stubs/TestBeginEndJobAnalyzer.cc" name="FWCoreFrameworkTest">
+<library file="stubs/TestBeginEndJobAnalyzer.cc" name="FWCoreFrameworkTest">
   <use name="FWCore/Framework"/>
 </library>
 
@@ -55,12 +55,6 @@
   <use name="FWCore/ParameterSet"/>
   <use name="FWCore/ServiceRegistry"/>
   <use name="FWCore/Utilities"/>
-</library>
-
-<library file="stubs/RunLumiEventAnalyzer.cc" name="RunLumiEventAnalyzer">
-  <flags EDM_PLUGIN="1"/>
-  <use name="FWCore/Framework"/>
-  <use name="FWCore/ParameterSet"/>
 </library>
 
 <library file="stubs/TestMod.cc" name="TestMod">
@@ -156,7 +150,7 @@
   <flags EDM_PLUGIN="1"/>
   <use name="DataFormats/Common"/>
   <use name="FWCore/Framework"/>
-  <use name="cppunit"/>
+  <use name="catch2"/>
 </library>
 
 <library file="stubs/TestBeginEndJobAnalyzerModule.cc" name="FWCoreFrameworkTestBeginEndJobAnalyzer">
@@ -193,7 +187,16 @@
   <use name="FWCore/Utilities"/>
 </library>
 
-<bin name="TestFWCoreFramework" file="testRunner.cpp,maker2_t.cppunit.cc,maker_t.cppunit.cc,productregistry.cppunit.cc,edproducer_productregistry_callback.cc,event_getrefbeforeput_t.cppunit.cc,generichandle_t.cppunit.cc,edconsumerbase_t.cppunit.cc,global_producer_t.cppunit.cc,global_filter_t.cppunit.cc,one_outputmodule_t.cppunit.cc,global_outputmodule_t.cppunit.cc,stream_producer_t.cppunit.cc,stream_filter_t.cppunit.cc,limited_producer_t.cppunit.cc,limited_filter_t.cppunit.cc,limited_outputmodule_t.cppunit.cc,checkForModuleDependencyCorrectness_t.cppunit.cc">
+<library file="stubs/TriggerResultsTestSource.cc" name="FWCoreFrameworkTriggerResultsTestSource">
+  <flags EDM_PLUGIN="1"/>
+  <use name="FWCore/Framework"/>
+  <use name="FWCore/ParameterSet"/>
+  <use name="FWCore/Utilities"/>
+  <use name="FWCore/Sources"/>
+</library>
+
+
+<bin name="TestFWCoreFramework" file="maker2_t.catch2.cc,productregistry.catch2.cc,edproducer_productregistry_callback.cc,event_getrefbeforeput_t.catch2.cc,generichandle_t.catch2.cc,edconsumerbase_t.catch2.cc,checkForModuleDependencyCorrectness_t.catch2.cc">
   <use name="DataFormats/Common"/>
   <use name="DataFormats/Provenance"/>
   <use name="DataFormats/TestObjects"/>
@@ -202,29 +205,47 @@
   <use name="FWCore/Utilities"/>
   <use name="FWCore/Version"/>
   <use name="FWCore/ParameterSetReader"/>
-  <use name="cppunit"/>
+  <use name="catch2"/>
 </bin>
 
-<bin name="TestFWCoreFrameworkeventsetup" file="testRunner.cpp,callback_t.cppunit.cc,datakey_t.cppunit.cc,dependentrecord_t.cppunit.cc,esproducer_t.cppunit.cc,esproducts_t.cppunit.cc,eventsetupplugin_t.cppunit.cc,eventsetuprecord_t.cppunit.cc,eventsetup_t.cppunit.cc,fullchain_t.cppunit.cc,interval_t.cppunit.cc,esproductresolverfactoryproducer_t.cppunit.cc,iovsyncvalue_t.cppunit.cc,intersectingiovrecordintervalfinder_t.cppunit.cc,eventsetupscontroller_t.cppunit.cc">
+<bin name="TestFWCoreFrameworkCatch2" file="test_catch2_main.cc,*_producer_catch2.cc,*_filter_catch2.cc,*_outputmodule_catch2.cc">
+  <use name="DataFormats/Common"/>
+  <use name="DataFormats/Provenance"/>
+  <use name="DataFormats/TestObjects"/>
+  <use name="FWCore/Framework"/>
+  <use name="FWCore/ParameterSet"/>
+  <use name="FWCore/Utilities"/>
+  <use name="FWCore/Version"/>
+  <use name="FWCore/ParameterSetReader"/>
+  <use name="catch2"/>
+</bin>
+
+<bin name="TestFWCoreFrameworkeventsetup" file="callback_t.catch2.cc,datakey_t.catch2.cc,dependentrecord_t.catch2.cc,esproducer_t.catch2.cc,esproducts_t.catch2.cc,eventsetupplugin_t.catch2.cc,eventsetuprecord_t.catch2.cc,eventsetup_t.catch2.cc,fullchain_t.catch2.cc,interval_t.catch2.cc,esproductresolverfactoryproducer_t.catch2.cc,iovsyncvalue_t.catch2.cc,intersectingiovrecordintervalfinder_t.catch2.cc,eventsetupscontroller_t.catch2.cc">
   <lib name="FWCoreFrameworkTestDummyForEventSetup"/>
   <use name="FWCore/Framework"/>
   <use name="FWCore/ParameterSet"/>
   <use name="FWCore/Utilities"/>
   <use name="FWCore/Version"/>
-  <use name="cppunit"/>
+  <use name="catch2"/>
 </bin>
 
-<bin name="TestFWCoreFrameworkeventprocessor" file="testRunner.cpp,eventprocessor2_t.cppunit.cc,eventprocessor_t.cppunit.cc">
+<bin name="TestFWCoreFrameworkeventprocessor" file="eventprocessor2_t.catch2.cc,eventprocessor_t.catch2.cc">
   <lib name="FWCoreFrameworkTest"/>
   <use name="DataFormats/Provenance"/>
   <use name="FWCore/Framework"/>
   <use name="FWCore/ServiceRegistry"/>
   <use name="FWCore/Utilities"/>
   <use name="FWCore/ParameterSetReader"/>
-  <use name="cppunit"/>
+  <use name="catch2"/>
 </bin>
 
-<bin name="TestFWCoreFrameworkeventprincipal" file="testRunner.cpp,eventprincipal_t.cppunit.cc,sharedresourcesregistry_t.cppunit.cc">
+<bin name="TestFWCoreFrameworkSourceCoordinator" file="test_catch2_main.cc,sourcecoordinator_t.catch2.cc">
+  <use name="FWCore/Framework"/>
+  <use name="FWCore/ServiceRegistry"/>
+  <use name="catch2"/>
+</bin>
+
+<bin name="TestFWCoreFrameworkeventprincipal" file="eventprincipal_t.catch2.cc,sharedresourcesregistry_t.catch2.cc">
   <use name="DataFormats/Common"/>
   <use name="DataFormats/Provenance"/>
   <use name="DataFormats/TestObjects"/>
@@ -232,7 +253,7 @@
   <use name="FWCore/ParameterSet"/>
   <use name="FWCore/Utilities"/>
   <use name="FWCore/Version"/>
-  <use name="cppunit"/>
+  <use name="catch2"/>
 </bin>
 
 <bin name="TestFWCoreFrameworkEvent" file="Event_t.cpp">
@@ -243,12 +264,12 @@
   <use name="FWCore/ParameterSet"/>
   <use name="FWCore/Utilities"/>
   <use name="FWCore/Version"/>
-  <use name="cppunit"/>
+  <use name="catch2"/>
 </bin>
 
 <bin name="TestFWCoreFrameworkView" file="View_t.cpp">
   <use name="DataFormats/Common"/>
-  <use name="cppunit"/>
+  <use name="catch2"/>
 </bin>
 
 <test name="TestFWCoreFrameworkCmsRun" command="run_cmsRun.sh"/>
@@ -293,13 +314,10 @@
   <use name="catch2"/>
 </bin>
 
-<bin name="TestFWCoreFrameworkStatemachine" file="statemachine_t.cc">
-  <lib name="FWCoreFrameworkTest"/>
+<bin name="TestFWCoreFrameworkStatemachine" file="MockEventProcessor.cc,statemachine_t.cc">
   <use name="FWCore/Framework"/>
-  <use name="boost_program_options"/>
+  <use name="catch2"/>
 </bin>
-
-<test name="TestFWCoreFrameworkStatemachineSH" command="run_statemachine.sh"/>
 
 <test name="TestFWCoreFrameworkInputTagFailure" command="test_InputTag_cache_failure.sh"/>
 
@@ -318,7 +336,7 @@
   <use name="FWCore/Framework"/>
 </bin>
 
-<bin file="test_catch2_main.cc,test_catch2_Factory.cc" name="TestFWCoreFrameworkFactory">
+<bin file="test_catch2_main.cc,test_catch2_ModuleHolderFactory.cc" name="TestFWCoreFrameworkFactory">
   <use name="catch2"/>
   <use name="FWCore/Framework"/>
 </bin>
@@ -338,16 +356,9 @@
 <test name="testFWCoreFrameworkOutputModuleSelectEventsMissingPathSameProcessAnotherModuleBefore" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/testOutputModuleSelectEventsMissingPath_cfg.py --missingPath=sameProcess --anotherModule=before 2>&amp;1 | grep 'to request a trigger name that does not exist'"/>
 <test name="testFWCoreFrameworkOutputModuleSelectEventsMissingPathSameProcessAnotherModuleAfter" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/testOutputModuleSelectEventsMissingPath_cfg.py --missingPath=sameProcess --anotherModule=after 2>&amp;1 | grep 'to request a trigger name that does not exist'"/>
 
-<test name="testFWCoreFrameworkOutputModuleSelectEventsMissingPathEarlier" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/testOutputModuleSelectEventsMissingPathEarlier_cfg.py"/>
-<test name="testFWCoreFrameworkOutputModuleSelectEventsMissingPathEarlierProcess" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/testOutputModuleSelectEventsMissingPath_cfg.py --missingPath=earlierProcess 2>&amp;1 | grep 'to request a trigger name that does not exist'">
-  <flags PRE_TEST="testFWCoreFrameworkOutputModuleSelectEventsMissingPathEarlier"/>
-</test>
-<test name="testFWCoreFrameworkOutputModuleSelectEventsMissingPathEarlierProcessBefore" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/testOutputModuleSelectEventsMissingPath_cfg.py --missingPath=earlierProcess --anotherModule=before 2>&amp;1 | grep 'to request a trigger name that does not exist'">
-  <flags PRE_TEST="testFWCoreFrameworkOutputModuleSelectEventsMissingPathEarlier"/>
-</test>
-<test name="testFWCoreFrameworkOutputModuleSelectEventsMissingPathEarlierProcessAfter" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/testOutputModuleSelectEventsMissingPath_cfg.py --missingPath=earlierProcess --anotherModule=after 2>&amp;1 | grep 'to request a trigger name that does not exist'">
-  <flags PRE_TEST="testFWCoreFrameworkOutputModuleSelectEventsMissingPathEarlier"/>
-</test>
+<test name="testFWCoreFrameworkOutputModuleSelectEventsMissingPathEarlierProcess" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/testOutputModuleSelectEventsMissingPath_cfg.py --missingPath=earlierProcess 2>&amp;1 | grep 'to request a trigger name that does not exist'"/>
+<test name="testFWCoreFrameworkOutputModuleSelectEventsMissingPathEarlierProcessBefore" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/testOutputModuleSelectEventsMissingPath_cfg.py --missingPath=earlierProcess --anotherModule=before 2>&amp;1 | grep 'to request a trigger name that does not exist'"/>
+<test name="testFWCoreFrameworkOutputModuleSelectEventsMissingPathEarlierProcessAfter" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/testOutputModuleSelectEventsMissingPath_cfg.py --missingPath=earlierProcess --anotherModule=after 2>&amp;1 | grep 'to request a trigger name that does not exist'"/>
 
 <test name="testFWCoreFrameworkOutputModuleSelectEventsMissingPathMissingProcess" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/testOutputModuleSelectEventsMissingPath_cfg.py --missingPath=missingProcess 2>&amp;1 | grep 'An exception of category .ProductNotFound'"/>
 <test name="testFWCoreFrameworkOutputModuleSelectEventsMissingPathMissingProcessAnotherModuleBefore" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/testOutputModuleSelectEventsMissingPath_cfg.py --missingPath=missingProcess --anotherModule=before 2>&amp;1 | grep 'An exception of category .ProductNotFound'"/>
@@ -362,19 +373,9 @@
 <test name="testFWCoreFrameworkBadScheduleException6" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/test_bad_schedule_exception_message_cfg.py 6; grep -v 'Fatal Exception' test_bad_schedule_6.log | diff -q ${LOCALTOP}/src/FWCore/Framework/test/unit_test_outputs/test_bad_schedule_6.log -"/>
 <test name="testFWCoreFrameworkBadScheduleException7" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/test_bad_schedule_exception_message_cfg.py 7; grep -v 'Fatal Exception' test_bad_schedule_7.log | diff -q ${LOCALTOP}/src/FWCore/Framework/test/unit_test_outputs/test_bad_schedule_7.log -"/>
 <test name="testFWCoreFrameworkBadScheduleException8" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/test_bad_schedule_exception_message_cfg.py 8; grep -v 'Fatal Exception' test_bad_schedule_8.log | diff -q ${LOCALTOP}/src/FWCore/Framework/test/unit_test_outputs/test_bad_schedule_8.log -"/>
-<test name="testFWCoreFrameworkConditionalTask" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/test_conditionaltasks_cfg.py"/>
-<test name="testFWCoreFrameworkConditionalTask_filterSucceeds" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/test_conditionaltasks_cfg.py --filterSucceeds"/>
-<test name="testFWCoreFrameworkConditionalTask_reverseDependencies" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/test_conditionaltasks_cfg.py --reverseDependencies"/>
-<test name="testFWCoreFrameworkConditionalTask_testAlias" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/test_conditionaltasks_cfg.py --testAlias"/>
-<test name="testFWCoreFrameworkConditionalTask_testAlias_aliasWithStar" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/test_conditionaltasks_cfg.py --testAlias --aliasWithStar"/>
-<test name="testFWCoreFrameworkConditionalTask_testView" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/test_conditionaltasks_cfg.py --testView"/>
-<test name="testFWCoreFrameworkConditionalTask_testView_testAlias" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/test_conditionaltasks_cfg.py --testView --testAlias"/>
-<test name="testFWCoreFrameworkConditionalTask_testView_testAlias_aliasWithStar" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/test_conditionaltasks_cfg.py --testView --testAlias --aliasWithStar"/>
 <test name="testFWCoreFrameworkModuleSynchLumiBoundary" command="run_module_synch_lumiboundary.sh"/>
 <test name="testFWCoreFrameworkGetByType_getterOfProduct" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/test_get_by_type_cfg.py"/>
 <test name="testFWCoreFrameworkGetByType_getterOfProduct_alias" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/test_get_by_type_cfg.py --useEDAlias"/>
-
-<test name="testFWCoreFrameworkConditionalTaskNonConsumed" command="test_conditionaltasks_nonconsumed.sh"/>
 
 <test name="testFWCoreFrameworkOptionsNumberOfThreadsType" command="cmsRun ${LOCALTOP}/src/FWCore/Framework/test/test_wrongOptionsType_cfg.py --name=numberOfThreads --value='cms.untracked.uint32(1)'"/>
 <test name="testFWCoreFrameworkWrongOptionsNumberOfThreadsType" command="run_wrongOptionsType.sh numberOfThreads 'cms.untracked.int32(1)'"/>
@@ -382,6 +383,12 @@
 <test name="testFWCoreFrameworkWrongOptionssizeOfStackForThreadsInKBType" command="run_wrongOptionsType.sh sizeOfStackForThreadsInKB 'cms.untracked.int32(1024)'"/>
 
 <bin file="test_catch2_main.cc,test_catch2_CmsRunParser.cc" name="TestFWCoreFrameworkCmsRunParser">
+  <use name="catch2"/>
+  <use name="FWCore/Framework"/>
+  <use name="FWCore/Utilities"/>
+</bin>
+
+<bin file="test_catch2_main.cc,test_catch2_ScheduleBuilder.cc" name="TestFWCoreFrameworkScheduleBuilder">
   <use name="catch2"/>
   <use name="FWCore/Framework"/>
   <use name="FWCore/Utilities"/>

@@ -11,6 +11,7 @@
 #include "DataFormats/JetReco/interface/PFJet.h"
 
 using namespace reco;
+using namespace reco::io_v1;
 
 PFJet::PFJet(const LorentzVector& fP4,
              const Point& fVertex,
@@ -40,6 +41,7 @@ reco::PFCandidatePtr PFJet::getPFConstituent(unsigned fIndex) const {
 
 std::vector<reco::PFCandidatePtr> PFJet::getPFConstituents() const {
   std::vector<PFCandidatePtr> result;
+  result.reserve(numberOfDaughters());
   for (unsigned i = 0; i < numberOfDaughters(); i++)
     result.push_back(getPFConstituent(i));
   return result;
@@ -94,7 +96,7 @@ std::string PFJet::print() const {
   return out.str();
 }
 
-std::ostream& reco::operator<<(std::ostream& out, const reco::PFJet& jet) {
+std::ostream& reco::io_v1::operator<<(std::ostream& out, const reco::io_v1::PFJet& jet) {
   if (out) {
     out << "PFJet "
         << "(pt, eta, phi) = " << jet.pt() << "," << jet.eta() << "," << jet.phi()

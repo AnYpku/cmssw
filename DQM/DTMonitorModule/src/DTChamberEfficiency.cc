@@ -22,7 +22,7 @@
 #include "DataFormats/DTRecHit/interface/DTRecSegment4D.h"
 #include "DataFormats/MuonDetId/interface/MuonSubdetId.h"
 
-#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/GlobalTrackingGeometry.h"
 #include "MagneticField/Engine/interface/MagneticField.h"
 
 #include "RecoMuon/Navigation/interface/DirectMuonNavigation.h"
@@ -187,7 +187,7 @@ void DTChamberEfficiency::analyze(const Event& event, const EventSetup& eventSet
           continue;
 
         // get the first det (it's the most compatible)
-        const DetWithState detWithState = dss.front();
+        const DetWithState& detWithState = dss.front();
         const DetId idDetLay = detWithState.first->geographicalId();
 
         // check if this is a DT and the track has the needed quality

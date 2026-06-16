@@ -3,18 +3,13 @@
 #include "DataFormats/ForwardDetId/interface/BTLDetId.h"
 #include "DataFormats/ForwardDetId/interface/ETLDetId.h"
 
-#include "Geometry/CommonDetUnit/interface/GeomDetType.h"
+#include "Geometry/CommonTopologies/interface/GeomDetType.h"
 #include "Geometry/MTDGeometryBuilder/interface/ProxyMTDTopology.h"
 #include "Geometry/MTDGeometryBuilder/interface/RectangularMTDTopology.h"
 #include "Geometry/MTDCommonData/interface/MTDTopologyMode.h"
 
 MTDTimeCalib::MTDTimeCalib(edm::ParameterSet const& conf, const MTDGeometry* geom, const MTDTopology* topo)
-    : geom_(geom),
-      topo_(topo),
-      btlTimeOffset_(conf.getParameter<double>("BTLTimeOffset")),
-      etlTimeOffset_(conf.getParameter<double>("ETLTimeOffset")),
-      btlLightCollTime_(conf.getParameter<double>("BTLLightCollTime")),
-      btlLightCollSlope_(conf.getParameter<double>("BTLLightCollSlope")) {}
+    : geom_(geom), topo_(topo), btlLightCollSlope_(conf.getParameter<double>("BTLLightCollSlope")) {}
 
 float MTDTimeCalib::getTimeCalib(const MTDDetId& id) const {
   if (id.subDetector() != MTDDetId::FastTime) {
@@ -25,7 +20,6 @@ float MTDTimeCalib::getTimeCalib(const MTDDetId& id) const {
   float time_calib = 0.;
 
   if (id.mtdSubDetector() == MTDDetId::BTL) {
-    time_calib += btlTimeOffset_;
     BTLDetId hitId(id);
     //for BTL topology gives different layout id
     DetId geoId = hitId.geographicalId(MTDTopologyMode::crysLayoutFromTopoMode(topo_->getMTDTopologyMode()));
@@ -47,7 +41,7 @@ float MTDTimeCalib::getTimeCalib(const MTDDetId& id) const {
           << "BTL topology mode " << static_cast<int>(btlL) << " unsupported! Aborting";
     }
   } else if (id.mtdSubDetector() == MTDDetId::ETL) {
-    time_calib += etlTimeOffset_;
+    // no correction applied for ETL
   } else {
     throw cms::Exception("MTDTimeCalib") << "MTDDetId: " << std::hex << id.rawId() << " is invalid!" << std::dec
                                          << std::endl;

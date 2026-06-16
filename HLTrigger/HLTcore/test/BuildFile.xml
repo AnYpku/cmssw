@@ -10,8 +10,13 @@
   <use name="catch2"/>
 </bin>
 
+<bin file="test_catch2_defaultModuleLabel.cc" name="testHLTriggerHLTcoreDefaultModuleLabelCatch2">
+  <use name="HLTrigger/HLTcore"/>
+  <use name="catch2"/>
+</bin>
+
 <!-- test the HLTPrescaleExample plugin -->
-<test name="testHLTPrescaleExample" command="testHLTPrescaleExample.sh"/>
+<!-- <test name="testHLTPrescaleExample" command="testHLTPrescaleExample.sh"/> COMMENT: reads old format file -->
 
 <!-- test EDAnalyzers using TriggerEvent and TriggerEventWithRefs -->
-<test name="testTriggerEventAnalyzers" command="testTriggerEventAnalyzers.sh"/>
+<!-- <test name="testTriggerEventAnalyzers" command="testTriggerEventAnalyzers.sh"/> COMMENT: reads old format file -->

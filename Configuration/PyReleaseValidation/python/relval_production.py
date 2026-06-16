@@ -1,5 +1,6 @@
 # import the definition of the steps and input files:
-from  Configuration.PyReleaseValidation.relval_steps import *
+from Configuration.PyReleaseValidation.relval_steps import *
+from .MatrixUtil import Matrix
 
 # here only define the workflows as a combination of the steps defined above:
 workflows = Matrix()
@@ -9,7 +10,7 @@ workflows = Matrix()
 # the name of step1 will be used
 
 ## data production test
-workflows[1000] = [ '',['RunMinBias2011A','TIER0','SKIMD','HARVESTDfst2','ALCASPLIT']]
+workflows[1000] = [ '',['RunMinBias2011A','TIER0','SKIMDRun1','HARVESTDfst2','ALCASPLIT']]
 workflows[1001] = [ '',['RunMinBias2011A','TIER0EXP','ALCAEXP','ALCAHARVDSIPIXELCALRUN1','ALCAHARVD1','ALCAHARVD2','ALCAHARVD3','ALCAHARVD4','ALCAHARVD5','ALCAHARVD7','ALCAHARVD8']]
 workflows[1001.2] = [ '',['RunZeroBias2017F','TIER0EXPRUN2','ALCAEXPRUN2','ALCAHARVDSIPIXELCAL','ALCAHARVDSIPIXELCALLA','ALCAHARVD4','ALCAHARVDSIPIXELALIHG']]
 workflows[1001.3] = [ '',['RunSingleMuon2022B','TIER0EXPRUN3','ALCAEXPRUN3','ALCAHARVDEXPRUN3']]
@@ -23,14 +24,10 @@ workflows[1003]=['', ['RunMinBias2012A','RECODDQM','HARVESTDDQM']]
 workflows[1005] = ['',['RunCosmics2022F','TIER0EXPCOSMICSRUN3','ALCAEXPCOSMICSRUN3','ALCAHARVD2COS','ALCAHARVD3COS']]
 
 workflows[1010] =  ['',['TestEnableEcalHCAL2017B','TIER0EXPTE', 'ALCAEXPTE', 'ALCAHARVDTE']]
-workflows[1020] =  ['',['AlCaLumiPixels2021','TIER0EXPLP','ALCAEXPLP','ALCAHARVLP', 'TIER0PROMPTLP']]
 workflows[1030] =  ['',['RunHLTPhy2017B','TIER0EXPHPBS','ALCASPLITHPBS','ALCAHARVDHPBS', 'ALCAHARVDHPBSLOWPU']]
 
 workflows[1040] =  ['',['RunZeroBias2017F','TIER0RAWSIPIXELCAL','ALCASPLITSIPIXELCAL','ALCAHARVDSIPIXELCAL']]
-workflows[1040.1] =  ['',['RunExpressPhy2017F','TIER0EXPSIPIXELCAL','ALCASPLITSIPIXELCAL','ALCAHARVDSIPIXELCAL']]
 
-workflows[1041] = ['',['RunExpressPhy2017F','TIER0EXPPPSCAL','ALCASPLITPPSCAL','ALCAHARVDPPSCAL']]
-workflows[1042] = ['',['RunExpressPhy2017F','TIER0EXPPPSCALALIG','ALCASPLITPPSALIG','ALCAHARVDPPSALIG']]
 workflows[1046] = ['',['RunRawPPS2024D','TIER0EXPPPSCALRUN3','ALCASPLITPPSCALSAMPIC','ALCAHARVDPPSCALSAMPIC']]
 workflows[1047] = ['',['RunRawPPS2024D','TIER0EXPPPSCALRUN3','ALCASPLITPPSCALRUN3','ALCAHARVDPPSCALRUN3']]
 workflows[1048] = ['',['RunRawPPS2024D','TIER0EXPPPSCALRUN3','ALCASPLITPPSALIGRUN3','ALCAHARVDPPSALIGRUN3']]
@@ -38,7 +35,6 @@ workflows[1048] = ['',['RunRawPPS2024D','TIER0EXPPPSCALRUN3','ALCASPLITPPSALIGRU
 workflows[1049] = ['',['RunRawPPSReco2024E','RECODR3PPS', 'HARVESTDR3_PPSOnly']]
 
 workflows[1052] = ['',['RunCosmics2022F','TIER0EXPCOSMICSRUN3','ALCAEXPCOSMICSRUN3','ALCAHARVDSIPIXELLAMCS']]
-workflows[1052.1] = ['',['RunSiPixelCalCosmics2022F','ALCASPLITSIPIXELLAMCS','ALCAHARVDSIPIXELLAMCS']]
 
 ## MC production test
 #workflows[1100] = [ '',[]]

@@ -30,9 +30,9 @@
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/GlobalTrackingGeometry.h"
 #include "Geometry/Records/interface/GlobalTrackingGeometryRecord.h"
-#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/GlobalTrackingGeometry.h"
 #include "Geometry/Records/interface/TrackerTopologyRcd.h"
 
 #include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
@@ -63,7 +63,7 @@
 
 #include "FWCore/ServiceRegistry/interface/Service.h"
 
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
 
 #include "DataFormats/TrajectorySeed/interface/TrajectorySeedCollection.h"
 
@@ -250,7 +250,7 @@ void DeepCoreSeedGenerator::produce(edm::Event& iEvent, const edm::EventSetup& i
           }
         }  //end of TensorFlow tensors init
 
-        GlobalVector bigClustDir = splitClustDirSet[cc];
+        const GlobalVector& bigClustDir = splitClustDirSet[cc];
 
         jetEta_ = jet.eta();
         jetPt_ = jet.pt();
@@ -297,8 +297,8 @@ void DeepCoreSeedGenerator::produce(edm::Event& iEvent, const edm::EventSetup& i
                 fillPixelMatrix(aCluster, lay, localInter, det, input_tensors);
               }
             }  //cluster in ROI
-          }    //cluster
-        }      //detset
+          }  //cluster
+        }  //detset
 
         //here the NN produce the seed from the filled input
         std::pair<double[jetDimX][jetDimY][Nover][Npar], double[jetDimX][jetDimY][Nover]> seedParamNN =
@@ -388,8 +388,8 @@ void DeepCoreSeedGenerator::produce(edm::Event& iEvent, const edm::EventSetup& i
           }
         }
       }  //bigcluster
-    }    //jet > pt
-  }      //jet
+    }  //jet > pt
+  }  //jet
   iEvent.put(std::move(result));
   iEvent.put(std::move(resultTracks));
 }

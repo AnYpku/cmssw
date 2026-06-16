@@ -41,7 +41,7 @@
 #include "FWCore/Framework/interface/one/EDAnalyzer.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
 #include "Geometry/CommonTopologies/interface/PixelTopology.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
@@ -225,7 +225,7 @@ void SiPixelGainCalibrationRejectNoisyAndDead::fillDatabase(const edm::EventSetu
     float gainforthiscol[2];
     float pedforthiscol[2];
     int nusedrows[2];
-    int nrowsrocsplit;
+    int nrowsrocsplit = 0;
     if (record_ == "SiPixelGainCalibrationOfflineRcd")
       nrowsrocsplit = theGainCalibrationDbInputOffline_->getNumberOfRowsToAverageOver();
     if (record_ == "SiPixelGainCalibrationForHLTRcd")

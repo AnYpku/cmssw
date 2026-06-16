@@ -1,14 +1,47 @@
+###############################################################################
+# Way to use this:
+#   cmsRun testHGCaValidScintTest_cfg.py geomName=Run4D120
+#
+#   Options for geomName: Run4D120, Run4D121, Run4D122, Run4D123
+#
+###############################################################################
 import FWCore.ParameterSet.Config as cms
+import os, sys, importlib, re
+import FWCore.ParameterSet.VarParsing as VarParsing
 
-from Configuration.Eras.Era_Phase2C17I13M9_cff import Phase2C17I13M9
-process = cms.Process('PROD',Phase2C17I13M9)
+####################################################################
+### SETUP OPTIONS
+options = VarParsing.VarParsing('standard')
+options.register('geomName',
+                 "Run4D121",
+                  VarParsing.VarParsing.multiplicity.singleton,
+                  VarParsing.VarParsing.varType.string,
+                  "geometry of operations: Run4D120, Run4D121, Run4D122, Run4D123")
+### get and parse the command line arguments
+ 
+options.parseArguments()
+print(options)
+
+####################################################################
+geomName = options.geomName
+geomFile = "Configuration.Geometry.GeometryExtended" + geomName + "Reco_cff"
+import Configuration.Geometry.defaultPhase2ConditionsEra_cff as _settings
+GLOBAL_TAG, ERA = _settings.get_era_and_conditions(geomName)
+
+print("Geometry Name:   ", geomName)
+print("Geom file Name:  ", geomFile)
+print("Global Tag Name: ", GLOBAL_TAG)
+print("Era Name:        ", ERA)
+
+process = cms.Process('PROD',ERA)
 
 process.load("SimGeneral.HepPDTESSource.pdt_cfi")
-process.load("Configuration.Geometry.GeometryExtended2026D86Reco_cff")
+process.load(geomFile)
 process.load('FWCore.MessageService.MessageLogger_cfi')
 
 if hasattr(process,'MessageLogger'):
     process.MessageLogger.HGCalGeom=dict()
+    process.MessageLogger.HGCalGeomT=dict()
 
 process.load("IOMC.RandomEngine.IOMC_cff")
 process.RandomNumberGeneratorService.generator.initialSeed = 456789

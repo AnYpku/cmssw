@@ -1,7 +1,7 @@
 #include "RecoTracker/PixelLowPtUtilities/interface/ClusterShape.h"
 #include "RecoTracker/PixelLowPtUtilities/interface/ClusterData.h"
 
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
 #include "Geometry/CommonTopologies/interface/PixelTopology.h"
 
 #include "DataFormats/TrackerRecHit2D/interface/SiPixelRecHit.h"
@@ -122,7 +122,7 @@ void ClusterShape::determineShape(const PixelGeomDetUnit& pixelDet, const SiPixe
     if (pos.first > x[1]) {  // column ready
       if (processColumn(pos, true) == false) {
         data.isStraight = false;
-      }                          // break; }
+      }  // break; }
     } else {                     // increasing column
       if (pos.second > hig + 1)  // at least a pixel is missing
       {

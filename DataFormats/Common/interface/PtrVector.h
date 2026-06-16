@@ -65,7 +65,7 @@ namespace edm {
 
     Ptr<T> const operator[](difference_type n) const {  // Otherwise the
       return base_->fromItr(iter_ + n);                 // boost::range
-    }                                                   // doesn't have []
+    }  // doesn't have []
 
     PtrHolder<T> operator->() const { return PtrHolder<T>(this->operator*()); }
 
@@ -174,7 +174,7 @@ namespace edm {
     void fillView(std::vector<void const*>& pointers, FillViewHelperVector& helpers) const;
 
     //Used by ROOT storage
-    CMS_CLASS_VERSION(8)
+    CMS_CLASS_VERSION(3)
 
   private:
     //PtrVector const& operator=(PtrVector const&); // stop default

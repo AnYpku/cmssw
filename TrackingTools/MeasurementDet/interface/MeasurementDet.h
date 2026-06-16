@@ -3,7 +3,7 @@
 
 #include "TrackingTools/MeasurementDet/interface/TempMeasurements.h"
 
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 #include "TrackingTools/PatternTools/interface/TrajectoryMeasurement.h"
 #include "DataFormats/TrackerRecHit2D/interface/BaseTrackerRecHit.h"
 #include "DataFormats/TrackingRecHit/interface/InvalidTrackingRecHit.h"
@@ -62,12 +62,13 @@ public:
     measurements(stateOnThisDet, est, data, tmps);
     std::vector<TrajectoryMeasurement> result;
     result.reserve(tmps.size());
-    int index[tmps.size()];
+    int* index = new int[tmps.size()];
     tmps.sortIndex(index);
     for (std::size_t i = 0; i != tmps.size(); ++i) {
       auto j = index[i];
       result.emplace_back(stateOnThisDet, std::move(tmps.hits[j]), tmps.distances[j]);
     }
+    delete[] index;
     return result;
   }
 

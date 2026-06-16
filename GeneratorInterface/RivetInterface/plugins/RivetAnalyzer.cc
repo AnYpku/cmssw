@@ -54,6 +54,9 @@ void RivetAnalyzer::beginJob() {
   //set the environment, very ugly but rivet is monolithic when it comes to paths
   char* cmsswbase = std::getenv("CMSSW_BASE");
   char* cmsswrelease = std::getenv("CMSSW_RELEASE_BASE");
+  // These should never fail
+  assert(cmsswbase);
+  assert(cmsswrelease);
   if (!std::getenv("RIVET_REF_PATH")) {
     const std::string rivetref = string(cmsswbase) +
                                  "/src/GeneratorInterface/RivetInterface/data:" + string(cmsswrelease) +
@@ -136,6 +139,7 @@ void RivetAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   genEvent->read_data(*genEventData);
 
   std::vector<double> mergedWeights;
+  mergedWeights.reserve(genEvent->weights().size());
   for (unsigned int i = 0; i < genEvent->weights().size(); i++) {
     mergedWeights.push_back(genEvent->weights()[i]);
   }

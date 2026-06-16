@@ -21,20 +21,20 @@
 #include "TrackingTools/TrackAssociator/interface/DetIdAssociator.h"
 #include "TrackingTools/TrackAssociator/interface/TAMuonChamberMatch.h"
 #include "TrackPropagation/SteppingHelixPropagator/interface/SteppingHelixStateInfo.h"
-#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GlobalTrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 #include "DataFormats/DetId/interface/DetId.h"
 #include "CondFormats/CSCObjects/interface/CSCBadChambers.h"
 
 class MuonDetIdAssociator : public DetIdAssociator {
 public:
   MuonDetIdAssociator()
-      : DetIdAssociator(48, 48, 0.125), geometry_(nullptr), cscbadchambers_(nullptr), includeBadChambers_(false){};
+      : DetIdAssociator(48, 48, 0.125), geometry_(nullptr), cscbadchambers_(nullptr), includeBadChambers_(false) {}
   MuonDetIdAssociator(const int nPhi, const int nEta, const double etaBinSize)
       : DetIdAssociator(nPhi, nEta, etaBinSize),
         geometry_(nullptr),
         cscbadchambers_(nullptr),
-        includeBadChambers_(false){};
+        includeBadChambers_(false) {}
 
   MuonDetIdAssociator(int nPhi,
                       int nEta,
@@ -49,7 +49,7 @@ public:
         cscbadchambers_(badChambers),
         includeBadChambers_(includeBadChambers),
         includeGEM_(includeGEM),
-        includeME0_(includeME0){};
+        includeME0_(includeME0) {}
 
   virtual void setGeometry(const GlobalTrackingGeometry* ptr) { geometry_ = ptr; }
 

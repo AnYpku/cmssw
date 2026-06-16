@@ -57,7 +57,7 @@
 //#include "DataFormats/GeometryVector/interface/GlobalPoint.h"
 
 #include "FWCore/Framework/interface/ESHandle.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 
@@ -507,8 +507,8 @@ void Triplet::analyze(const edm::Event &iEvent, const edm::EventSetup &iSetup) {
           bestPvx = *iVertex;
         }
       }  // non-fake
-    }    //valid
-  }      // loop over vertices
+    }  //valid
+  }  // loop over vertices
 
   h022->Fill(maxSumPt);
 

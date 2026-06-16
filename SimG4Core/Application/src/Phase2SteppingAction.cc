@@ -1,4 +1,5 @@
 #include "SimG4Core/Application/interface/Phase2SteppingAction.h"
+#include "SimG4Core/Application/interface/Phase2TrackFilter.h"
 #include "SimG4Core/Geometry/interface/DD4hep2DDDName.h"
 #include "SimG4Core/Notification/interface/TrackInformation.h"
 #include "SimG4Core/Notification/interface/CMSSteppingVerbose.h"
@@ -13,10 +14,8 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/Utilities/interface/isFinite.h"
 
-Phase2SteppingAction::Phase2SteppingAction(const CMSSteppingVerbose* sv,
-                                           const edm::ParameterSet& p,
-                                           bool hasW,
-                                           bool dd4hep)
+Phase2SteppingAction::Phase2SteppingAction(
+    const CMSSteppingVerbose* sv, const edm::ParameterSet& p, const edm::ParameterSet& pstack, bool hasW, bool dd4hep)
     : steppingVerbose(sv), hasWatcher(hasW), dd4hep_(dd4hep) {
   theCriticalEnergyForVacuum = (p.getParameter<double>("CriticalEnergyForVacuum") * CLHEP::MeV);
   if (0.0 < theCriticalEnergyForVacuum) {
@@ -38,6 +37,9 @@ Phase2SteppingAction::Phase2SteppingAction(const CMSSteppingVerbose* sv,
   caloName_ = (G4String)(p.getParameter<std::string>("CaloName"));
   btlName_ = (G4String)(p.getParameter<std::string>("BTLName"));
   cms2ZDCName_ = p.getParameter<std::string>("CMS2ZDCName");
+  doFineCalo_ = (p.getParameter<bool>("DoFineCalo"));
+
+  filter = new Phase2TrackFilter(pstack, sv);
 
   edm::LogVerbatim("SimG4CoreApplication")
       << "Phase2SteppingAction:: KillBeamPipe = " << killBeamPipe
@@ -98,15 +100,24 @@ void Phase2SteppingAction::UserSteppingAction(const G4Step* aStep) {
   G4Track* theTrack = aStep->GetTrack();
   TrackStatus tstat = (theTrack->GetTrackStatus() == fAlive) ? sAlive : sKilledByProcess;
 
-  if (theTrack->GetKineticEnergy() < 0.0) {
-    if (nWarnings < 2) {
-      ++nWarnings;
-      edm::LogWarning("SimG4CoreApplication")
-          << "Phase2SteppingAction::UserPhase2SteppingAction: Track #" << theTrack->GetTrackID() << " "
-          << theTrack->GetDefinition()->GetParticleName()
-          << " Ekin(MeV)= " << theTrack->GetKineticEnergy() / CLHEP::MeV;
+  // check secondaries using StackingAction
+  std::size_t nn = aStep->GetNumberOfSecondariesInCurrentStep();
+  if (0 < nn) {
+    filter->setMother(theTrack);
+    auto step = const_cast<G4Step*>(aStep);
+    auto sec = step->GetfSecondary();
+    std::size_t n0 = sec->size() - nn;
+    for (std::size_t i = n0; i < sec->size(); ++i) {
+      auto track = (*sec)[i];
+      if (nullptr != track) {
+        auto status = filter->ClassifyNewTrack(track);
+        if (status == fKill) {
+          step->AddTotalEnergyDeposit(track->GetKineticEnergy());
+          sec->erase(sec->begin() + i);
+          delete track;
+        }
+      }
     }
-    theTrack->SetKineticEnergy(0.0);
   }
 
   const G4StepPoint* preStep = aStep->GetPreStepPoint();
@@ -171,46 +182,45 @@ void Phase2SteppingAction::UserSteppingAction(const G4Step* aStep) {
   // check transition tracker/btl and tracker/calo
   bool isKilled = false;
   if (sAlive == tstat || sVeryForward == tstat) {
-    // store TrackInformation about transition from one envelope to another
-    if (preStep->GetPhysicalVolume() == tracker && postStep->GetPhysicalVolume() == btl) {
-      // store transition tracker -> BTL only for tracks entering BTL for the first time
-      TrackInformation* trkinfo = static_cast<TrackInformation*>(theTrack->GetUserInformation());
-      if (!trkinfo->isFromTtoBTL() && !trkinfo->isFromBTLtoT()) {
-        trkinfo->setFromTtoBTL();
+    TrackInformation* trkinfo = dynamic_cast<TrackInformation*>(theTrack->GetUserInformation());
+    if (nullptr != trkinfo) {
+      // store TrackInformation about transition from one envelope to another
+      if (preStep->GetPhysicalVolume() == tracker && postStep->GetPhysicalVolume() == btl) {
+        // store transition tracker -> BTL only for tracks entering BTL for the first time
+        if (!trkinfo->isFromTtoBTL() && !trkinfo->isFromBTLtoT()) {
+          trkinfo->setFromTtoBTL();
 #ifdef EDM_ML_DEBUG
-        LogDebug("SimG4CoreApplication") << "Setting flag for Tracker -> BTL " << trkinfo->isFromTtoBTL()
-                                         << " IdAtBTLentrance = " << trkinfo->mcTruthID();
+          LogDebug("SimG4CoreApplication") << "Setting flag for Tracker -> BTL " << trkinfo->isFromTtoBTL()
+                                           << " IdAtBTLentrance = " << trkinfo->mcTruthID();
 #endif
-      } else {
-        trkinfo->setBTLlooper();
+        } else {
+          trkinfo->setBTLlooper();
 #ifdef EDM_ML_DEBUG
-        LogDebug("SimG4CoreApplication") << "Setting flag for BTL looper " << trkinfo->isBTLlooper();
+          LogDebug("SimG4CoreApplication") << "Setting flag for BTL looper " << trkinfo->isBTLlooper();
+#endif
+        }
+      } else if (preStep->GetPhysicalVolume() == btl && postStep->GetPhysicalVolume() == tracker) {
+        // store transition BTL -> tracker
+        if (!trkinfo->isFromBTLtoT()) {
+          trkinfo->setFromBTLtoT();
+#ifdef EDM_ML_DEBUG
+          LogDebug("SimG4CoreApplication") << "Setting flag for BTL -> Tracker " << trkinfo->isFromBTLtoT();
+#endif
+        }
+      } else if (preStep->GetPhysicalVolume() == tracker && postStep->GetPhysicalVolume() == calo) {
+        // store transition tracker -> calo
+        if (!trkinfo->crossedBoundary() && !doFineCalo_) {
+          trkinfo->setCrossedBoundary(theTrack);
+        }
+      } else if ((preStep->GetPhysicalVolume() == calo && postStep->GetPhysicalVolume() == tracker) ||
+                 (preStep->GetPhysicalVolume() == cmse && postStep->GetPhysicalVolume() == tracker)) {
+        // accounting for both geometries with direct CALO -> Tracker transitions or older versions with CMSE in the middle
+        trkinfo->setInTrkFromBackscattering();
+#ifdef EDM_ML_DEBUG
+        LogDebug("SimG4CoreApplication") << "Setting flag for backscattering from CALO "
+                                         << trkinfo->isInTrkFromBackscattering();
 #endif
       }
-    } else if (preStep->GetPhysicalVolume() == btl && postStep->GetPhysicalVolume() == tracker) {
-      // store transition BTL -> tracker
-      TrackInformation* trkinfo = static_cast<TrackInformation*>(theTrack->GetUserInformation());
-      if (!trkinfo->isFromBTLtoT()) {
-        trkinfo->setFromBTLtoT();
-#ifdef EDM_ML_DEBUG
-        LogDebug("SimG4CoreApplication") << "Setting flag for BTL -> Tracker " << trkinfo->isFromBTLtoT();
-#endif
-      }
-    } else if (preStep->GetPhysicalVolume() == tracker && postStep->GetPhysicalVolume() == calo) {
-      // store transition tracker -> calo
-      TrackInformation* trkinfo = static_cast<TrackInformation*>(theTrack->GetUserInformation());
-      if (!trkinfo->crossedBoundary()) {
-        trkinfo->setCrossedBoundary(theTrack);
-      }
-    } else if ((preStep->GetPhysicalVolume() == calo && postStep->GetPhysicalVolume() == tracker) ||
-               (preStep->GetPhysicalVolume() == cmse && postStep->GetPhysicalVolume() == tracker)) {
-      // accounting for both geometries with direct CALO -> Tracker transitions or older versions with CMSE in the middle
-      TrackInformation* trkinfo = static_cast<TrackInformation*>(theTrack->GetUserInformation());
-      trkinfo->setInTrkFromBackscattering();
-#ifdef EDM_ML_DEBUG
-      LogDebug("SimG4CoreApplication") << "Setting flag for backscattering from CALO "
-                                       << trkinfo->isInTrkFromBackscattering();
-#endif
     }
   } else {
     theTrack->SetTrackStatus(fStopAndKill);

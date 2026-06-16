@@ -17,6 +17,7 @@ class CustomUIsession;
 class SimWatcher;
 class SimProducer;
 class G4SimEvent;
+class G4LogicalVolume;
 
 class RunAction;
 
@@ -87,6 +88,15 @@ private:
 
   void runForPhase2();
 
+  void addRegions();
+
+  void addG4Region(const std::vector<G4LogicalVolume*>&,
+                   const std::string& regName,
+                   double cutg,
+                   double cute,
+                   double cutp,
+                   double cuti);
+
   G4MTRunManagerKernel* m_kernel;
 
   CustomUIsession* m_UIsession;
@@ -103,6 +113,7 @@ private:
   bool m_StorePhysicsTables;
   bool m_RestorePhysicsTables;
   bool m_check;
+  bool m_addRegions;
   bool m_geoFromDD4hep;
   bool m_score;
   bool m_isPhase2{false};

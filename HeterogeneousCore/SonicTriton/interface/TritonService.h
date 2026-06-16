@@ -18,7 +18,6 @@
 namespace edm {
   class ActivityRegistry;
   class ConfigurationDescriptions;
-  class PathsAndConsumesOfModulesBase;
   class ProcessContext;
   class ModuleDescription;
   namespace service {
@@ -43,7 +42,7 @@ public:
           instanceName(pset.getUntrackedParameter<std::string>("instanceName")),
           tempDir(pset.getUntrackedParameter<std::string>("tempDir")),
           imageName(pset.getUntrackedParameter<std::string>("imageName")),
-          sandboxName(pset.getUntrackedParameter<std::string>("sandboxName")) {
+          sandboxDir(pset.getUntrackedParameter<std::string>("sandboxDir")) {
       //randomize instance name
       if (instanceName.empty()) {
         instanceName =
@@ -61,7 +60,7 @@ public:
     std::string instanceName;
     std::string tempDir;
     std::string imageName;
-    std::string sandboxName;
+    std::string sandboxDir;
     std::string command;
   };
   struct Server {
@@ -123,7 +122,7 @@ private:
   void preModuleConstruction(edm::ModuleDescription const&);
   void postModuleConstruction(edm::ModuleDescription const&);
   void preModuleDestruction(edm::ModuleDescription const&);
-  void preBeginJob(edm::PathsAndConsumesOfModulesBase const&, edm::ProcessContext const&);
+  void preBeginJob(edm::ProcessContext const&);
   void postEndJob();
 
   //helper

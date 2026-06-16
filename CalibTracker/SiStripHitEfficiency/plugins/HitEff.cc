@@ -44,9 +44,9 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Utilities/interface/Exception.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
-#include "Geometry/CommonDetUnit/interface/GeomDetType.h"
-#include "Geometry/CommonDetUnit/interface/GluedGeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDetType.h"
+#include "Geometry/CommonTopologies/interface/GluedGeomDet.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/Records/interface/TrackerTopologyRcd.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
@@ -662,7 +662,7 @@ void HitEff::analyze(const edm::Event& e, const edm::EventSetup& es) {
             }
           }
           if (!tmpTmeas.empty() && !foundConsMissingHits) {
-            TrajectoryMeasurement TM_tmp(tmpTmeas.back());
+            const TrajectoryMeasurement& TM_tmp(tmpTmeas.back());
             unsigned int iidd_tmp = TM_tmp.recHit()->geographicalId().rawId();
             if (iidd_tmp != 0) {
               LogDebug("SiStripHitEfficiency:HitEff") << " hit actually being added to TM vector";
@@ -779,7 +779,7 @@ void HitEff::analyze(const edm::Event& e, const edm::EventSetup& es) {
             // take the last of the TMs, which is always an invalid hit
             // if no detId is available, ie detId==0, then no compatible layer was crossed
             // otherwise, use that TM for the efficiency measurement
-            TrajectoryMeasurement tob6TM(tmp.back());
+            const TrajectoryMeasurement& tob6TM(tmp.back());
             const auto& tob6Hit = tob6TM.recHit();
 
             if (tob6Hit->geographicalId().rawId() != 0) {
@@ -827,7 +827,7 @@ void HitEff::analyze(const edm::Event& e, const edm::EventSetup& es) {
             // take the last of the TMs, which is always an invalid hit
             // if no detId is available, ie detId==0, then no compatible layer was crossed
             // otherwise, use that TM for the efficiency measurement
-            TrajectoryMeasurement tec9TM(tmp.back());
+            const TrajectoryMeasurement& tec9TM(tmp.back());
             const auto& tec9Hit = tec9TM.recHit();
 
             unsigned int tec9id = tec9Hit->geographicalId().rawId();

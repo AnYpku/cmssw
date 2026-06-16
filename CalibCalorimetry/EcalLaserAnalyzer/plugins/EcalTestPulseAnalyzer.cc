@@ -12,6 +12,7 @@
 
 #include <sstream>
 #include <iomanip>
+#include <cmath>
 
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
@@ -287,7 +288,6 @@ void EcalTestPulseAnalyzer::analyze(const edm::Event& e, const edm::EventSetup& 
   double chi2pn = 0;
   double ypnrange[50];
   double dsum = 0.;
-  double dsum1 = 0.;
   double bl = 0.;
   double val_max = 0.;
   int samplemax = 0;
@@ -323,7 +323,7 @@ void EcalTestPulseAnalyzer::analyze(const edm::Event& e, const edm::EventSetup& 
       if (samId == 0)
         pngain = pnG[samId];
       if (samId > 0)
-        pngain = TMath::Max(pnG[samId], pngain);
+        pngain = std::max(pnG[samId], pngain);
     }
 
     for (dsum = 0., k = 0; k < _presamplePN; k++) {
@@ -430,14 +430,12 @@ void EcalTestPulseAnalyzer::analyze(const edm::Event& e, const edm::EventSetup& 
         if (i == 0)
           adcgain = adcG[i];
         if (i > 0)
-          adcgain = TMath::Max(adcG[i], adcgain);
+          adcgain = std::max(adcG[i], adcgain);
       }
       // Remove pedestal
       //====================
-      for (dsum = 0., dsum1 = 0., k = 0; k < _presample; k++) {
+      for (dsum = 0., k = 0; k < _presample; k++) {
         dsum += adc[k];
-        if (k < _presample - 1)
-          dsum1 += adc[k];
       }
 
       bl = dsum / ((double)_presample);
@@ -555,15 +553,13 @@ void EcalTestPulseAnalyzer::analyze(const edm::Event& e, const edm::EventSetup& 
         if (i == 0)
           adcgain = adcG[i];
         if (i > 0)
-          adcgain = TMath::Max(adcG[i], adcgain);
+          adcgain = std::max(adcG[i], adcgain);
       }
 
       // Remove pedestal
       //====================
-      for (dsum = 0., dsum1 = 0., k = 0; k < _presample; k++) {
+      for (dsum = 0., k = 0; k < _presample; k++) {
         dsum += adc[k];
-        if (k < _presample - 1)
-          dsum1 += adc[k];
       }
 
       bl = dsum / ((double)_presample);

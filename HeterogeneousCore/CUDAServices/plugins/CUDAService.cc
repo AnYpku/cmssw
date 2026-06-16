@@ -1,3 +1,4 @@
+#include <cstring>
 #include <iomanip>
 #include <iostream>
 #include <limits>
@@ -11,12 +12,12 @@
 #include <cuda_runtime.h>
 #include <nvml.h>
 
+#include "FWCore/AbstractServices/interface/ResourceInformation.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
-#include "FWCore/Utilities/interface/ResourceInformation.h"
 #include "FWCore/Utilities/interface/ReusableObjectHolder.h"
 #include "HeterogeneousCore/CUDAServices/interface/CUDAInterface.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/EventCache.h"
@@ -79,59 +80,69 @@ void setCudaLimit(cudaLimit limit, const char* name, size_t request) {
 }
 
 constexpr unsigned int getCudaCoresPerSM(unsigned int major, unsigned int minor) {
-  switch (major * 10 + minor) {
+  switch (major * 16 + minor) {
     // Fermi architecture
-    case 20:  // SM 2.0: GF100 class
+    case 0x20:  // SM 2.0: GF100 class
       return 32;
-    case 21:  // SM 2.1: GF10x class
+    case 0x21:  // SM 2.1: GF10x class
       return 48;
 
     // Kepler architecture
-    case 30:  // SM 3.0: GK10x class
-    case 32:  // SM 3.2: GK10x class
-    case 35:  // SM 3.5: GK11x class
-    case 37:  // SM 3.7: GK21x class
+    case 0x30:  // SM 3.0: GK10x class
+    case 0x32:  // SM 3.2: GK10x class
+    case 0x35:  // SM 3.5: GK11x class
+    case 0x37:  // SM 3.7: GK21x class
       return 192;
 
     // Maxwell architecture
-    case 50:  // SM 5.0: GM10x class
-    case 52:  // SM 5.2: GM20x class
-    case 53:  // SM 5.3: GM20x class
+    case 0x50:  // SM 5.0: GM10x class
+    case 0x52:  // SM 5.2: GM20x class
+    case 0x53:  // SM 5.3: GM20x class
       return 128;
 
     // Pascal architecture
-    case 60:  // SM 6.0: GP100 class
+    case 0x60:  // SM 6.0: GP100 class
       return 64;
-    case 61:  // SM 6.1: GP10x class
-    case 62:  // SM 6.2: GP10x class
+    case 0x61:  // SM 6.1: GP10x class
+    case 0x62:  // SM 6.2: GP10x class
       return 128;
 
     // Volta architecture
-    case 70:  // SM 7.0: GV100 class
-    case 72:  // SM 7.2: GV11b class
+    case 0x70:  // SM 7.0: GV100 class
+    case 0x72:  // SM 7.2: GV11b class
       return 64;
 
     // Turing architecture
-    case 75:  // SM 7.5: TU10x class
+    case 0x75:  // SM 7.5: TU10x class
       return 64;
 
     // Ampere architecture
-    case 80:  // SM 8.0: GA100 class
+    case 0x80:  // SM 8.0: GA100 class
       return 64;
-    case 86:  // SM 8.6: GA10x class
+    case 0x86:  // SM 8.6: GA10x class
+    case 0x87:  // SM 8.7: ?
       return 128;
 
     // Ada Lovelace architectures
-    case 89:  // SM 8.9: AD10x class
+    case 0x89:  // SM 8.9: AD10x class
       return 128;
 
     // Hopper architecture
-    case 90:  // SM 9.0: GH100 class
+    case 0x90:  // SM 9.0: GH100 class
+      return 128;
+
+    // Blackwell architecture
+    case 0xa0:  // SM 10.0: GB100 class
+    case 0xa1:  // SM 10.1: GB102 class
+      return 128;
+
+    // Blackwell 2.0 architecture
+    case 0xc0:  // SM 12.0: GB20x class
       return 128;
 
     // unknown architecture, return a default value
     default:
-      return 64;
+      return 128;
   }
 }
 
@@ -189,10 +200,18 @@ CUDAService::CUDAService(edm::ParameterSet const& config) : verbose_(config.getU
   computeCapabilities_.reserve(numberOfDevices_);
 
   // NVIDIA system driver version, e.g. 470.57.02
+  // The NVML interface is not available on gaming GPUs. Just report "unknown" in that case.
   char systemDriverVersion[NVML_SYSTEM_DRIVER_VERSION_BUFFER_SIZE];
-  nvmlCheck(nvmlInitWithFlags(NVML_INIT_FLAG_NO_GPUS | NVML_INIT_FLAG_NO_ATTACH));
-  nvmlCheck(nvmlSystemGetDriverVersion(systemDriverVersion, sizeof(systemDriverVersion)));
-  nvmlCheck(nvmlShutdown());
+  nvmlReturn_t result = nvmlInitWithFlags(NVML_INIT_FLAG_NO_GPUS | NVML_INIT_FLAG_NO_ATTACH);
+  if (NVML_SUCCESS != result) {
+    edm::LogWarning("CUDAService") << "NVML library not available, cannot query NVIDIA driver version:\n"
+                                   << nvmlErrorString(result) << "\nReporting NVIDIA driver version as \"unknown\".";
+    std::strncpy(systemDriverVersion, "unknown", sizeof(systemDriverVersion) - 1);
+    systemDriverVersion[sizeof(systemDriverVersion) - 1] = '\0';
+  } else {
+    nvmlCheck(nvmlSystemGetDriverVersion(systemDriverVersion, sizeof(systemDriverVersion)));
+    nvmlCheck(nvmlShutdown());
+  }
 
   // CUDA driver version, e.g. 11.4
   // the full version, like 11.4.1 or 11.4.100, is not reported
@@ -221,7 +240,6 @@ CUDAService::CUDAService(edm::ParameterSet const& config) : verbose_(config.getU
   auto printfFifoSize = limits.getUntrackedParameter<int>("cudaLimitPrintfFifoSize");
   auto stackSize = limits.getUntrackedParameter<int>("cudaLimitStackSize");
   auto mallocHeapSize = limits.getUntrackedParameter<int>("cudaLimitMallocHeapSize");
-  auto devRuntimeSyncDepth = limits.getUntrackedParameter<int>("cudaLimitDevRuntimeSyncDepth");
   auto devRuntimePendingLaunchCount = limits.getUntrackedParameter<int>("cudaLimitDevRuntimePendingLaunchCount");
 
   std::set<std::string> models;
@@ -248,8 +266,14 @@ CUDAService::CUDAService(edm::ParameterSet const& config) : verbose_(config.getU
       log << "  streaming multiprocessors: " << std::setw(13) << properties.multiProcessorCount << '\n';
       log << "  CUDA cores: " << std::setw(28)
           << properties.multiProcessorCount * getCudaCoresPerSM(properties.major, properties.minor) << '\n';
-      log << "  single to double performance: " << std::setw(8) << properties.singleToDoublePrecisionPerfRatio
-          << ":1\n";
+      int singleToDoublePrecisionPerfRatio = 0;
+#if CUDART_VERSION < 13000
+      singleToDoublePrecisionPerfRatio = properties.singleToDoublePrecisionPerfRatio;
+#else
+      cudaCheck(
+          cudaDeviceGetAttribute(&singleToDoublePrecisionPerfRatio, cudaDevAttrSingleToDoublePrecisionPerfRatio, i));
+#endif
+      log << "  single to double performance: " << std::setw(8) << singleToDoublePrecisionPerfRatio << ":1\n";
     }
 
     // compute mode
@@ -259,11 +283,18 @@ CUDAService::CUDAService(edm::ParameterSet const& config) : verbose_(config.getU
         "prohibited",                  // cudaComputeModeProhibited
         "exclusive (single process)",  // cudaComputeModeExclusiveProcess
         "unknown"};
+    static constexpr const int cudaComputeModeUnknown = static_cast<int>(std::size(computeModeDescription)) - 1;
     if (verbose_) {
-      log << "  compute mode:" << std::right << std::setw(27)
-          << computeModeDescription[std::min(properties.computeMode,
-                                             static_cast<int>(std::size(computeModeDescription)) - 1)]
-          << '\n';
+      int computeMode = cudaComputeModeUnknown;
+#if CUDART_VERSION < 13000
+      computeMode = properties.computeMode;
+#else
+      cudaCheck(cudaDeviceGetAttribute(&computeMode, cudaDevAttrComputeMode, i));
+#endif
+      if (computeMode < 0 or computeMode >= cudaComputeModeUnknown) {
+        computeMode = cudaComputeModeUnknown;
+      }
+      log << "  compute mode:" << std::right << std::setw(27) << computeModeDescription[computeMode] << '\n';
     }
 
     // TODO if a device is in exclusive use, skip it and remove it from the list, instead of failing with abort()
@@ -309,8 +340,10 @@ CUDAService::CUDAService(edm::ParameterSet const& config) : verbose_(config.getU
           << " directly access managed memory on the device without migration\n";
       log << "  " << (properties.cooperativeLaunch ? "supports" : "does not support")
           << " launching cooperative kernels via cudaLaunchCooperativeKernel()\n";
+#if CUDART_VERSION < 13000
       log << "  " << (properties.cooperativeMultiDeviceLaunch ? "supports" : "does not support")
           << " launching cooperative kernels via cudaLaunchCooperativeKernelMultiDevice()\n";
+#endif
       log << '\n';
     }
 
@@ -367,11 +400,6 @@ CUDAService::CUDAService(edm::ParameterSet const& config) : verbose_(config.getU
       setCudaLimit(cudaLimitMallocHeapSize, "cudaLimitMallocHeapSize", mallocHeapSize);
     }
     if ((properties.major > 3) or (properties.major == 3 and properties.minor >= 5)) {
-      // cudaLimitDevRuntimeSyncDepth controls the maximum nesting depth of a grid at which
-      // a thread can safely call cudaDeviceSynchronize().
-      if (devRuntimeSyncDepth >= 0) {
-        setCudaLimit(cudaLimitDevRuntimeSyncDepth, "cudaLimitDevRuntimeSyncDepth", devRuntimeSyncDepth);
-      }
       // cudaLimitDevRuntimePendingLaunchCount controls the maximum number of outstanding
       // device runtime launches that can be made from the current device.
       if (devRuntimePendingLaunchCount >= 0) {
@@ -391,8 +419,6 @@ CUDAService::CUDAService(edm::ParameterSet const& config) : verbose_(config.getU
       cudaCheck(cudaDeviceGetLimit(&value, cudaLimitMallocHeapSize));
       log << "  malloc heap size:          " << std::setw(10) << value / (1 << 20) << " MB\n";
       if ((properties.major > 3) or (properties.major == 3 and properties.minor >= 5)) {
-        cudaCheck(cudaDeviceGetLimit(&value, cudaLimitDevRuntimeSyncDepth));
-        log << "  runtime sync depth:           " << std::setw(10) << value << '\n';
         cudaCheck(cudaDeviceGetLimit(&value, cudaLimitDevRuntimePendingLaunchCount));
         log << "  runtime pending launch count: " << std::setw(10) << value << '\n';
       }
@@ -458,8 +484,6 @@ void CUDAService::fillDescriptions(edm::ConfigurationDescriptions& descriptions)
   limits.addUntracked<int>("cudaLimitStackSize", -1)->setComment("Stack size in bytes of each GPU thread.");
   limits.addUntracked<int>("cudaLimitMallocHeapSize", -1)
       ->setComment("Size in bytes of the heap used by the malloc() and free() device system calls.");
-  limits.addUntracked<int>("cudaLimitDevRuntimeSyncDepth", -1)
-      ->setComment("Maximum nesting depth of a grid at which a thread can safely call cudaDeviceSynchronize().");
   limits.addUntracked<int>("cudaLimitDevRuntimePendingLaunchCount", -1)
       ->setComment("Maximum number of outstanding device runtime launches that can be made from the current device.");
   desc.addUntracked<edm::ParameterSetDescription>("limits", limits)
@@ -476,12 +500,6 @@ void CUDAService::fillDescriptions(edm::ConfigurationDescriptions& descriptions)
 
   descriptions.add("CUDAService", desc);
 }
-
-namespace edm {
-  namespace service {
-    inline bool isProcessWideService(CUDAService const*) { return true; }
-  }  // namespace service
-}  // namespace edm
 
 #include "FWCore/ServiceRegistry/interface/ServiceMaker.h"
 using CUDAServiceMaker = edm::serviceregistry::ParameterSetMaker<CUDAInterface, CUDAService>;

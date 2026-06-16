@@ -2,11 +2,13 @@
 ----------------------------------------------------------------------*/
 #include "EmbeddedRootSource.h"
 #include "InputFile.h"
-#include "RunHelper.h"
 #include "RootEmbeddedFileSequence.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/Sources/interface/VectorInputSourceDescription.h"
+#include "FWCore/Sources/interface/InputSourceRunHelper.h"
+#include "FWCore/Sources/interface/SciTagCategoryForEmbeddedSources.h"
+#include "FWStorage/Catalog/interface/StorageURLModifier.h"
 
 namespace edm {
 
@@ -29,9 +31,11 @@ namespace edm {
         bypassVersionCheck_(pset.getUntrackedParameter<bool>("bypassVersionCheck", false)),
         treeMaxVirtualSize_(pset.getUntrackedParameter<int>("treeMaxVirtualSize", -1)),
         productSelectorRules_(pset, "inputCommands", "InputSource"),
-        runHelper_(new DefaultRunHelper()),
-        catalog_(pset.getUntrackedParameter<std::vector<std::string> >("fileNames"),
-                 pset.getUntrackedParameter<std::string>("overrideCatalog", std::string())),
+        runHelper_(new DefaultInputSourceRunHelper()),
+        catalog_(pset,
+                 false,
+                 desc.cat_ == SciTagCategoryForEmbeddedSources::PreMixedPileup ? SciTagCategory::PreMixedPileup
+                                                                               : SciTagCategory::Embedded),
         // Note: fileSequence_ needs to be initialized last, because it uses data members
         // initialized previously in its own initialization.
         fileSequence_(new RootEmbeddedFileSequence(pset, *this, catalog_)) {}
@@ -78,8 +82,7 @@ namespace edm {
 
     std::vector<std::string> defaultStrings;
     desc.setComment("Reads EDM/Root files for mixing.");
-    desc.addUntracked<std::vector<std::string> >("fileNames")->setComment("Names of files to be processed.");
-    desc.addUntracked<std::string>("overrideCatalog", std::string());
+    InputFileCatalog::fillDescription(desc);
     desc.addUntracked<bool>("skipBadFiles", false)
         ->setComment(
             "True:  Ignore any missing or unopenable input file.\n"

@@ -3,7 +3,7 @@
 #include "DataFormats/GeometryVector/interface/GlobalPoint.h"
 #include "DataFormats/SiStripDetId/interface/StripSubdetector.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 #include "TrackingTools/TrajectoryState/interface/TrajectoryStateOnSurface.h"
 #include "TrackingTools/TransientTrackingRecHit/interface/TransientTrackingRecHit.h"
 #include "TrackingTools/KalmanUpdators/interface/KFUpdator.h"
@@ -295,6 +295,7 @@ bool SeedFromGenericPairOrTriplet::qualityFilter(const SeedingHitSet& hits) cons
     if (hits.size() == 3) {
       std::vector<GlobalPoint> gPoints;
       unsigned int nHits = hits.size();
+      gPoints.reserve(nHits);
       for (unsigned int iHit = 0; iHit < nHits; ++iHit)
         gPoints.push_back(hits[iHit]->globalPosition());
       unsigned int subid = (*hits[0]).geographicalId().subdetId();

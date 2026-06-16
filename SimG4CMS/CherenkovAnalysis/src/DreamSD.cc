@@ -7,7 +7,6 @@
 #include "DetectorDescription/DDCMS/interface/DDCompactView.h"
 #include "DetectorDescription/DDCMS/interface/DDFilteredView.h"
 #include "SimG4Core/Geometry/interface/DD4hep2DDDName.h"
-#include "SimG4Core/Notification/interface/TrackInformation.h"
 
 #include "G4LogicalVolume.hh"
 #include "G4LogicalVolumeStore.hh"
@@ -160,12 +159,15 @@ void DreamSD::initMap(const std::string &sd) {
   edm::LogVerbatim("EcalSim") << "DreamSD: Length Table for ReadOutName = " << sd << ":";
 #endif
   DimensionMap::const_iterator ite = xtalLMap_.begin();
+#ifdef EDM_ML_DEBUG
   int i = 0;
-  for (; ite != xtalLMap_.end(); ite++, i++) {
+#endif
+  for (; ite != xtalLMap_.end(); ite++) {
     G4String name = "Unknown";
     if (ite->first != nullptr)
       name = (ite->first)->GetName();
 #ifdef EDM_ML_DEBUG
+    i++;
     edm::LogVerbatim("EcalSim") << " " << i << " " << ite->first << " " << name << " L = " << ite->second.first
                                 << " W = " << ite->second.second;
 #endif

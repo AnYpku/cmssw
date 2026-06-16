@@ -15,7 +15,7 @@
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/TrackerNumberingBuilder/interface/GeometricDet.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetType.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetType.h"
 #include "Geometry/TrackerGeometryBuilder/interface/StripGeomDetType.h"
 #include "DataFormats/DetId/interface/DetId.h"
 #include "DataFormats/GeometryVector/interface/LocalPoint.h"
@@ -109,7 +109,8 @@ void TestAssociator::printRechitSimhit(const edm::Handle<edmNew::DetSetVector<re
           edm::LogVerbatim("TrackAssociator")
               << " simtrack ID = " << m.trackId() << "                            Simhit Pos = " << m.localPosition();
           // Seek the smallest residual
-          if (const SiPixelRecHit* dummy = dynamic_cast<const SiPixelRecHit*>(&rechit)) {
+          auto ptr = dynamic_cast<const SiPixelRecHit*>(&rechit);
+          if (nullptr != ptr) {
             isPixel = true;
             dist = (rechit.localPosition() - m.localPosition()).mag();  // pixels measure 2 dimensions
           } else {

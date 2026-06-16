@@ -8,14 +8,13 @@
 
 #include "DataFormats/Provenance/interface/BranchID.h"
 #include "DataFormats/Provenance/interface/BranchIDListHelper.h"
-#include "DataFormats/Provenance/interface/ThinnedAssociationsHelper.h"
-#include "FWCore/Catalog/interface/InputFileCatalog.h"
-#include "FWCore/Catalog/interface/SiteLocalConfig.h"
+
 #include "FWCore/Framework/interface/InputSource.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
+#include "FWStorage/Catalog/interface/SiteLocalConfig.h"
 
 #include "CLHEP/Random/RandFlat.h"
 
@@ -25,7 +24,7 @@
 
 namespace {
   std::atomic<unsigned int> badFilesSkipped_{0};
-  auto operator"" _uz(unsigned long long i) -> std::size_t { return std::size_t{i}; }  // uz will be in C++23
+  auto operator""_uz(unsigned long long i) -> std::size_t { return std::size_t{i}; }  // uz will be in C++23
 }  // namespace
 
 namespace edm {
@@ -112,7 +111,9 @@ namespace edm {
       }
     }
     if (rootFile()) {
-      input_.productRegistryUpdate().updateFromInput(rootFile()->productRegistry()->productList());
+      std::vector<std::string> processOrder;
+      processingOrderMerge(input_.processHistoryRegistry(), processOrder);
+      input_.productRegistryUpdate().updateFromInput(rootFile()->productRegistry()->productList(), processOrder);
     } else {
       throw Exception(errors::FileOpenError) << "RootEmbeddedFileSequence::RootEmbeddedFileSequence(): "
                                              << " input file retries exhausted.\n";
@@ -135,25 +136,25 @@ namespace edm {
   }
 
   RootEmbeddedFileSequence::RootFileSharedPtr RootEmbeddedFileSequence::makeRootFile(
-      std::shared_ptr<InputFile> filePtr) {
+      std::shared_ptr<InputFile> filePtr, std::string const& physicalFileNameFirstCatalog) {
     size_t currentIndexIntoFile = sequenceNumberOfFile();
-    return std::make_shared<RootFile>(fileNames()[0],
-                                      ProcessConfiguration(),
-                                      logicalFileName(),
-                                      filePtr,
-                                      input_.nStreams(),
-                                      treeCacheSize_,
-                                      input_.treeMaxVirtualSize(),
-                                      input_.runHelper(),
-                                      input_.productSelectorRules(),
+    return std::make_shared<RootFile>(RootFile::FileOptions{.fileName = physicalFileNameFirstCatalog,
+                                                            .logicalFileName = logicalFileName(),
+                                                            .filePtr = filePtr,
+                                                            .bypassVersionCheck = input_.bypassVersionCheck(),
+                                                            .enforceGUIDInFileName = enforceGUIDInFileName_},
                                       InputType::SecondarySource,
+                                      RootFile::ProcessingOptions{},
+                                      RootFile::TTreeOptions{.treeCacheSize = treeCacheSize_,
+                                                             .treeMaxVirtualSize = input_.treeMaxVirtualSize(),
+                                                             .enablePrefetching = enablePrefetching_},
+                                      RootFile::ProductChoices{.productSelectorRules = input_.productSelectorRules()},
+                                      RootFile::CrossFileInfo{.runHelper = input_.runHelper(),
+                                                              .indexesIntoFiles = indexesIntoFiles(),
+                                                              .currentIndexIntoFile = currentIndexIntoFile},
+                                      input_.nStreams(),
                                       input_.processHistoryRegistryForUpdate(),
-                                      indexesIntoFiles(),
-                                      currentIndexIntoFile,
-                                      orderedProcessHistoryIDs_,
-                                      input_.bypassVersionCheck(),
-                                      enablePrefetching_,
-                                      enforceGUIDInFileName_);
+                                      orderedProcessHistoryIDs_);
   }
 
   void RootEmbeddedFileSequence::skipEntries(unsigned int offset) {
@@ -193,7 +194,7 @@ namespace edm {
       rootFile()->setAtEventEntry(IndexIntoFile::invalidEntry);
       return readOneSequential(cache, fileNameHash, nullptr, nullptr, recycleFiles);
     }
-    fileNameHash = lfnHash();
+    fileNameHash = cfnHash();
     return true;
   }
 
@@ -234,7 +235,7 @@ namespace edm {
       }
       return readOneSequentialWithID(cache, fileNameHash, nullptr, idp, recycleFiles);
     }
-    fileNameHash = lfnHash();
+    fileNameHash = cfnHash();
     return true;
   }
 
@@ -254,7 +255,7 @@ namespace edm {
     assert(found);
     fileNameHash = idx.fileNameHash();
     if (fileNameHash == 0U) {
-      fileNameHash = lfnHash();
+      fileNameHash = cfnHash();
     }
   }
 
@@ -266,7 +267,7 @@ namespace edm {
     while (eventsRemainingInFile_ == 0) {
       bool opened{false};
       while (!opened && badFilesSkipped_ < maxFileSkips_) {
-        unsigned int newSeqNumber = CLHEP::RandFlat::shootInt(engine, fileCatalogItems().size());
+        unsigned int newSeqNumber = CLHEP::RandFlat::shootInt(engine, configuredFileNames().size());
         setAtFileSequenceNumber(newSeqNumber);
         if (newSeqNumber != currentSeqNumber) {
           initFile(input_.skipBadFiles());
@@ -277,10 +278,11 @@ namespace edm {
           if (eventsRemainingInFile_ == 0) {
             if (!input_.skipBadFiles()) {
               throw Exception(errors::NotFound) << "RootEmbeddedFileSequence::readOneRandom(): Secondary Input file "
-                                                << fileNames()[0] << " contains no events.\n";
+                                                << rootFile()->file() << " contains no events.\n";
             }
-            LogWarning("RootEmbeddedFileSequence") << "RootEmbeddedFileSequence::readOneRandom(): Secondary Input file "
-                                                   << fileNames()[0] << " contains no events and will be skipped.\n";
+            LogWarning("RootEmbeddedFileSequence")
+                << "RootEmbeddedFileSequence::readOneRandom(): Secondary Input file " << rootFile()->file()
+                << " contains no events and will be skipped.\n";
             ++badFilesSkipped_;
           } else {
             opened = true;
@@ -305,7 +307,7 @@ namespace edm {
       auto [found2, succeeded] = rootFile()->readCurrentEvent(cache);
       assert(found2);
     }
-    fileNameHash = lfnHash();
+    fileNameHash = cfnHash();
     --eventsRemainingInFile_;
     return true;
   }
@@ -349,7 +351,7 @@ namespace edm {
       }
       return readOneRandomWithID(cache, fileNameHash, engine, idp, recycleFiles);
     }
-    fileNameHash = lfnHash();
+    fileNameHash = cfnHash();
     return true;
   }
 

@@ -43,7 +43,7 @@
 #include "DataFormats/TrackingRecHit/interface/TrackingRecHit.h"
 #include "RecoMuon/TransientTrackingRecHit/interface/MuonTransientTrackingRecHitBuilder.h"
 #include "TrackingTools/TrajectoryState/interface/TrajectoryStateTransform.h"
-#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/GlobalTrackingGeometry.h"
 #include "Geometry/Records/interface/GlobalTrackingGeometryRecord.h"
 #include "CondFormats/Alignment/interface/Definitions.h"
 #include "DataFormats/GeometrySurface/interface/Surface.h"
@@ -160,7 +160,7 @@ void CSCOverlapsTrackPreparation::produce(edm::Event& iEvent, const edm::EventSe
         TSOSes.push_back(
             TrajectoryStateOnSurface(localTrajectoryParameters, localTrajectoryError, layerSurface, &*magneticField));
       }  // end if CSC
-    }    // end loop over hits
+    }  // end loop over hits
 
     assert(clonedHits.size() == transHits.size());
     assert(transHits.size() == TSOSes.size());
@@ -186,7 +186,7 @@ void CSCOverlapsTrackPreparation::produce(edm::Event& iEvent, const edm::EventSe
       reference_map[trajCounter] = trackCounter;
 
     }  // end if there are any clonedHits/TSOSes to work with
-  }    // end loop over tracks
+  }  // end loop over tracks
 
   unsigned int numTrajectories = trajectoryCollection->size();
 

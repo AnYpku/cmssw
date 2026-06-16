@@ -16,7 +16,7 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/Records/interface/TrackerTopologyRcd.h"
 #include "Geometry/TrackerGeometryBuilder/interface/StripGeomDetUnit.h"
@@ -325,10 +325,10 @@ void SiStripHitEfficiencyHarvester::dqmEndJob(DQMStore::IBooker& booker, DQMStor
             t_threshold = 0;
             tree->Fill();
           }  // if storing tree
-        }    // if not autoInefModTagging
-      }      // if there are no bad APVs
-    }        // if denom
-  }          // loop on DetIds
+        }  // if not autoInefModTagging
+      }  // if there are no bad APVs
+    }  // if denom
+  }  // loop on DetIds
 
   if (autoIneffModTagging_) {
     for (unsigned int i = 1; i <= k_LayersAtTECEnd; i++) {
@@ -442,10 +442,10 @@ void SiStripHitEfficiencyHarvester::dqmEndJob(DQMStore::IBooker& booker, DQMStor
               }
             }
           }  // if denom
-        }    // layer = i
-      }      // loop on detids
-    }        // loop on layers
-  }          // if auto tagging
+        }  // layer = i
+      }  // loop on detids
+    }  // loop on layers
+  }  // if auto tagging
 
   tkMap.save(true, 0, 0, "SiStripHitEffTKMap_NEW.png");
   tkMapBad.save(true, 0, 0, "SiStripHitEffTKMapBad_NEW.png");

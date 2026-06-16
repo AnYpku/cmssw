@@ -65,7 +65,8 @@ namespace goodseedhelpers {
   };
 }  // namespace goodseedhelpers
 
-class GoodSeedProducer final : public edm::stream::EDProducer<edm::GlobalCache<goodseedhelpers::HeavyObjectCache>> {
+class GoodSeedProducer final
+    : public edm::stream::EDProducer<edm::GlobalCache<goodseedhelpers::HeavyObjectCache>, edm::stream::WatchRuns> {
   typedef TrajectoryStateOnSurface TSOS;
 
 public:
@@ -619,7 +620,7 @@ void GoodSeedProducer::produce(Event& iEvent, const EventSetup& iSetup) {
         output_preidinfo->push_back(myPreId);
       }
     }  //end loop on track collection
-  }    //end loop on the vector of track collections
+  }  //end loop on the vector of track collections
 
   // no disablePreId_ switch, it is simpler to have an empty collection rather than no collection
   iEvent.put(std::move(output_preid), preidgsf_);

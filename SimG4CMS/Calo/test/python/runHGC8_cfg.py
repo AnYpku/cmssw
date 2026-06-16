@@ -1,10 +1,47 @@
+###############################################################################
+# Way to use this:
+#   cmsRun runHGC8_cfg.py geomName=Run4D120
+#   Options for geomName: Run4D120, Run4D121, Run4D122, Run4D123
+# 
+###############################################################################
 import FWCore.ParameterSet.Config as cms
-from Configuration.Eras.Era_Phase2C11_cff import Phase2C11
+import os, sys, importlib, re
+import FWCore.ParameterSet.VarParsing as VarParsing
 
-process = cms.Process("PROD",Phase2C11)
+####################################################################
+### SETUP OPTIONS
+options = VarParsing.VarParsing('standard')
+options.register('geomName',
+                 "Run4D121",
+                  VarParsing.VarParsing.multiplicity.singleton,
+                  VarParsing.VarParsing.varType.string,
+                  "geometry of operations: Run4D120, Run4D121, Run4D122, Run4D123")
+
+### get and parse the command line arguments
+ 
+options.parseArguments()
+print(options)
+
+####################################################################
+geomName = options.geomName
+import FWCore.ParameterSet.Config as cms
+import os, sys, importlib, re
+import FWCore.ParameterSet.VarParsing as VarParsing
+
+geomFile = "Configuration.Geometry.GeometryExtended" + geomName + "Reco_cff"
+import Configuration.Geometry.defaultPhase2ConditionsEra_cff as _settings
+GLOBAL_TAG, ERA = _settings.get_era_and_conditions(geomName)
+
+print("Geometry Name:   ", geomName)
+print("Geom file Name:  ", geomFile)
+print("Global Tag Name: ", GLOBAL_TAG)
+print("Era Name:        ", ERA)
+
+process = cms.Process("PROD",ERA)
+
 process.load("SimGeneral.HepPDTESSource.pythiapdt_cfi")
 process.load("IOMC.EventVertexGenerators.VtxSmearedGauss_cfi")
-process.load("Configuration.Geometry.GeometryExtended2026D88Reco_cff")
+process.load(geomFile)
 process.load("Configuration.StandardSequences.MagneticField_cff")
 process.load("Configuration.EventContent.EventContent_cff")
 process.load('Configuration.StandardSequences.Generator_cff')
@@ -13,10 +50,11 @@ process.load('FWCore.MessageService.MessageLogger_cfi')
 process.load('SimG4CMS.Calo.hgcalHitScintillator_cfi')
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T21', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, GLOBAL_TAG, '')
 
 if hasattr(process,'MessageLogger'):
     process.MessageLogger.HGCalGeom=dict()
+    process.MessageLogger.HGCalGeomT=dict()
     process.MessageLogger.HGCalSim=dict()
     process.MessageLogger.HGCSim=dict()
 
@@ -38,8 +76,8 @@ process.source = cms.Source("EmptySource",
 
 process.generator = cms.EDProducer("FlatRandomEGunProducer",
     PGunParameters = cms.PSet(
-        PartID = cms.vint32(211),
-        MinEta = cms.double(1.50),
+        PartID = cms.vint32(13),
+        MinEta = cms.double(1.55),
         MaxEta = cms.double(2.20),
         MinPhi = cms.double(-3.1415926),
         MaxPhi = cms.double(-1.5707963),
@@ -52,7 +90,7 @@ process.generator = cms.EDProducer("FlatRandomEGunProducer",
 
 process.output = cms.OutputModule("PoolOutputModule",
     process.FEVTSIMEventContent,
-    fileName = cms.untracked.string('hgcV16.root')
+    fileName = cms.untracked.string('hgcV19.root')
 )
 
 process.hgcalHitScintillator.tileFileName = "extraTiles.txt"

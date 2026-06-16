@@ -26,7 +26,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   class CaloRecHitSoAProducer : public global::EDProducer<> {
   public:
     CaloRecHitSoAProducer(edm::ParameterSet const& config)
-        : recHitsToken_(consumes(config.getParameter<edm::InputTag>("src"))),
+        : EDProducer(config),
+          recHitsToken_(consumes(config.getParameter<edm::InputTag>("src"))),
           deviceToken_(produces()),
           synchronise_(config.getUntrackedParameter<bool>("synchronise")) {}
 
@@ -36,7 +37,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       if (DEBUG)
         printf("Found %d recHits\n", num_recHits);
 
-      hcal::RecHitHostCollection hostProduct{num_recHits, event.queue()};
+      hcal::RecHitHostCollection hostProduct{event.queue(), num_recHits};
       auto& view = hostProduct.view();
 
       for (int i = 0; i < num_recHits; i++) {
@@ -46,7 +47,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           printf("recHit %4d %u %f %f\n", i, view.detId(i), view.energy(i), view.timeM0(i));
       }
 
-      hcal::RecHitDeviceCollection deviceProduct{num_recHits, event.queue()};
+      hcal::RecHitDeviceCollection deviceProduct{event.queue(), num_recHits};
       alpaka::memcpy(event.queue(), deviceProduct.buffer(), hostProduct.buffer());
       if (synchronise_)
         alpaka::wait(event.queue());
@@ -74,6 +75,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                                                   const HCAL::CaloRecHitType& from) {
     // Fill SoA from HCAL rec hit
     to.detId() = from.id().rawId();
+    to.chi2() = from.chi2();
     to.energy() = from.energy();
     to.timeM0() = from.time();
   }

@@ -15,7 +15,7 @@ process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('FWCore.MessageService.MessageLogger_cfi')
 process.load('Configuration.EventContent.EventContent_cff')
 process.load('SimGeneral.MixingModule.mixNoPU_cfi')
-process.load('Configuration.Geometry.GeometryExtended2026D88Reco_cff')
+process.load('Configuration.Geometry.GeometryExtendedRun4D88Reco_cff')
 process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load('Configuration.StandardSequences.RawToDigi_cff')
 process.load('Configuration.StandardSequences.L1TrackTrigger_cff')
@@ -106,6 +106,12 @@ process.load("L1Trigger.DTTriggerPhase2.dtTriggerPhase2PrimitiveDigis_cfi")
 process.dtTriggerPhase2PrimitiveDigis.debug = False
 process.dtTriggerPhase2PrimitiveDigis.dump = False
 process.dtTriggerPhase2PrimitiveDigis.scenario = 0
+
+#DTTriggerPhase2Showers
+process.load("L1Trigger.DTTriggerPhase2.dtTriggerPhase2Showers_cfi")
+process.dtTriggerPhase2Shower.showerTaggingAlgo = 1
+process.dtTriggerPhase2Shower.debug = False
+process.dtTriggerPhase2Shower.scenario = 0
 
 process.load("L1Trigger.Phase2L1GMT.gmt_cff")
 

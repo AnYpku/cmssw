@@ -22,7 +22,7 @@
 #include "TrackingTools/TrajectoryState/interface/TrajectoryStateOnSurface.h"
 #include "TrackingTools/TrajectoryState/interface/FreeTrajectoryState.h"
 #include "TrackingTools/DetLayers/interface/DetLayer.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 #include "TMath.h"
 
 using namespace edm;
@@ -219,3 +219,6 @@ void SETMuonSeedProducer::produce(edm::Event& event, const edm::EventSetup& even
 
 //
 void SETMuonSeedProducer::setEvent(const edm::Event& event) { theFilter->setEvent(event); }
+
+#include "FWCore/Framework/interface/MakerMacros.h"
+DEFINE_FWK_MODULE(SETMuonSeedProducer);

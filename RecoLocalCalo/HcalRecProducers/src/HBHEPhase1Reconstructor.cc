@@ -58,6 +58,9 @@
 #include "CondFormats/HcalObjects/interface/HBHENegativeEFilter.h"
 #include "CondFormats/DataRecord/interface/HBHENegativeEFilterRcd.h"
 
+#include "CalibCalorimetry/HcalAlgos/interface/HcalPulseShapeLookup.h"
+#include "RecoLocalCalo/HcalRecAlgos/interface/HcalPulseShapeLookupRcd.h"
+
 // Parser for Phase 1 HB/HE reco algorithms
 #include "RecoLocalCalo/HcalRecAlgos/interface/parseHBHEPhase1AlgoDescription.h"
 
@@ -210,7 +213,7 @@ namespace {
         psdigi.getParameter<double>("nominalPedestal"),
         psdigi.getParameter<double>("hitEnergyMinimum"),
         psdigi.getParameter<int>("hitMultiplicityThreshold"),
-        psdigi.getParameter<std::vector<edm::ParameterSet> >("pulseShapeParameterSets"));
+        psdigi.getParameter<std::vector<edm::ParameterSet>>("pulseShapeParameterSets"));
   }
 
   std::unique_ptr<HBHEPulseShapeFlagSetter> parse_HBHEPulseShapeFlagSetter(const edm::ParameterSet& psPulseShape,
@@ -225,20 +228,20 @@ namespace {
         psPulseShape.getParameter<double>("R45PlusOneRange"),
         psPulseShape.getParameter<double>("R45MinusOneRange"),
         psPulseShape.getParameter<unsigned int>("TrianglePeakTS"),
-        psPulseShape.getParameter<std::vector<double> >("LinearThreshold"),
-        psPulseShape.getParameter<std::vector<double> >("LinearCut"),
-        psPulseShape.getParameter<std::vector<double> >("RMS8MaxThreshold"),
-        psPulseShape.getParameter<std::vector<double> >("RMS8MaxCut"),
-        psPulseShape.getParameter<std::vector<double> >("LeftSlopeThreshold"),
-        psPulseShape.getParameter<std::vector<double> >("LeftSlopeCut"),
-        psPulseShape.getParameter<std::vector<double> >("RightSlopeThreshold"),
-        psPulseShape.getParameter<std::vector<double> >("RightSlopeCut"),
-        psPulseShape.getParameter<std::vector<double> >("RightSlopeSmallThreshold"),
-        psPulseShape.getParameter<std::vector<double> >("RightSlopeSmallCut"),
-        psPulseShape.getParameter<std::vector<double> >("TS4TS5LowerThreshold"),
-        psPulseShape.getParameter<std::vector<double> >("TS4TS5LowerCut"),
-        psPulseShape.getParameter<std::vector<double> >("TS4TS5UpperThreshold"),
-        psPulseShape.getParameter<std::vector<double> >("TS4TS5UpperCut"),
+        psPulseShape.getParameter<std::vector<double>>("LinearThreshold"),
+        psPulseShape.getParameter<std::vector<double>>("LinearCut"),
+        psPulseShape.getParameter<std::vector<double>>("RMS8MaxThreshold"),
+        psPulseShape.getParameter<std::vector<double>>("RMS8MaxCut"),
+        psPulseShape.getParameter<std::vector<double>>("LeftSlopeThreshold"),
+        psPulseShape.getParameter<std::vector<double>>("LeftSlopeCut"),
+        psPulseShape.getParameter<std::vector<double>>("RightSlopeThreshold"),
+        psPulseShape.getParameter<std::vector<double>>("RightSlopeCut"),
+        psPulseShape.getParameter<std::vector<double>>("RightSlopeSmallThreshold"),
+        psPulseShape.getParameter<std::vector<double>>("RightSlopeSmallCut"),
+        psPulseShape.getParameter<std::vector<double>>("TS4TS5LowerThreshold"),
+        psPulseShape.getParameter<std::vector<double>>("TS4TS5LowerCut"),
+        psPulseShape.getParameter<std::vector<double>>("TS4TS5UpperThreshold"),
+        psPulseShape.getParameter<std::vector<double>>("TS4TS5UpperCut"),
         psPulseShape.getParameter<bool>("UseDualFit"),
         psPulseShape.getParameter<bool>("TriangleIgnoreSlow"),
         setLegacyFlags);
@@ -281,7 +284,7 @@ namespace {
 //
 // class declaration
 //
-class HBHEPhase1Reconstructor : public edm::stream::EDProducer<> {
+class HBHEPhase1Reconstructor : public edm::stream::EDProducer<edm::stream::WatchRuns> {
 public:
   explicit HBHEPhase1Reconstructor(const edm::ParameterSet&);
   ~HBHEPhase1Reconstructor() override;
@@ -295,6 +298,7 @@ private:
 
   // Configuration parameters
   std::string algoConfigClass_;
+  std::string channelShapesLabel_;
   bool processQIE8_;
   bool processQIE11_;
   bool saveInfos_;
@@ -305,6 +309,7 @@ private:
   bool recoParamsFromDB_;
   bool saveEffectivePedestal_;
   bool use8ts_;
+  bool useChannelShapes_;
   int sipmQTSShift_;
   int sipmQNTStoSum_;
 
@@ -336,6 +341,7 @@ private:
   edm::ESGetToken<HcalChannelPropertiesVec, HcalChannelPropertiesRecord> propertiesToken_;
   edm::ESGetToken<HBHENegativeEFilter, HBHENegativeEFilterRcd> negToken_;
   edm::ESGetToken<HcalFrontEndMap, HcalFrontEndMapRcd> feMapToken_;
+  edm::ESGetToken<HcalPulseShapeLookup, HcalPulseShapeLookupRcd> pulseShapesToken_;
 
   // For the function below, arguments "infoColl" and/or "rechits"
   // are allowed to be null.
@@ -372,6 +378,7 @@ private:
 //
 HBHEPhase1Reconstructor::HBHEPhase1Reconstructor(const edm::ParameterSet& conf)
     : algoConfigClass_(conf.getParameter<std::string>("algoConfigClass")),
+      channelShapesLabel_(conf.getParameter<std::string>("channelShapesLabel")),
       processQIE8_(conf.getParameter<bool>("processQIE8")),
       processQIE11_(conf.getParameter<bool>("processQIE11")),
       saveInfos_(conf.getParameter<bool>("saveInfos")),
@@ -382,6 +389,7 @@ HBHEPhase1Reconstructor::HBHEPhase1Reconstructor(const edm::ParameterSet& conf)
       recoParamsFromDB_(conf.getParameter<bool>("recoParamsFromDB")),
       saveEffectivePedestal_(conf.getParameter<bool>("saveEffectivePedestal")),
       use8ts_(conf.getParameter<bool>("use8ts")),
+      useChannelShapes_(conf.getParameter<bool>("useChannelShapes")),
       sipmQTSShift_(conf.getParameter<int>("sipmQTSShift")),
       sipmQNTStoSum_(conf.getParameter<int>("sipmQNTStoSum")),
       setNegativeFlagsQIE8_(conf.getParameter<bool>("setNegativeFlagsQIE8")),
@@ -442,6 +450,9 @@ HBHEPhase1Reconstructor::HBHEPhase1Reconstructor(const edm::ParameterSet& conf)
     negToken_ = esConsumes<HBHENegativeEFilter, HBHENegativeEFilterRcd>();
   if (setNoiseFlagsQIE8_ || setNoiseFlagsQIE11_)
     feMapToken_ = esConsumes<HcalFrontEndMap, HcalFrontEndMapRcd, edm::Transition::BeginRun>();
+  if (useChannelShapes_)
+    pulseShapesToken_ = esConsumes<HcalPulseShapeLookup, HcalPulseShapeLookupRcd, edm::Transition::BeginRun>(
+        edm::ESInputTag("", channelShapesLabel_));
 }
 
 HBHEPhase1Reconstructor::~HBHEPhase1Reconstructor() {
@@ -744,6 +755,15 @@ void HBHEPhase1Reconstructor::beginRun(edm::Run const& r, edm::EventSetup const&
           << "Failed to configure HBHEPhase1Algo algorithm from EventSetup" << std::endl;
   }
 
+  if (useChannelShapes_) {
+    if (auto handle = es.getHandle(pulseShapesToken_)) {
+      const HcalPulseShapeLookup& lookup = *handle;
+      reco_->setPulseShapes(&lookup);
+    } else {
+      edm::LogWarning("EventSetup") << "HBHEPhase1Reconstructor failed to get HcalPulseShapeLookup!" << std::endl;
+    }
+  }
+
   if (setNoiseFlagsQIE8_ || setNoiseFlagsQIE11_) {
     if (auto handle = es.getHandle(feMapToken_)) {
       const HcalFrontEndMap& hfemap = *handle;
@@ -761,46 +781,290 @@ void HBHEPhase1Reconstructor::beginRun(edm::Run const& r, edm::EventSetup const&
 
 void HBHEPhase1Reconstructor::endRun(edm::Run const&, edm::EventSetup const&) { reco_->endRun(); }
 
-#define add_param_set(name) /**/     \
-  edm::ParameterSetDescription name; \
-  name.setAllowAnything();           \
-  desc.add<edm::ParameterSetDescription>(#name, name)
-
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void HBHEPhase1Reconstructor::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+  // hbheprereco
   edm::ParameterSetDescription desc;
-
-  desc.add<edm::InputTag>("digiLabelQIE8");
-  desc.add<edm::InputTag>("digiLabelQIE11");
-  desc.add<std::string>("algoConfigClass");
-  desc.add<bool>("processQIE8");
-  desc.add<bool>("processQIE11");
-  desc.add<bool>("saveInfos");
-  desc.add<bool>("saveDroppedInfos");
-  desc.add<bool>("makeRecHits");
-  desc.add<bool>("dropZSmarkedPassed");
-  desc.add<bool>("tsFromDB");
-  desc.add<bool>("recoParamsFromDB");
+  desc.add<edm::InputTag>("digiLabelQIE8", edm::InputTag("hcalDigis"));
+  desc.add<bool>("processQIE8", true);
+  desc.add<edm::InputTag>("digiLabelQIE11", edm::InputTag("hcalDigis"));
+  desc.add<bool>("processQIE11", true);
+  desc.add<bool>("tsFromDB", false);
+  desc.add<bool>("recoParamsFromDB", true);
   desc.add<bool>("saveEffectivePedestal", false);
-  desc.add<bool>("use8ts", false);
+  desc.add<bool>("dropZSmarkedPassed", true);
+  desc.add<bool>("makeRecHits", true);
+  desc.add<bool>("saveInfos", false);
+  desc.add<bool>("saveDroppedInfos", false);
+  desc.add<bool>("use8ts", true);
+  desc.add<bool>("useChannelShapes", false);
   desc.add<int>("sipmQTSShift", 0);
   desc.add<int>("sipmQNTStoSum", 3);
-  desc.add<bool>("setNegativeFlagsQIE8");
-  desc.add<bool>("setNegativeFlagsQIE11");
-  desc.add<bool>("setNoiseFlagsQIE8");
-  desc.add<bool>("setNoiseFlagsQIE11");
-  desc.add<bool>("setPulseShapeFlagsQIE8");
-  desc.add<bool>("setPulseShapeFlagsQIE11");
-  desc.add<bool>("setLegacyFlagsQIE8");
-  desc.add<bool>("setLegacyFlagsQIE11");
-
-  desc.add<edm::ParameterSetDescription>("algorithm", fillDescriptionForParseHBHEPhase1Algo());
-  add_param_set(flagParametersQIE8);
-  add_param_set(flagParametersQIE11);
-  add_param_set(pulseShapeParametersQIE8);
-  add_param_set(pulseShapeParametersQIE11);
-
-  descriptions.addDefault(desc);
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<bool>("applyTimeSlewM3", true);
+    psd0.add<int>("timeSlewParsType", 3);
+    psd0.add<double>("respCorrM3", 1.0);
+    psd0.add<bool>("applyPedConstraint", true);
+    psd0.add<bool>("applyTimeConstraint", true);
+    psd0.add<bool>("applyPulseJitter", false);
+    psd0.add<bool>("applyTimeSlew", true);
+    psd0.add<double>("ts4Min", 0.0);
+    psd0.add<std::vector<double>>("ts4Max",
+                                  {
+                                      100.0,
+                                      20000.0,
+                                      30000,
+                                  });
+    psd0.add<double>("pulseJitter", 1.0);
+    psd0.add<double>("meanPed", 0.0);
+    psd0.add<double>("meanTime", 0.0);
+    psd0.add<double>("timeSigmaHPD", 5.0);
+    psd0.add<double>("timeSigmaSiPM", 2.5);
+    psd0.add<double>("timeMin", -12.5);
+    psd0.add<double>("timeMax", 12.5);
+    psd0.add<std::vector<double>>("ts4chi2",
+                                  {
+                                      15.0,
+                                      15.0,
+                                  });
+    psd0.add<int>("fitTimes", 1);
+    psd0.add<int>("firstSampleShift", 0);
+    psd0.add<int>("samplesToAdd", 2);
+    psd0.add<bool>("correctForPhaseContainment", true);
+    psd0.add<double>("correctionPhaseNS", 6.0);
+    psd0.add<bool>("applyFixPCC", false);
+    psd0.add<bool>("calculateArrivalTime", true);
+    psd0.add<int>("timeAlgo", 2);
+    psd0.add<double>("thEnergeticPulses", 5.0);
+    psd0.add<bool>("dynamicPed", false);
+    psd0.add<double>("ts4Thresh", 0.0);
+    psd0.add<double>("chiSqSwitch", 15.0);
+    psd0.add<std::vector<int>>("activeBXs",
+                               {
+                                   -3,
+                                   -2,
+                                   -1,
+                                   0,
+                                   1,
+                                   2,
+                                   3,
+                                   4,
+                               });
+    psd0.add<int>("nMaxItersMin", 500);
+    psd0.add<int>("nMaxItersNNLS", 500);
+    psd0.add<double>("deltaChiSqThresh", 0.001);
+    psd0.add<double>("nnlsThresh", 1e-11);
+    psd0.add<std::string>("Class", "SimpleHBHEPhase1Algo");
+    psd0.add<double>("tdcTimeShift", 0.0);
+    psd0.add<bool>("useM2", false);
+    psd0.add<bool>("useM3", true);
+    psd0.add<bool>("useMahi", true);
+    psd0.add<bool>("applyLegacyHBMCorrection", true);
+    psd0.add<bool>("useChannelPulseShapesForMC", false);
+    desc.add<edm::ParameterSetDescription>("algorithm", psd0);
+  }
+  desc.add<std::string>("algoConfigClass", "");
+  desc.add<std::string>("channelShapesLabel", "HcalDataShapes");
+  desc.add<bool>("setNegativeFlagsQIE8", true);
+  desc.add<bool>("setNegativeFlagsQIE11", false);
+  desc.add<bool>("setNoiseFlagsQIE8", true);
+  desc.add<bool>("setNoiseFlagsQIE11", false);
+  desc.add<bool>("setPulseShapeFlagsQIE8", true);
+  desc.add<bool>("setPulseShapeFlagsQIE11", false);
+  desc.add<bool>("setLegacyFlagsQIE8", true);
+  desc.add<bool>("setLegacyFlagsQIE11", false);
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<double>("nominalPedestal", 3.0);
+    psd0.add<double>("hitEnergyMinimum", 1.0);
+    psd0.add<int>("hitMultiplicityThreshold", 17);
+    {
+      edm::ParameterSetDescription vpsd2;
+      vpsd2.add<std::vector<double>>("pulseShapeParameters",
+                                     {
+                                         0.0,
+                                         100.0,
+                                         -50.0,
+                                         0.0,
+                                         -15.0,
+                                         0.15,
+                                     });
+      std::vector<edm::ParameterSet> temp2;
+      temp2.reserve(4);
+      {
+        edm::ParameterSet temp3;
+        temp3.addParameter<std::vector<double>>("pulseShapeParameters",
+                                                {
+                                                    0.0,
+                                                    100.0,
+                                                    -50.0,
+                                                    0.0,
+                                                    -15.0,
+                                                    0.15,
+                                                });
+        temp2.push_back(temp3);
+      }
+      {
+        edm::ParameterSet temp3;
+        temp3.addParameter<std::vector<double>>("pulseShapeParameters",
+                                                {
+                                                    100.0,
+                                                    2000.0,
+                                                    -50.0,
+                                                    0.0,
+                                                    -5.0,
+                                                    0.05,
+                                                });
+        temp2.push_back(temp3);
+      }
+      {
+        edm::ParameterSet temp3;
+        temp3.addParameter<std::vector<double>>("pulseShapeParameters",
+                                                {
+                                                    2000.0,
+                                                    1000000.0,
+                                                    -50.0,
+                                                    0.0,
+                                                    95.0,
+                                                    0.0,
+                                                });
+        temp2.push_back(temp3);
+      }
+      {
+        edm::ParameterSet temp3;
+        temp3.addParameter<std::vector<double>>("pulseShapeParameters",
+                                                {
+                                                    -1000000.0,
+                                                    1000000.0,
+                                                    45.0,
+                                                    0.1,
+                                                    1000000.0,
+                                                    0.0,
+                                                });
+        temp2.push_back(temp3);
+      }
+      psd0.addVPSet("pulseShapeParameterSets", vpsd2, temp2);
+    }
+    desc.add<edm::ParameterSetDescription>("flagParametersQIE8", psd0);
+  }
+  {
+    edm::ParameterSetDescription psd0;
+    desc.add<edm::ParameterSetDescription>("flagParametersQIE11", psd0);
+  }
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<double>("MinimumChargeThreshold", 20);
+    psd0.add<double>("TS4TS5ChargeThreshold", 70);
+    psd0.add<double>("TS3TS4ChargeThreshold", 70);
+    psd0.add<double>("TS3TS4UpperChargeThreshold", 20);
+    psd0.add<double>("TS5TS6ChargeThreshold", 70);
+    psd0.add<double>("TS5TS6UpperChargeThreshold", 20);
+    psd0.add<double>("R45PlusOneRange", 0.2);
+    psd0.add<double>("R45MinusOneRange", 0.2);
+    psd0.add<unsigned int>("TrianglePeakTS", 10000);
+    psd0.add<std::vector<double>>("LinearThreshold",
+                                  {
+                                      20,
+                                      100,
+                                      100000,
+                                  });
+    psd0.add<std::vector<double>>("LinearCut",
+                                  {
+                                      -3,
+                                      -0.054,
+                                      -0.054,
+                                  });
+    psd0.add<std::vector<double>>("RMS8MaxThreshold",
+                                  {
+                                      20,
+                                      100,
+                                      100000,
+                                  });
+    psd0.add<std::vector<double>>("RMS8MaxCut",
+                                  {
+                                      -13.5,
+                                      -11.5,
+                                      -11.5,
+                                  });
+    psd0.add<std::vector<double>>("LeftSlopeThreshold",
+                                  {
+                                      250,
+                                      500,
+                                      100000,
+                                  });
+    psd0.add<std::vector<double>>("LeftSlopeCut",
+                                  {
+                                      5,
+                                      2.55,
+                                      2.55,
+                                  });
+    psd0.add<std::vector<double>>("RightSlopeThreshold",
+                                  {
+                                      250,
+                                      400,
+                                      100000,
+                                  });
+    psd0.add<std::vector<double>>("RightSlopeCut",
+                                  {
+                                      5,
+                                      4.15,
+                                      4.15,
+                                  });
+    psd0.add<std::vector<double>>("RightSlopeSmallThreshold",
+                                  {
+                                      150,
+                                      200,
+                                      100000,
+                                  });
+    psd0.add<std::vector<double>>("RightSlopeSmallCut",
+                                  {
+                                      1.08,
+                                      1.16,
+                                      1.16,
+                                  });
+    psd0.add<double>("MinimumTS4TS5Threshold", 100);
+    psd0.add<std::vector<double>>("TS4TS5UpperThreshold",
+                                  {
+                                      70,
+                                      90,
+                                      100,
+                                      400,
+                                  });
+    psd0.add<std::vector<double>>("TS4TS5UpperCut",
+                                  {
+                                      1,
+                                      0.8,
+                                      0.75,
+                                      0.72,
+                                  });
+    psd0.add<std::vector<double>>("TS4TS5LowerThreshold",
+                                  {
+                                      100,
+                                      120,
+                                      160,
+                                      200,
+                                      300,
+                                      500,
+                                  });
+    psd0.add<std::vector<double>>("TS4TS5LowerCut",
+                                  {
+                                      -1,
+                                      -0.7,
+                                      -0.5,
+                                      -0.4,
+                                      -0.3,
+                                      0.1,
+                                  });
+    psd0.add<bool>("UseDualFit", true);
+    psd0.add<bool>("TriangleIgnoreSlow", false);
+    desc.add<edm::ParameterSetDescription>("pulseShapeParametersQIE8", psd0);
+  }
+  {
+    edm::ParameterSetDescription psd0;
+    desc.add<edm::ParameterSetDescription>("pulseShapeParametersQIE11", psd0);
+  }
+  descriptions.addWithDefaultLabel(desc);
 }
 
 //define this as a plug-in

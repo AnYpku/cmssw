@@ -26,7 +26,7 @@
 #include "DataFormats/TrackReco/interface/Track.h"
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
 #include "RecoMuon/TrackingTools/interface/MuonServiceProxy.h"
-#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/GlobalTrackingGeometry.h"
 #include "MagneticField/Engine/interface/MagneticField.h"
 #include "Geometry/Records/interface/GlobalTrackingGeometryRecord.h"
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
@@ -797,3 +797,6 @@ TrajectoryStateOnSurface CosmicMuonValidator::updatedState(const TrajectoryState
 edm::ESHandle<Propagator> CosmicMuonValidator::propagator() const {
   return theService->propagator("SteppingHelixPropagatorAny");
 }
+
+#include "FWCore/Framework/interface/MakerMacros.h"
+DEFINE_FWK_MODULE(CosmicMuonValidator);

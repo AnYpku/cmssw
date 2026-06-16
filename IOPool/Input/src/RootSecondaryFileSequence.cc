@@ -9,13 +9,13 @@
 
 #include "DataFormats/Provenance/interface/BranchID.h"
 #include "DataFormats/Provenance/interface/ProductRegistry.h"
-#include "FWCore/Catalog/interface/InputFileCatalog.h"
-#include "FWCore/Catalog/interface/SiteLocalConfig.h"
+#include "DataFormats/Provenance/interface/ProcessHistoryRegistry.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
-#include "Utilities/StorageFactory/interface/StorageFactory.h"
+#include "FWStorage/Catalog/interface/SiteLocalConfig.h"
+#include "FWStorage/StorageFactory/interface/StorageFactory.h"
 
 namespace edm {
   RootSecondaryFileSequence::RootSecondaryFileSequence(ParameterSet const& pset,
@@ -37,7 +37,7 @@ namespace edm {
     // thousands of files and prestaging all those files can cause a site to fail.
     // So, we stage in the first secondary file only.
     setAtFirstFile();
-    storage::StorageFactory::get()->stagein(fileNames()[0]);
+    storage::StorageFactory::get()->stagein(physicalFileNames()[0]);
 
     // Open the first file.
     for (setAtFirstFile(); !noMoreFiles(); setAtNextFile()) {
@@ -46,7 +46,9 @@ namespace edm {
         break;
     }
     if (rootFile()) {
-      input_.productRegistryUpdate().updateFromInput(rootFile()->productRegistry()->productList());
+      std::vector<std::string> processOrder;
+      processingOrderMerge(input_.processHistoryRegistry(), processOrder);
+      input_.productRegistryUpdate().updateFromInput(rootFile()->productRegistry()->productList(), processOrder);
     }
   }
 
@@ -67,36 +69,31 @@ namespace edm {
   }
 
   RootSecondaryFileSequence::RootFileSharedPtr RootSecondaryFileSequence::makeRootFile(
-      std::shared_ptr<InputFile> filePtr) {
+      std::shared_ptr<InputFile> filePtr, std::string const& physicalFileNameFirstCatalog) {
     size_t currentIndexIntoFile = sequenceNumberOfFile();
-    return std::make_shared<RootFile>(fileNames()[0],
-                                      input_.processConfiguration(),
-                                      logicalFileName(),
-                                      filePtr,
-                                      input_.nStreams(),
-                                      input_.treeMaxVirtualSize(),
-                                      input_.processingMode(),
-                                      input_.runHelper(),
-                                      input_.productSelectorRules(),
-                                      InputType::SecondaryFile,
-                                      input_.branchIDListHelper(),
-                                      input_.thinnedAssociationsHelper(),
-                                      &associationsFromSecondary_,
-                                      input_.dropDescendants(),
-                                      input_.processHistoryRegistryForUpdate(),
-                                      indexesIntoFiles(),
-                                      currentIndexIntoFile,
-                                      orderedProcessHistoryIDs_,
-                                      input_.bypassVersionCheck(),
-                                      input_.labelRawDataLikeMC(),
-                                      enablePrefetching_,
-                                      enforceGUIDInFileName_);
+    return std::make_shared<RootFile>(
+        RootFile::FileOptions{.fileName = physicalFileNameFirstCatalog,
+                              .logicalFileName = logicalFileName(),
+                              .filePtr = filePtr,
+                              .bypassVersionCheck = input_.bypassVersionCheck(),
+                              .enforceGUIDInFileName = enforceGUIDInFileName_},
+        InputType::SecondaryFile,
+        RootFile::ProcessingOptions{
+            .processingMode = input_.processingMode(),
+        },
+        RootFile::TTreeOptions{.treeMaxVirtualSize = input_.treeMaxVirtualSize(),
+                               .enablePrefetching = enablePrefetching_,
+                               .promptReading = not input_.delayReadingEventProducts()},
+        RootFile::ProductChoices{.productSelectorRules = input_.productSelectorRules(),
+                                 .dropDescendantsOfDroppedProducts = input_.dropDescendants(),
+                                 .labelRawDataLikeMC = input_.labelRawDataLikeMC()},
+        RootFile::CrossFileInfo{.runHelper = input_.runHelper(),
+                                .branchIDListHelper = input_.branchIDListHelper(),
+                                .indexesIntoFiles = indexesIntoFiles(),
+                                .currentIndexIntoFile = currentIndexIntoFile},
+        input_.nStreams(),
+        input_.processHistoryRegistryForUpdate(),
+        orderedProcessHistoryIDs_);
   }
 
-  void RootSecondaryFileSequence::initAssociationsFromSecondary(std::set<BranchID> const& associationsFromSecondary) {
-    for (auto const& branchID : associationsFromSecondary) {
-      associationsFromSecondary_.push_back(branchID);
-    }
-    rootFile()->initAssociationsFromSecondary(associationsFromSecondary_);
-  }
 }  // namespace edm

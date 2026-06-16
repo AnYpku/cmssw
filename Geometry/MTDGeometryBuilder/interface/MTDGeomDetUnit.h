@@ -1,7 +1,7 @@
 #ifndef Geometry_MTDGeometryBuilder_MTDGeomDetUnit_H
 #define Geometry_MTDGeometryBuilder_MTDGeomDetUnit_H
 
-#include "Geometry/CommonDetUnit/interface/MTDGeomDet.h"
+#include "Geometry/CommonTopologies/interface/MTDGeomDet.h"
 #include "DataFormats/DetId/interface/DetId.h"
 #include "Geometry/MTDGeometryBuilder/interface/ProxyMTDTopology.h"
 
@@ -35,10 +35,10 @@ public:
   /// the proxy topology (through topology() and specificTopology()) which includes
   /// corrections for the surface deformations, and once via the GeomDetType
   /// (through type().topology() and the like).
-  virtual const MTDGeomDetType& specificType() const;
+  const MTDGeomDetType& specificType() const;
 
   /// Returns a reference to the pixel proxy topology
-  virtual const PixelTopology& specificTopology() const;
+  const PixelTopology& specificTopology() const;
 
   /// Return pointer to surface deformation.
   const SurfaceDeformation* surfaceDeformation() const override { return theTopology->surfaceDeformation(); }

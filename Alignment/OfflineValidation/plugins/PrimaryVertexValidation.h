@@ -41,7 +41,7 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/Utilities/interface/EDGetToken.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "RecoVertex/AdaptiveVertexFit/interface/AdaptiveVertexFitter.h"
@@ -56,7 +56,7 @@
 #include "Alignment/OfflineValidation/interface/PVValidationHelpers.h"
 #include "MagneticField/Engine/interface/MagneticField.h"
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
-#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/GlobalTrackingGeometry.h"
 #include "Geometry/Records/interface/GlobalTrackingGeometryRecord.h"
 #include "CondFormats/RunInfo/interface/RunInfo.h"
 #include "TrackingTools/Records/interface/TransientTrackRecord.h"
@@ -81,7 +81,7 @@ private:
   void beginJob() override;
   void beginRun(edm::Run const& iRun, edm::EventSetup const& iSetup) override;
   void analyze(const edm::Event&, const edm::EventSetup&) override;
-  void endRun(edm::Run const&, edm::EventSetup const&) override{};
+  void endRun(edm::Run const&, edm::EventSetup const&) override {}
   void endJob() override;
 
   // user defined methods

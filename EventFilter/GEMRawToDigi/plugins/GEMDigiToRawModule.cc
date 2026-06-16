@@ -33,7 +33,7 @@ public:
   // global::EDProducer
   std::shared_ptr<GEMChMap> globalBeginRun(edm::Run const&, edm::EventSetup const&) const override;
   void produce(edm::StreamID, edm::Event&, edm::EventSetup const&) const override;
-  void globalEndRun(edm::Run const&, edm::EventSetup const&) const override{};
+  void globalEndRun(edm::Run const&, edm::EventSetup const&) const override {}
 
   // Fill parameters descriptions
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
@@ -124,14 +124,7 @@ void GEMDigiToRawModule::produce(edm::StreamID iID, edm::Event& iEvent, edm::Eve
         else
           bx = 0;
       }
-      auto search = gemBxMap.find(bx);
-      if (search != gemBxMap.end()) {
-        search->second.insertDigi(gemId, *digi);
-      } else {
-        GEMDigiCollection newGDC;
-        newGDC.insertDigi(gemId, *digi);
-        gemBxMap.insert(std::pair<int, GEMDigiCollection>(bx, newGDC));
-      }
+      gemBxMap[bx].insertDigi(gemId, *digi);
     }
   }
 
@@ -167,7 +160,7 @@ void GEMDigiToRawModule::produce(edm::StreamID iID, edm::Event& iEvent, edm::Eve
               uint64_t lsData = 0;  ///<channels from 1to64
               uint64_t msData = 0;  ///<channels from 65to128
 
-              GEMDigiCollection inBxGemDigis = gemBx.second;
+              const GEMDigiCollection& inBxGemDigis = gemBx.second;
               const GEMDigiCollection::Range& range = inBxGemDigis.get(gemId);
 
               for (GEMDigiCollection::const_iterator digiIt = range.first; digiIt != range.second; ++digiIt) {
@@ -238,7 +231,7 @@ void GEMDigiToRawModule::produce(edm::StreamID iID, edm::Event& iEvent, edm::Eve
       amc13->setCDFTrailer(EvtLength);
       amc13s.emplace_back(std::move(amc13));
     }  // finished making amc13 data
-  }    // end of FED loop
+  }  // end of FED loop
 
   // read out amc13s into fedRawData
   for (const auto& amc13e : amc13s) {

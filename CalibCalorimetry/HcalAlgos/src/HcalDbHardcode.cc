@@ -31,7 +31,8 @@ HcalDbHardcode::HcalDbHardcode()
                             {0.0},                 //dark current
                             {0.0},                 //noise correlation
                             0.0,                   //PF noise threshold
-                            0.1                    //PF seed threshold
+                            0.1,                   //PF seed threshold
+                            0.0                    //Extra pulse delay
                             ),
       setHB_(false),
       setHE_(false),
@@ -176,6 +177,11 @@ HcalGainWidth HcalDbHardcode::makeGainWidth(HcalGenericDetId fId) const {  // Ge
   float value = getParameters(fId).gainWidth(getGainIndex(fId));
   HcalGainWidth result(fId.rawId(), value, value, value, value);
   return result;
+}
+
+HcalPulseDelay HcalDbHardcode::makePulseDelay(HcalGenericDetId fId) const {  // ns
+  const float value0 = getParameters(fId).pulseDelay();
+  return HcalPulseDelay(fId, "default", value0);
 }
 
 HcalPFCut HcalDbHardcode::makePFCut(HcalGenericDetId fId, double intLumi, bool noHE) const {  // GeV
@@ -756,7 +762,18 @@ HcalTPChannelParameter HcalDbHardcode::makeHardcodeTPChannelParameter(HcalGeneri
   // mask for channel validity and self trigger information, fine grain
   // bit information and auxiliary words
   uint32_t bitInfo = ((44 << 16) | 30);
-  return HcalTPChannelParameter(fId.rawId(), 0, bitInfo, 0, 0);
+  int auxi1 = 0;
+  int auxi2 = 0;
+  if (fId.genericSubdet() == HcalGenericDetId::HcalGenZDC)
+    auxi2 = 50;  // ZDC bunch spacing parameter
+
+  // Hard code Run 3 TP algorithm for HB (OOT PU subtraction, prefire veto)
+  else if (fId.subdetId() == HcalTriggerTower) {
+    auxi1 = 120;  // OOT PU subtraction presample weighting factor (fixed-point 8-bit) (w ~ 0.47)
+    auxi2 = 0;    // For now, leave prefire veto off
+  }
+
+  return HcalTPChannelParameter(fId.rawId(), 0, bitInfo, auxi1, auxi2);
 }
 
 void HcalDbHardcode::makeHardcodeTPParameters(HcalTPParameters& tppar) const {

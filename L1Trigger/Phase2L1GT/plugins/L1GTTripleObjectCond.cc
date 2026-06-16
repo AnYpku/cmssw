@@ -16,6 +16,7 @@
 #include "L1GTCorrelationalCut.h"
 #include "L1GT3BodyCut.h"
 #include "L1GTSingleInOutLUT.h"
+#include "L1GTOptionalParam.h"
 
 #include <set>
 
@@ -48,6 +49,9 @@ private:
 
   const L1GT3BodyCut correl123Cuts_;
 
+  const std::optional<unsigned int> minQualityScoreSum_;
+  const std::optional<unsigned int> maxQualityScoreSum_;
+
   const edm::EDGetTokenT<P2GTCandidateCollection> token1_;
   const edm::EDGetTokenT<P2GTCandidateCollection> token2_;
   const edm::EDGetTokenT<P2GTCandidateCollection> token3_;
@@ -68,6 +72,8 @@ L1GTTripleObjectCond::L1GTTripleObjectCond(const edm::ParameterSet& config)
       correl23Cuts_(
           config.getParameter<edm::ParameterSet>("correl23"), config, scales_, enable_sanity_checks_, inv_mass_checks_),
       correl123Cuts_(config, config, scales_, inv_mass_checks_),
+      minQualityScoreSum_(getOptionalParam<unsigned int>("minQualityScoreSum", config)),
+      maxQualityScoreSum_(getOptionalParam<unsigned int>("maxQualityScoreSum", config)),
       token1_(consumes<P2GTCandidateCollection>(collection1Cuts_.tag())),
       token2_(collection1Cuts_.tag() == collection2Cuts_.tag()
                   ? token1_
@@ -90,6 +96,11 @@ L1GTTripleObjectCond::L1GTTripleObjectCond(const edm::ParameterSet& config)
 
   if (inv_mass_checks_) {
     produces<InvariantMassErrorCollection>();
+  }
+
+  if ((minQualityScoreSum_ || maxQualityScoreSum_) &&
+      !(collection1Cuts_.tag() == collection2Cuts_.tag() && collection2Cuts_.tag() == collection3Cuts_.tag())) {
+    throw cms::Exception("Configuration") << "A qualityScore sum can only be calculated within one collection.";
   }
 }
 
@@ -130,6 +141,9 @@ void L1GTTripleObjectCond::fillDescriptions(edm::ConfigurationDescriptions& desc
   desc.add<edm::ParameterSetDescription>("correl23", correl23Desc);
 
   L1GT3BodyCut::fillPSetDescription(desc);
+
+  desc.addOptional<unsigned int>("minQualityScoreSum");
+  desc.addOptional<unsigned int>("maxQualityScoreSum");
 
   L1GTCorrelationalCut::fillLUTDescriptions(desc);
 
@@ -181,6 +195,15 @@ bool L1GTTripleObjectCond::filter(edm::StreamID, edm::Event& event, const edm::E
         pass &= correl23Cuts_.checkObjects(col2->at(idx2), col3->at(idx3), massErrors);
         pass &= correl123Cuts_.checkObjects(col1->at(idx1), col2->at(idx2), col3->at(idx3), massErrors);
 
+        if (minQualityScoreSum_ || maxQualityScoreSum_) {
+          unsigned int qualityScoreSum = col1->at(idx1).hwQualityScore().to_uint() +
+                                         col2->at(idx2).hwQualityScore().to_uint() +
+                                         col3->at(idx3).hwQualityScore().to_uint();
+
+          pass &= minQualityScoreSum_ ? qualityScoreSum > minQualityScoreSum_ : true;
+          pass &= maxQualityScoreSum_ ? qualityScoreSum < maxQualityScoreSum_ : true;
+        }
+
         condition_result |= pass;
 
         if (pass) {
@@ -203,6 +226,10 @@ bool L1GTTripleObjectCond::filter(edm::StreamID, edm::Event& event, const edm::E
       }
     }
   }
+
+  condition_result &= collection1Cuts_.checkCollection(*col1);
+  condition_result &= collection2Cuts_.checkCollection(*col2);
+  condition_result &= collection3Cuts_.checkCollection(*col3);
 
   if (condition_result) {
     std::unique_ptr<P2GTCandidateVectorRef> triggerCol1 = std::make_unique<P2GTCandidateVectorRef>();

@@ -36,13 +36,13 @@
 #include "FWCore/Utilities/interface/InputTag.h"
 
 // my includes
-//#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+//#include "Geometry/CommonTopologies/interface/GeomDet.h"
 
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetType.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetType.h"
 
 #include "DataFormats/SiPixelDetId/interface/PixelSubdetector.h"
 #include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
@@ -674,12 +674,12 @@ void PixelDigisTest::analyze(const edm::Event &iEvent, const edm::EventSetup &iS
           totalNumOfDigisF2++;
           numOfDigisPerDetF2++;
         }  // noise
-      }    // end if layer
+      }  // end if layer
 #endif
 
     }  // end for digis in detunit
-       //if(PRINT)
-       //cout<<" for det "<<detid<<" digis = "<<numberOfDigis<<endl;
+    //if(PRINT)
+    //cout<<" for det "<<detid<<" digis = "<<numberOfDigis<<endl;
 
 #ifdef HISTOS
     // Some histos
@@ -740,8 +740,8 @@ void PixelDigisTest::analyze(const edm::Event &iEvent, const edm::EventSetup &iS
           numOfDigisPerDet3 = 0;
 
         }  // layer
-      }    // if bpix
-    }      // if valid
+      }  // if bpix
+    }  // if valid
 #endif
 
   }  // end for det-units

@@ -45,7 +45,7 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "FWCore/Utilities/interface/InputTag.h"
-#include "Geometry/CommonDetUnit/interface/TrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/TrackingGeometry.h"
 #include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/Records/interface/TrackerTopologyRcd.h"
@@ -421,8 +421,8 @@ void SiStripApvGainInspector::checkBookAPVColls(const edm::EventSetup& es) {
           Index++;
           NStripAPVs++;
         }  // loop on APVs
-      }    // if is Strips
-    }      // loop on dets
+      }  // if is Strips
+    }  // loop on dets
 
     for (unsigned int i = 0; i < Det.size();
          i++) {  //Make two loop such that the Pixel information is added at the end --> make transition simpler
@@ -469,10 +469,10 @@ void SiStripApvGainInspector::checkBookAPVColls(const edm::EventSetup& es) {
             NPixelDets++;
 
           }  // loop on ROC cols
-        }    // loop on ROC rows
-      }      // if Pixel
-    }        // loop on Dets
-  }          //if (!bareTkGeomPtr_) ...
+        }  // loop on ROC rows
+      }  // if Pixel
+    }  // loop on Dets
+  }  //if (!bareTkGeomPtr_) ...
   bareTkGeomPtr_ = newBareTkGeomPtr;
 }
 

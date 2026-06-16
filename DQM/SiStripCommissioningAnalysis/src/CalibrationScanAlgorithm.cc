@@ -51,8 +51,7 @@ void CalibrationScanAlgorithm::extract(const std::vector<TH1*>& histos) {
 
   // Extract histograms
   std::vector<TH1*>::const_iterator ihis = histos.begin();
-  unsigned int cnt = 0;
-  for (; ihis != histos.end(); ihis++, cnt++) {
+  for (; ihis != histos.end(); ihis++) {
     // Check for NULL pointer
     if (!(*ihis)) {
       continue;
@@ -425,7 +424,7 @@ void CalibrationScanAlgorithm::tuneIndependently(const int& iapv,
     imap = 0;
     // store for each isha value all rise time (changing isha)
     for (auto map_element : histo_) {
-      if (fabs(scanned_vfs_.at(imap) - cal_->vfs_[iapv]) < CalibrationScanAnalysis::VFSrange_ and
+      if (std::abs(scanned_vfs_.at(imap) - cal_->vfs_[iapv]) < CalibrationScanAnalysis::VFSrange_ and
           cal_->isValid(map_element.first)[iapv])  //around chosen VFS by \pm 20
         riseTime_vs_isha[scanned_isha_.at(imap)].push_back(cal_->riseTime(map_element.first)[iapv]);
       if (name == "") {
@@ -568,8 +567,8 @@ void CalibrationScanAlgorithm::fillTunedObservables(const int& apvid) {
 
   // find close by ISHA
   for (size_t i = 0; i < scanned_isha_.size(); i++) {
-    if (fabs(scanned_isha_.at(i) - cal_->bestISHA().at(apvid)) < distance_apv) {
-      distance_apv = fabs(scanned_isha_.at(i) - cal_->bestISHA().at(apvid));
+    if (std::abs(scanned_isha_.at(i) - cal_->bestISHA().at(apvid)) < distance_apv) {
+      distance_apv = std::abs(scanned_isha_.at(i) - cal_->bestISHA().at(apvid));
       cal_->tunedISHA_.at(apvid) = scanned_isha_.at(i);
     }
   }
@@ -578,8 +577,8 @@ void CalibrationScanAlgorithm::fillTunedObservables(const int& apvid) {
 
   // find close by VFS
   for (size_t i = 0; i < scanned_vfs_.size(); i++) {
-    if (fabs(scanned_vfs_.at(i) - cal_->bestVFS().at(apvid)) < distance_apv) {
-      distance_apv = fabs(scanned_vfs_.at(i) - cal_->bestVFS().at(apvid));
+    if (std::abs(scanned_vfs_.at(i) - cal_->bestVFS().at(apvid)) < distance_apv) {
+      distance_apv = std::abs(scanned_vfs_.at(i) - cal_->bestVFS().at(apvid));
       cal_->tunedVFS_.at(apvid) = scanned_vfs_.at(i);
     }
   }

@@ -25,16 +25,23 @@ HGCalNumberingScheme::HGCalNumberingScheme(const HGCalDDDConstants& hgc,
     : hgcons_(hgc), mode_(hgc.geomMode()), det_(det), name_(name) {
 #ifdef EDM_ML_DEBUG
   edm::LogVerbatim("HGCSim") << "Creating HGCalNumberingScheme for " << name_ << " Det " << det_ << " Mode " << mode_
-                             << ":" << HGCalGeometryMode::Hexagon8Full << ":" << HGCalGeometryMode::Hexagon8 << ":"
-                             << HGCalGeometryMode::Hexagon8File << ":" << HGCalGeometryMode::Hexagon8Module << ":"
-                             << ":" << HGCalGeometryMode::Hexagon8Cassette << ":" << HGCalGeometryMode::Trapezoid << ":"
-                             << HGCalGeometryMode::TrapezoidFile << ":" << HGCalGeometryMode::TrapezoidModule << ":"
-                             << HGCalGeometryMode::TrapezoidCassette;
+                             << " Hexagon8Full:" << HGCalGeometryMode::Hexagon8Full
+                             << " Hexagon8:" << HGCalGeometryMode::Hexagon8
+                             << " Hexagon8File:" << HGCalGeometryMode::Hexagon8File
+                             << " Hexagon8Module:" << HGCalGeometryMode::Hexagon8Module << ":"
+                             << " Hexagon8Cassette:" << HGCalGeometryMode::Hexagon8Cassette
+                             << " Hexagon8CalibCell:" << HGCalGeometryMode::Hexagon8CalibCell
+                             << " Hexagon8FineCell:" << HGCalGeometryMode::Hexagon8FineCell
+                             << " Trapezoid:" << HGCalGeometryMode::Trapezoid
+                             << " TrapezoidFile:" << HGCalGeometryMode::TrapezoidFile
+                             << " TrapezoidModule:" << HGCalGeometryMode::TrapezoidModule
+                             << " TrapezoidCassette:" << HGCalGeometryMode::TrapezoidCassette
+                             << " TrapezoidFineCell:" << HGCalGeometryMode::TrapezoidFineCell;
 #endif
   firstLayer_ = hgcons_.getLayerOffset();
   if (!fileName.empty()) {
     edm::FileInPath filetmp1("SimG4CMS/Calo/data/" + fileName);
-    std::string filetmp2 = filetmp1.fullPath();
+    const std::string& filetmp2 = filetmp1.fullPath();
     std::ifstream fInput(filetmp2.c_str());
     if (!fInput.good()) {
       edm::LogVerbatim("HGCalSim") << "Cannot open file " << filetmp2;
@@ -157,6 +164,10 @@ uint32_t HGCalNumberingScheme::getUnitID(int layer, int module, int cell, int iz
     }
   } else if (hgcons_.tileTrapezoid()) {
     std::array<int, 3> id = hgcons_.assignCellTrap(pos.x(), pos.y(), pos.z(), layer, false);
+#ifdef EDM_ML_DEBUG
+    edm::LogVerbatim("HGCSim") << "Trapezoid Position Layer " << layer << " Position " << pos.x() << ":" << pos.y()
+                               << ":" << pos.z() << " ID " << id[0] << ":" << id[1] << ":" << id[2];
+#endif
     if (id[2] >= 0) {
       std::pair<int, int> typm = hgcons_.tileType(layer, id[0], 0);
       HGCScintillatorDetId detId(id[2], layer, iz * id[0], id[1], false, 0);
@@ -164,6 +175,11 @@ uint32_t HGCalNumberingScheme::getUnitID(int layer, int module, int cell, int iz
         detId.setType(typm.first);
         detId.setSiPM(typm.second);
       }
+      detId.setGranularity(hgcons_.tileGranularity(layer));
+#ifdef EDM_ML_DEBUG
+      edm::LogVerbatim("HGCSim") << "Trapezoid : Type " << typm.first << " SiPM " << typm.second << " Granularity "
+                                 << hgcons_.tileGranularity(layer);
+#endif
       index = detId.rawId();
       bool debug(false);
       if (!indices_.empty()) {
@@ -173,9 +189,8 @@ uint32_t HGCalNumberingScheme::getUnitID(int layer, int module, int cell, int iz
       }
       if (debug)
         edm::LogVerbatim("HGCSim") << "Radius/Phi " << id[0] << ":" << id[1] << " Type " << id[2] << ":" << typm.first
-                                   << " SiPM " << typm.second << ":" << hgcons_.tileSiPM(typm.second) << " Layer "
-                                   << layer << " z " << iz << " " << detId << " wt " << wt << " position " << pos
-                                   << " R " << pos.perp();
+                                   << " SiPM " << typm.second << " Layer " << layer << " z " << iz << " ID " << detId
+                                   << " wt " << wt << " position " << pos << " R " << pos.perp();
 #ifdef EDM_ML_DEBUG
     } else {
       edm::LogVerbatim("HGCSim") << "Radius/Phi " << id[0] << ":" << id[1] << " Type " << id[2] << " Layer|iz " << layer

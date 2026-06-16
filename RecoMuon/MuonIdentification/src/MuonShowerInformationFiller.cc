@@ -32,7 +32,7 @@
 #include "DataFormats/GeometrySurface/interface/Bounds.h"
 #include "RecoMuon/MeasurementDet/interface/MuonDetLayerMeasurements.h"
 #include "DataFormats/MuonDetId/interface/MuonSubdetId.h"
-#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/GlobalTrackingGeometry.h"
 #include "MagneticField/Engine/interface/MagneticField.h"
 #include "Geometry/Records/interface/GlobalTrackingGeometryRecord.h"
 #include "TrackingTools/TrajectoryState/interface/TrajectoryStateTransform.h"
@@ -972,8 +972,8 @@ void MuonShowerInformationFiller::fillHitsByStation(const reco::Muon& muon) {
             muonRecHitsThetaBest = muonRecHitsThetaTemp;
           }
         }  //at least two hits
-      }    //loop over seeds
-    }      //not empty container2
+      }  //loop over seeds
+    }  //not empty container2
 
     //fill deltaRs
     if (muonRecHitsThetaBest.size() > 1 && muonRecHitsPhiBest.size() > 1)

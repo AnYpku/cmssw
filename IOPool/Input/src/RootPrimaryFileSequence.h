@@ -14,7 +14,7 @@ RootPrimaryFileSequence: This is an InputSource
 #include "FWCore/Framework/interface/ProcessingController.h"
 #include "FWCore/Sources/interface/EventSkipperByID.h"
 #include "FWCore/Utilities/interface/get_underlying_safe.h"
-#include "DataFormats/Provenance/interface/BranchDescription.h"
+#include "DataFormats/Provenance/interface/ProductDescription.h"
 #include "DataFormats/Provenance/interface/ProcessHistoryID.h"
 
 #include <memory>
@@ -25,7 +25,6 @@ namespace edm {
 
   class BranchID;
   class DuplicateChecker;
-  class FileCatalogItem;
   class InputFileCatalog;
   class ParameterSetDescription;
   class PoolSource;
@@ -52,7 +51,8 @@ namespace edm {
 
   private:
     void initFile_(bool skipBadFiles) override;
-    RootFileSharedPtr makeRootFile(std::shared_ptr<InputFile> filePtr) override;
+    RootFileSharedPtr makeRootFile(std::shared_ptr<InputFile> filePtr,
+                                   std::string const& physicalFileNameFirstCatalog) override;
     bool nextFile();
     bool previousFile();
     void rewindFile();
@@ -63,7 +63,7 @@ namespace edm {
 
     PoolSource& input_;
     bool firstFile_;
-    BranchDescription::MatchMode branchesMustMatch_;
+    ProductDescription::MatchMode branchesMustMatch_;
     std::vector<ProcessHistoryID> orderedProcessHistoryIDs_;
 
     std::shared_ptr<EventSkipperByID const> eventSkipperByID() const { return get_underlying_safe(eventSkipperByID_); }

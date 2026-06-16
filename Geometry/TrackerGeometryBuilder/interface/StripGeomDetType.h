@@ -1,7 +1,7 @@
 #ifndef Geometry_TrackerGeometryBuilder_StripGeomDetType_H
 #define Geometry_TrackerGeometryBuilder_StripGeomDetType_H
 
-#include "Geometry/CommonDetUnit/interface/GeomDetType.h"
+#include "Geometry/CommonTopologies/interface/GeomDetType.h"
 #include "Geometry/CommonTopologies/interface/StripTopology.h"
 #include <vector>
 
@@ -20,7 +20,7 @@ public:
   // Access to topologies
   const Topology& topology() const override { return *theTopology; }
 
-  virtual const TopologyType& specificTopology() const { return *theTopology; }
+  const TopologyType& specificTopology() const { return *theTopology; }
 
   void setTopology(TopologyType* topol);
 

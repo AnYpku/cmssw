@@ -12,11 +12,12 @@
 #include "FWCore/Framework/interface/ConsumesCollector.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
+#include "FWCore/AbstractServices/interface/RandomNumberGenerator.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "FWCore/ServiceRegistry/interface/ServiceRegistry.h"
-#include "FWCore/Utilities/interface/RandomNumberGenerator.h"
 #include "FWCore/Utilities/interface/Exception.h"
+#include "FWCore/Utilities/interface/ThreadHandoff.h"
 
 #include "SimG4Core/Application/interface/OscarMTMasterThread.h"
 #include "SimG4Core/Application/interface/RunManagerMT.h"
@@ -34,12 +35,11 @@
 #include "SimDataFormats/TrackingHit/interface/PSimHitContainer.h"
 #include "SimDataFormats/CaloHit/interface/PCaloHitContainer.h"
 
-#include "SimG4Core/Application/interface/ThreadHandoff.h"
-
 #include "Randomize.hh"
 
 // for some reason void doesn't compile
-class OscarMTProducer : public edm::stream::EDProducer<edm::GlobalCache<OscarMTMasterThread>, edm::RunCache<int>> {
+class OscarMTProducer
+    : public edm::stream::EDProducer<edm::GlobalCache<OscarMTMasterThread>, edm::RunCache<int>, edm::stream::WatchRuns> {
 public:
   typedef std::vector<std::shared_ptr<SimProducer>> Producers;
 
@@ -58,7 +58,7 @@ public:
   void produce(edm::Event& e, const edm::EventSetup& c) override;
 
 private:
-  omt::ThreadHandoff m_handoff;
+  edm::ThreadHandoff m_handoff;
   std::unique_ptr<RunManagerMTWorker> m_runManagerWorker;
   const OscarMTMasterThread* m_masterThread;
   const edm::ParameterSetID m_psetID;
@@ -251,7 +251,7 @@ void OscarMTProducer::produce(edm::Event& e, const edm::EventSetup& es) {
 
   if (0 < m_verbose) {
     edm::LogVerbatim("SimG4CoreApplication")
-        << "Produced " << p2->size() << " SimVertecies: position(cm), time(s), parentID, vertexID, processType";
+        << "Produced " << p2->size() << " SimVertices: position(cm), time(s), parentID, vertexID, processType";
     if (1 < m_verbose) {
       int nn = p2->size();
       for (int i = 0; i < nn; ++i) {
@@ -260,12 +260,15 @@ void OscarMTProducer::produce(edm::Event& e, const edm::EventSetup& es) {
     }
     edm::LogVerbatim("SimG4CoreApplication")
         << "Produced " << p1->size()
-        << " SimTracks: pdg, 4-momentum(GeV), vertexID, mcTruthID, flagBoundary, trackID at boundary";
+        << " SimTracks: G4 Id, pdg, 4-momentum(GeV), vertexID, mcTruthID, crossedBoundary -> trackID at boundary, from "
+           "backscattering, isPrimary -> getPrimary";
     if (1 < m_verbose) {
       int nn = p1->size();
       for (int i = 0; i < nn; ++i) {
-        edm::LogVerbatim("Track") << " " << i << ". " << (*p1)[i] << " " << (*p1)[i].crossedBoundary() << " "
-                                  << (*p1)[i].getIDAtBoundary();
+        edm::LogVerbatim("Track") << " " << i << ". " << (*p1)[i].trackId() << ", " << (*p1)[i] << ", "
+                                  << (*p1)[i].crossedBoundary() << "-> " << (*p1)[i].getIDAtBoundary() << ", "
+                                  << (*p1)[i].isFromBackScattering() << ", " << (*p1)[i].isPrimary() << "-> "
+                                  << (*p1)[i].getPrimaryOrLastStoredID();
       }
     }
   }

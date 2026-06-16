@@ -1,4 +1,4 @@
-#include "catch.hpp"
+#include "catch2/catch_all.hpp"
 #include "FWCore/Utilities/interface/Exception.h"
 #include <cstdlib>
 #include <iomanip>
@@ -36,6 +36,24 @@ namespace {
       "char*:  ..a nonconst pointer\n"
       "\n"
       "Gave up\n";
+
+  constexpr char expected_func4[] =
+      "An exception of category 'DataCorrupt' occurred.\n"
+      "Exception Message:\n"
+      "This is just a test: \n"
+      "double: 1.11111\n"
+      "float:  2.22222\n"
+      "uint:   75\n"
+      "string: a string\n"
+      "char*:  a nonconst pointer\n"
+      "char[]: a c-style array\n";
+
+  constexpr char expected_func5[] =
+      "An exception of category 'Format' occurred.\n"
+      "Exception Message:\n"
+      "chaining of format calls 0\n"
+      "vformat 3.14\n"
+      "last foo\n";
 
   void func3() {
     double d = 1.11111;
@@ -77,10 +95,47 @@ namespace {
     }
   }
 
+  void func4() {
+    double d = 1.11111;
+    float f = 2.22222;
+    unsigned int i = 75U;
+    std::string s("a string");
+    char* c1 = const_cast<char*>("a nonconst pointer");
+    char c2[] = "a c-style array";
+    Thing thing(4);
+
+    cms::Exception e("DataCorrupt");
+    e.format(
+        "This is just a test: \n"
+        "double: {}\n"
+        "float:  {}\n"
+        "uint:   {}\n"
+        "string: {}\n"
+        "char*:  {}\n"
+        "char[]: {}\n",
+        d,
+        f,
+        i,
+        s,
+        c1,
+        c2);
+
+    throw e;
+  }
+
+  void func5() {
+    auto f = 3.14f;
+    throw cms::Exception("Format")
+        .format("chaining of format calls {}\n", 0)
+        .vformat("vformat {}\n", std::make_format_args(f))
+        .format("last {}\n", "foo");
+  }
 }  // namespace
 
 TEST_CASE("Test cms::Exception", "[cms::Exception]") {
   SECTION("throw") { REQUIRE_THROWS_WITH(func1(), expected); }
+  SECTION("throw with format") { REQUIRE_THROWS_WITH(func4(), expected_func4); }
+  SECTION("throw temporary with format") { REQUIRE_THROWS_WITH(func5(), expected_func5); }
   SECTION("returnCode") {
     cms::Exception e1("ABC");
     REQUIRE(e1.returnCode() == 8001);

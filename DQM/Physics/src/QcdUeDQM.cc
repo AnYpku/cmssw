@@ -16,10 +16,10 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetType.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetType.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "Geometry/TrackerGeometryBuilder/interface/RectangularPixelTopology.h"
 #include "HLTrigger/HLTcore/interface/HLTConfigProvider.h"
@@ -1058,8 +1058,8 @@ void QcdUeDQM::fillUE_with_MaxpTtrack(const std::vector<const reco::Track *> &tr
           }
         }
       }  // track loop
-    }    // leading track
-         // non empty collection
+    }  // leading track
+    // non empty collection
     fillProfile(hdNdEtadPhi_pTMax_Toward500_, track[0]->pt(), nTrk500_TowardReg, w);
     fillProfile(hdNdEtadPhi_pTMax_Transverse500_, track[0]->pt(), nTrk500_TransReg, w);
     fillProfile(hdNdEtadPhi_pTMax_Away500_, track[0]->pt(), nTrk500_AwayReg, w);

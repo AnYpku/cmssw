@@ -45,15 +45,15 @@
 #include "SimDataFormats/TrackingHit/interface/PSimHit.h"
 #include "SimDataFormats/TrackerDigiSimLink/interface/PixelDigiSimLink.h"
 
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
 
 #include "MagneticField/Engine/interface/MagneticField.h"
 
 #include "SimGeneral/MixingModule/interface/PileUpEventPrincipal.h"
 
 // Random Number
-#include "FWCore/Utilities/interface/RandomNumberGenerator.h"
+#include "FWCore/AbstractServices/interface/RandomNumberGenerator.h"
 #include "FWCore/Utilities/interface/Exception.h"
 
 namespace cms {

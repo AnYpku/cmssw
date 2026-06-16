@@ -7,6 +7,7 @@
 
 #include "SimG4Core/Geometry/interface/DDDWorld.h"
 #include "SimG4Core/Geometry/interface/CustomUIsession.h"
+#include "SimG4Core/Geometry/interface/CMSG4RegionReporter.h"
 
 #include "SimG4Core/Physics/interface/PhysicsListFactory.h"
 #include "SimG4Core/PhysicsLists/interface/CMSMonopolePhysics.h"
@@ -43,6 +44,7 @@
 #include "G4ParticleTable.hh"
 #include "G4CascadeInterface.hh"
 #include "G4EmParameters.hh"
+#include "G4LossTableManager.hh"
 #include "G4HadronicParameters.hh"
 #include "G4NuclearLevelData.hh"
 #include <CLHEP/Units/SystemOfUnits.h>
@@ -51,6 +53,8 @@
 #include "G4PhysicalVolumeStore.hh"
 #include "G4Region.hh"
 #include "G4RegionStore.hh"
+#include "G4PhysListUtil.hh"
+#include "G4PhysicsListHelper.hh"
 
 #include <iostream>
 #include <sstream>
@@ -62,6 +66,7 @@ RunManagerMT::RunManagerMT(edm::ParameterSet const& p)
       m_StorePhysicsTables(p.getUntrackedParameter<bool>("StorePhysicsTables", false)),
       m_RestorePhysicsTables(p.getUntrackedParameter<bool>("RestorePhysicsTables", false)),
       m_check(p.getUntrackedParameter<bool>("CheckGeometry")),
+      m_addRegions(p.getUntrackedParameter<bool>("AddRegions")),
       m_geoFromDD4hep(p.getParameter<bool>("g4GeometryDD4hepSource")),
       m_score(p.getParameter<bool>("UseCommandBaseScorer")),
       m_stepverb(p.getUntrackedParameter<int>("SteppingVerbosity", 0)),
@@ -85,6 +90,8 @@ RunManagerMT::RunManagerMT(edm::ParameterSet const& p)
   m_UIsession = new CustomUIsession();
   G4UImanager::GetUIpointer()->SetCoutDestination(m_UIsession);
   G4UImanager::GetUIpointer()->SetMasterUIManager(true);
+  G4PhysListUtil::InitialiseParameters();
+  G4LossTableManager::Instance();
 }
 
 RunManagerMT::~RunManagerMT() { delete m_UIsession; }
@@ -110,6 +117,10 @@ void RunManagerMT::initG4(const DDCompactView* pDD,
   m_world = std::make_unique<DDDWorld>(pDD, pDD4hep, m_catalog, verb, cuts, protonCut);
   G4VPhysicalVolume* world = m_world.get()->GetWorldVolume();
 
+  if (m_addRegions) {
+    addRegions();
+  }
+
   m_kernel->SetVerboseLevel(verb);
   edm::LogVerbatim("SimG4CoreApplication")
       << "RunManagerMT: Define cuts: " << cuts << " Geant4 run manager verbosity: " << verb;
@@ -122,6 +133,10 @@ void RunManagerMT::initG4(const DDCompactView* pDD,
   unsigned int nn = regStore->size();
   edm::LogVerbatim("SimG4CoreApplication")
       << "RunManagerMT: " << numPV << " physical volumes; " << numLV << " logical volumes; " << nn << " regions.";
+
+#if G4VERSION_NUMBER >= 1130
+  G4GeometryManager::GetInstance()->RequestParallelOptimisation(false, false);
+#endif
 
   if (m_check) {
     m_kernel->SetVerboseLevel(2);
@@ -150,6 +165,7 @@ void RunManagerMT::initG4(const DDCompactView* pDD,
   G4HadronicParameters::Instance()->SetVerboseLevel(verb);
   G4EmParameters::Instance()->SetVerbose(verb);
   G4EmParameters::Instance()->SetWorkerVerbose(std::max(verb - 1, 0));
+  G4PhysicsListHelper::GetPhysicsListHelper();
 
   // exotic particle physics
   double monopoleMass = m_pPhysics.getUntrackedParameter<double>("MonopoleMass", 0);
@@ -289,7 +305,7 @@ void RunManagerMT::terminateRun() {
 
 void RunManagerMT::checkVoxels() {
   const G4LogicalVolumeStore* lvs = G4LogicalVolumeStore::GetInstance();
-  int numLV = lvs->size();
+  int numLV = (int)lvs->size();
   edm::LogVerbatim("SimG4CoreApplication") << "RunManagerMT: nLV=" << numLV;
   int nvox = 0;
   int nslice = 0;
@@ -299,7 +315,7 @@ void RunManagerMT::checkVoxels() {
     auto vox = lv->GetVoxelHeader();
     auto sma = lv->GetSmartless();
     auto reg = lv->GetRegion();
-    size_t nsl = (nullptr == vox) ? 0 : vox->GetNoSlices();
+    std::size_t nsl = (nullptr == vox) ? 0 : vox->GetNoSlices();
     if (0 < nsl) {
       nslice += nsl;
       std::string rname = (nullptr != reg) ? reg->GetName() : "";
@@ -348,4 +364,52 @@ void RunManagerMT::runForPhase2() {
       break;
     }
   }
+}
+
+// This method should be extended in order to add new regions via names of logical volume
+// and to add a new production cuts for these regions
+void RunManagerMT::addRegions() {
+  // add HF region
+  std::vector<G4LogicalVolume*> lvnew;
+  const auto lvs = G4LogicalVolumeStore::GetInstance();
+  auto ptr1 = lvs->GetVolume("HVQF", false);
+  if (nullptr != ptr1) {
+    lvnew.push_back(ptr1);
+  }
+  auto ptr2 = lvs->GetVolume("HVQX", false);
+  if (nullptr != ptr2) {
+    lvnew.push_back(ptr2);
+  }
+  if (!lvnew.empty()) {
+    G4double cut = CLHEP::mm;
+    addG4Region(lvnew, "RegionHF", cut, cut, cut, cut);
+  }
+
+  // dump region list
+  if (m_check) {
+    CMSG4RegionReporter rep;
+    rep.ReportRegions("g4region.txt");
+  }
+}
+
+// This is a utility method to add a G4Region
+void RunManagerMT::addG4Region(const std::vector<G4LogicalVolume*>& v,
+                               const std::string& rName,
+                               double cutg,
+                               double cute,
+                               double cutp,
+                               double cuti) {
+  if (v.empty()) {
+    return;
+  }
+  auto reg = new G4Region((G4String)rName);
+  for (auto const& lv : v) {
+    reg->AddRootLogicalVolume(lv, true);
+  }
+  auto cuts = new G4ProductionCuts();
+  cuts->SetProductionCut(cutg, 0);
+  cuts->SetProductionCut(cute, 1);
+  cuts->SetProductionCut(cutp, 2);
+  cuts->SetProductionCut(cuti, 3);
+  reg->SetProductionCuts(cuts);
 }

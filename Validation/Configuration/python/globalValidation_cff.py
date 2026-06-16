@@ -38,11 +38,13 @@ from Validation.RPCRecHits.rpcRecHitValidation_cfi import *
 from Validation.DTRecHits.DTRecHitQuality_cfi import *
 from Validation.CSCRecHits.cscRecHitValidation_cfi import *
 from Validation.RecoTau.DQMMCValidation_cfi import *
+from Validation.RecoTau.RecoTauValidation_cff import *
 from Validation.L1T.L1Validator_cfi import *
 from Validation.SiPixelPhase1ConfigV.SiPixelPhase1OfflineDQM_sourceV_cff import *
 from DQMOffline.RecoB.dqmAnalyzer_cff import *
 from Validation.RecoB.BDHadronTrackValidation_cff import *
 from Validation.Configuration.hgcalSimValid_cff import *
+from Validation.Configuration.barrelSimValid_cff import *
 from Validation.Configuration.mtdSimValid_cff import *
 from Validation.Configuration.ecalSimValid_cff import *
 from Validation.SiTrackerPhase2V.Phase2TrackerValidationFirstStep_cff import *
@@ -151,6 +153,16 @@ globalPrevalidationJetMETOnly = cms.Sequence(
     + metPreValidSeq
 )
 
+globalPrevalidationTaus = cms.Sequence(
+    # produceDenoms
+    tauPreValidSeq
+)
+
+globalValidationTaus = cms.Sequence(
+    # pfTauRunDQMValidation
+    recoTauValidationSequence
+)
+
 # ECAL local reconstruction
 globalPrevalidationECAL = cms.Sequence()
 globalPrevalidationECALOnly = cms.Sequence(
@@ -164,6 +176,7 @@ globalValidationECAL = cms.Sequence(
     + ecalRecHitsValidationSequence
     + ecalClustersValidationSequence
 )
+
 globalValidationECALOnly = cms.Sequence(
       ecalSimHitsValidationSequence
     + ecalDigisValidationSequence
@@ -171,7 +184,10 @@ globalValidationECALOnly = cms.Sequence(
     + pfClusterCaloOnlyValidationSequence
 )
 from Configuration.Eras.Modifier_phase2_ecal_devel_cff import phase2_ecal_devel
+phase2_ecal_devel.toReplaceWith(ecalSimHitsValidationSequence, ecalSimHitsValidationSequencePhase2)
+phase2_ecal_devel.toReplaceWith(ecalDigisValidationSequence, ecalDigisValidationSequencePhase2)
 phase2_ecal_devel.toReplaceWith(ecalRecHitsValidationSequence, ecalRecHitsValidationSequencePhase2)
+phase2_ecal_devel.toReplaceWith(pfClusterCaloOnlyValidationSequence, ecalClustersValidationSequence)
 
 # HCAL local reconstruction
 globalPrevalidationHCAL = cms.Sequence()
@@ -196,9 +212,21 @@ globalValidationHCALOnly = cms.Sequence(
     + hcalRecHitsOnlyValidationSequence
     + pfClusterCaloOnlyValidationSequence
 )
+globalPrevalidationHGCal = cms.Sequence(hgcalAssociators, ticlSimTrackstersTask)
 
 globalValidationHGCal = cms.Sequence(hgcalValidation)
-globalPrevalidationHGCal = cms.Sequence(hgcalAssociators, ticlSimTrackstersTask)
+
+globalPrevalidationBarrel = cms.Sequence()
+_globalPrevalidationBarrel = globalPrevalidationBarrel.copy()
+_globalPrevalidationBarrel += cms.Sequence(barrelAssociators)
+
+globalValidationBarrel = cms.Sequence()
+_globalValidationBarrel = globalValidationBarrel.copy()
+_globalValidationBarrel += barrelValidation
+
+from Configuration.ProcessModifiers.ticl_barrel_cff import ticl_barrel
+ticl_barrel.toReplaceWith(globalPrevalidationBarrel, _globalPrevalidationBarrel)
+ticl_barrel.toReplaceWith(globalValidationBarrel, _globalValidationBarrel)
 
 globalValidationMTD = cms.Sequence()
 

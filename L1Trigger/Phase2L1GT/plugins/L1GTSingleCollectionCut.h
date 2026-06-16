@@ -63,9 +63,9 @@ namespace l1t {
           maxAbsEta_(getOptionalParam<int, double>(
               "maxAbsEta", config, [&scales](double value) { return scales.to_hw_eta_ceil(value); })),
           minIsolationPt_(getOptionalParam<int, double>(
-              "minRelIsolationPt", config, [&scales](double value) { return scales.to_hw_isolationPT_floor(value); })),
+              "minIsolationPt", config, [&scales](double value) { return scales.to_hw_isolationPT_floor(value); })),
           maxIsolationPt_(getOptionalParam<int, double>(
-              "maxRelIsolationPt", config, [&scales](double value) { return scales.to_hw_isolationPT_ceil(value); })),
+              "maxIsolationPt", config, [&scales](double value) { return scales.to_hw_isolationPT_ceil(value); })),
           minRelIsolationPt_(getOptionalParam<int, double>(
               "minRelIsolationPt",
               config,
@@ -87,7 +87,29 @@ namespace l1t {
               "minPrimVertDz", config, [&scales](double value) { return scales.to_hw_z0_floor(value); })),
           maxPrimVertDz_(getOptionalParam<int, double>(
               "maxPrimVertDz", config, [&scales](double value) { return scales.to_hw_z0_ceil(value); })),
-          primVertex_(getOptionalParam<unsigned int>("primVertex", config)) {}
+          primVertex_(getOptionalParam<unsigned int>("primVertex", config)),
+          minPtMultiplicityN_(config.getParameter<unsigned int>("minPtMultiplicityN")),
+          minPtMultiplicityCut_(getOptionalParam<int, double>(
+              "minPtMultiplicityCut", config, [&scales](double value) { return scales.to_hw_pT_floor(value); })) {
+      if (!std::is_sorted(regionsAbsEtaLowerBounds_.begin(), regionsAbsEtaLowerBounds_.end())) {
+        throw cms::Exception("Configuration") << "\'regionsAbsEtaLowerBounds\' is not sorted.";
+      }
+      if (!regionsMinPt_.empty() && regionsAbsEtaLowerBounds_.size() != regionsMinPt_.size()) {
+        throw cms::Exception("Configuration")
+            << "\'regionsMinPt\' has " << regionsMinPt_.size() << " entries, but requires "
+            << regionsAbsEtaLowerBounds_.size() << " in " << tag_ << " .";
+      }
+      if (!regionsMaxRelIsolationPt_.empty() && regionsAbsEtaLowerBounds_.size() != regionsMaxRelIsolationPt_.size()) {
+        throw cms::Exception("Configuration")
+            << "\'regionsMaxRelIsolationPt\' has " << regionsMaxRelIsolationPt_.size() << " entries, but requires "
+            << regionsAbsEtaLowerBounds_.size() << " in " << tag_ << " .";
+      }
+      if (!regionsQualityFlags_.empty() && regionsAbsEtaLowerBounds_.size() != regionsQualityFlags_.size()) {
+        throw cms::Exception("Configuration")
+            << "\'regionsQualityFlags\' has " << regionsQualityFlags_.size() << " entries, but requires "
+            << regionsAbsEtaLowerBounds_.size() << " in " << tag_ << " .";
+      }
+    }
 
     bool checkObject(const P2GTCandidate& obj) const {
       bool result = true;
@@ -126,6 +148,20 @@ namespace l1t {
 
       result &= regionsAbsEtaLowerBounds_.empty() ? true : checkEtaDependentCuts(obj);
       return result;
+    }
+
+    bool checkCollection(const P2GTCandidateCollection& col) const {
+      if (minPtMultiplicityN_ > 0 && minPtMultiplicityCut_) {
+        unsigned int minPtMultiplicity = 0;
+
+        for (const P2GTCandidate& obj : col) {
+          minPtMultiplicity = obj.hwPT() > minPtMultiplicityCut_ ? minPtMultiplicity + 1 : minPtMultiplicity;
+        }
+
+        return minPtMultiplicity >= minPtMultiplicityN_;
+      }
+
+      return true;
     }
 
     bool checkPrimaryVertices(const P2GTCandidate& obj, const P2GTCandidateCollection& primVertCol) const {
@@ -179,6 +215,8 @@ namespace l1t {
       desc.addOptional<double>("minPrimVertDz");
       desc.addOptional<double>("maxPrimVertDz");
       desc.addOptional<unsigned int>("primVertex");
+      desc.add<unsigned int>("minPtMultiplicityN", 0);
+      desc.addOptional<double>("minPtMultiplicityCut");
     }
 
     const edm::InputTag& tag() const { return tag_; }
@@ -241,6 +279,8 @@ namespace l1t {
     const std::optional<int> minPrimVertDz_;
     const std::optional<int> maxPrimVertDz_;
     const std::optional<unsigned int> primVertex_;
+    const unsigned int minPtMultiplicityN_;
+    const std::optional<int> minPtMultiplicityCut_;
   };
 
 }  // namespace l1t

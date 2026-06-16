@@ -7,6 +7,7 @@
 
 #include "DataFormats/DetId/interface/DetId.h"
 #include "DataFormats/HGCRecHit/interface/HGCRecHitCollections.h"
+#include "DataFormats/ParticleFlowReco/interface/PFRecHitFwd.h"
 #include "Geometry/CaloTopology/interface/HGCalTopology.h"
 #include "Geometry/HGCalGeometry/interface/HGCalGeometry.h"
 #include "Geometry/Records/interface/CaloGeometryRecord.h"
@@ -65,7 +66,7 @@ public:
   void getEventSetupPerAlgorithm(const edm::EventSetup& es) override;
 
   void populate(const HGCRecHitCollection& hits) override;
-
+  void populate(const reco::PFRecHitCollection& hits) override {}
   // this is the method that will start the clusterisation (it is possible to invoke this method
   // more than once - but make sure it is with different hit collections (or else use reset)
 
@@ -90,7 +91,7 @@ public:
   void computeThreshold();
 
   static void fillPSetDescription(edm::ParameterSetDescription& iDesc) {
-    iDesc.add<std::vector<double>>("thresholdW0", {2.9, 2.9, 2.9});
+    iDesc.add<std::vector<double>>("thresholdW0", {2.9, 2.9, 2.9, 2.9});
     iDesc.add<double>("positionDeltaRho2", 1.69);
     iDesc.add<std::vector<double>>("deltac",
                                    {

@@ -326,8 +326,7 @@ void MuIsoValidation::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   h_nMuons->Fill(theMuonData);
 
   //Fill historgams concerning muon isolation
-  uint iMuon = 0;
-  for (MuonIterator muon = muonsHandle->begin(); muon != muonsHandle->end(); ++muon, ++iMuon) {
+  for (MuonIterator muon = muonsHandle->begin(); muon != muonsHandle->end(); ++muon) {
     ++nIncMuons;
     if (requireCombinedMuon) {
       if (muon->combinedMuon().isNull())
@@ -473,7 +472,7 @@ void MuIsoValidation::FillHistos() {
     h_1D[var]->Fill(theData[var]);
     if (cdCompNeeded[var])
       cd_plots[var]->Fill(theData[var]);  //right now, this is a regular PDF (just like h_1D)
-  }                                       //Finish 1D
+  }  //Finish 1D
 
   //----------Fill 2D histograms---------------
   for (int var1 = 0; var1 < NUM_VARS; ++var1) {

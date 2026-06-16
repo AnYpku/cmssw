@@ -1,6 +1,7 @@
 <ifrelease name="UBSAN">
   <flags REM_CXXFLAGS="-fno-omit-frame-pointer -fsanitize=undefined"/>
 </ifrelease>
+<use name="rootcling"/>
 <use name="boost_serialization"/>
 <use name="CondFormats/Serialization"/>
 <use name="DataFormats/Portable"/>
@@ -10,12 +11,6 @@
 <use name="FWCore/MessageLogger"/>
 <use name="FWCore/Utilities"/>
 <use name="Geometry/CaloTopology"/>
-<iftool name="cuda">
-  <use name="HeterogeneousCore/CUDACore"/>
-  <use name="HeterogeneousCore/CUDAUtilities"/>
-<else/>
-  <flags SKIP_FILES="%GPU.cc"/>
-</iftool>
 <use name="HeterogeneousCore/AlpakaCore"/>
 <use name="HeterogeneousCore/AlpakaInterface"/>
 <flags ALPAKA_BACKENDS="1"/>

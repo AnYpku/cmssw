@@ -1,7 +1,7 @@
 
 #include "CalibTracker/SiPixelQuality/interface/SiPixelTopoFinder.h"
 
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
 #include "Geometry/CommonTopologies/interface/PixelTopology.h"
 #include "DataFormats/TrackerCommon/interface/PixelBarrelName.h"
 #include "DataFormats/TrackerCommon/interface/PixelEndcapName.h"
@@ -68,7 +68,7 @@ void SiPixelTopoFinder::init(const TrackerGeometry* trackerGeometry,
         int value = roc;
         rocIdMap[key] = value;
       }  // column
-    }    // row
+    }  // row
 
     fRocIds_[detid] = rocIdMap;
 

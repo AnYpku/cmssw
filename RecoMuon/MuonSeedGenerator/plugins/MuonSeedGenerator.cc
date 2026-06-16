@@ -9,10 +9,10 @@
  */
 
 #include "RecoMuon/MuonSeedGenerator/plugins/MuonSeedGenerator.h"
-#include "RecoMuon/MuonSeedGenerator/src/MuonSeedFinder.h"
-#include "RecoMuon/MuonSeedGenerator/src/MuonSeedOrcaPatternRecognition.h"
-#include "RecoMuon/MuonSeedGenerator/src/MuonSeedFinder.h"
-#include "RecoMuon/MuonSeedGenerator/src/MuonSeedSimpleCleaner.h"
+#include "RecoMuon/MuonSeedGenerator/interface/MuonSeedFinder.h"
+#include "RecoMuon/MuonSeedGenerator/interface/MuonSeedOrcaPatternRecognition.h"
+#include "RecoMuon/MuonSeedGenerator/interface/MuonSeedFinder.h"
+#include "RecoMuon/MuonSeedGenerator/interface/MuonSeedSimpleCleaner.h"
 
 // Data Formats
 #include "DataFormats/TrajectorySeed/interface/TrajectorySeed.h"
@@ -24,7 +24,7 @@
 #include "RecoMuon/Records/interface/MuonRecoGeometryRecord.h"
 
 // Geometry
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 #include "TrackingTools/DetLayers/interface/DetLayer.h"
 
 #include "RecoMuon/MeasurementDet/interface/MuonDetLayerMeasurements.h"
@@ -122,3 +122,6 @@ void MuonSeedGenerator::fillDescriptions(edm::ConfigurationDescriptions& descrip
   desc.add<double>("deltaEtaCrackSearchWindow", 0.25);
   descriptions.add("muonSeedGenerator", desc);
 }
+
+#include "FWCore/Framework/interface/MakerMacros.h"
+DEFINE_FWK_MODULE(MuonSeedGenerator);

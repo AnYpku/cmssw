@@ -12,8 +12,8 @@
 #include "DataFormats/TrackerRecHit2D/interface/SiStripMatchedRecHit2D.h"
 #include "DataFormats/TrackerRecHit2D/interface/SiStripRecHit1D.h"
 #include "DataFormats/TrackerRecHit2D/interface/SiStripRecHit2D.h"
-#include "Geometry/CommonDetUnit/interface/TrackingGeometry.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonTopologies/interface/TrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
 #include "Geometry/TrackerGeometryBuilder/interface/StripGeomDetUnit.h"
 #include "Geometry/TrackerNumberingBuilder/interface/GeometricDet.h"
 
@@ -749,8 +749,8 @@ void SiStripGainsPCLHarvester::checkBookAPVColls(const edm::EventSetup& es) {
           Index++;
           NStripAPVs++;
         }  // loop on APVs
-      }    // if is Strips
-    }      // loop on dets
+      }  // if is Strips
+    }  // loop on dets
 
     for (unsigned int i = 0; i < Det.size();
          i++) {  //Make two loop such that the Pixel information is added at the end --> make transition simpler
@@ -799,10 +799,10 @@ void SiStripGainsPCLHarvester::checkBookAPVColls(const edm::EventSetup& es) {
             NPixelDets++;
 
           }  // loop on ROC cols
-        }    // loop on ROC rows
-      }      // if Pixel
-    }        // loop on Dets
-  }          //if (!bareTkGeomPtr_) ...
+        }  // loop on ROC rows
+      }  // if Pixel
+    }  // loop on Dets
+  }  //if (!bareTkGeomPtr_) ...
   bareTkGeomPtr_ = newBareTkGeomPtr;
 }
 

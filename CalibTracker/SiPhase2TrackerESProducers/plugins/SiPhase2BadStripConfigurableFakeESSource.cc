@@ -21,6 +21,7 @@
 #include "DataFormats/SiStripDetId/interface/SiStripDetId.h"
 #include "DataFormats/SiStripDetId/interface/StripSubdetector.h"
 #include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
+#include "FWCore/AbstractServices/interface/RandomNumberGenerator.h"
 #include "FWCore/Framework/interface/ESProducer.h"
 #include "FWCore/Framework/interface/EventSetupRecordIntervalFinder.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
@@ -29,8 +30,7 @@
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "FWCore/Utilities/interface/Exception.h"
-#include "FWCore/Utilities/interface/RandomNumberGenerator.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
 #include "Geometry/CommonTopologies/interface/PixelTopology.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/Records/interface/TrackerTopologyRcd.h"
@@ -55,6 +55,7 @@ public:
   static void fillDescriptions(edm::ConfigurationDescriptions&);
 
 private:
+  bool isConcurrentFinder() const override { return true; }
   std::map<unsigned short, unsigned short> clusterizeBadChannels(
       const std::vector<Phase2TrackerDigi::PackedDigiType>& maskedChannels);
 
@@ -179,9 +180,9 @@ SiPhase2BadStripConfigurableFakeESSource::ReturnType SiPhase2BadStripConfigurabl
           counter++;
 
         }  // if it's a strip module
-      }    // if it's OT
-    }      // if it's Tracker
-  }        // loop on DetIds
+      }  // if it's OT
+    }  // if it's Tracker
+  }  // loop on DetIds
 
   LogDebug("SiPhase2BadStripConfigurableFakeESSource") << "end of the detId loops";
 

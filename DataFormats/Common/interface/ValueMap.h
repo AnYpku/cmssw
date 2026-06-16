@@ -89,7 +89,7 @@ namespace edm {
       void throwFillSize() const {
         Exception::throwThis(errors::InvalidReference,
                              "ValueMap::Filler: handle and reference "
-                             "collections should the same size\n");
+                             "collections should have the same size\n");
       }
       void throwFillID(ProductID id) const {
         Exception e(errors::InvalidReference);
@@ -229,7 +229,7 @@ namespace edm {
     const_reference_type get(size_t idx) const { return values_[idx]; }
 
     //Used by ROOT storage
-    CMS_CLASS_VERSION(10)
+    CMS_CLASS_VERSION(3)
 
   protected:
     container values_;

@@ -5,7 +5,7 @@ import os
 from HeterogeneousCore.Common.PlatformStatus import PlatformStatus
 
 class ModuleTypeResolverAlpaka:
-    def __init__(self, accelerators, backend):
+    def __init__(self, accelerators, backend, synchronize):
         # first element is used as the default if nothing is set
         self._valid_backends = []
         if "gpu-nvidia" in accelerators:
@@ -23,6 +23,7 @@ class ModuleTypeResolverAlpaka:
             if backend != self._valid_backends[0]:
                 self._valid_backends.remove(backend)
                 self._valid_backends.insert(0, backend)
+        self._synchronize = synchronize
 
     def plugin(self):
         return "ModuleTypeResolverAlpaka"
@@ -31,6 +32,11 @@ class ModuleTypeResolverAlpaka:
         if module.type_().endswith("@alpaka"):
             defaultBackend = self._valid_backends[0]
             if hasattr(module, "alpaka"):
+                # Ensure the untrackedness already here, because the
+                # C++ ModuleTypeResolverAlpaka relies on the
+                # untrackedness (before the configuration validation)
+                if module.alpaka.isTracked():
+                    raise cms.EDMException(cms.edm.errors.Configuration, "The 'alpaka' PSet in module '{}' is tracked, but it should be untracked".format(module.label()))
                 if hasattr(module.alpaka, "backend"):
                     if module.alpaka.backend == "":
                         module.alpaka.backend = defaultBackend
@@ -42,6 +48,12 @@ class ModuleTypeResolverAlpaka:
                 module.alpaka = cms.untracked.PSet(
                     backend = cms.untracked.string(defaultBackend)
                 )
+            isDefaultValue = lambda v: \
+                isinstance(v, type(cms.optional.untracked.bool)) \
+                and not v.isTracked() \
+                and v.isCompatibleCMSType(cms.bool)
+            if not hasattr(module.alpaka, "synchronize") or isDefaultValue(module.alpaka.synchronize):
+                module.alpaka.synchronize = cms.untracked.bool(self._synchronize)
 
 class ProcessAcceleratorAlpaka(cms.ProcessAccelerator):
     """ProcessAcceleratorAlpaka itself does not define or inspect
@@ -50,36 +62,40 @@ class ProcessAcceleratorAlpaka(cms.ProcessAccelerator):
     accelerators that the concrete ProcessAccelerators (like
     ProcessAcceleratorCUDA) define.
     """
-    def __init__(self):
+    def __init__(self, backend = None, synchronize = False):
         super(ProcessAcceleratorAlpaka, self).__init__()
-        self._backend = None
+        self._backend = backend
+        self._synchronize = synchronize
 
     # User-facing interface
     def setBackend(self, backend):
         self._backend = backend
 
+    def setSynchronize(self, synchronize):
+        self._synchronize = synchronize
+
+    # Include the ProcessAcceleratorAlpaka configuration in the python dumps
+    def dumpPythonImpl(self, options) -> str:
+        args = []
+        if self._backend is not None:
+            args.append(options.indentation() + f"backend = '{self._backend}'")
+        if self._synchronize != False:
+            args.append(options.indentation() + f"synchronize = {self._synchronize}")
+        return ',\n'.join(args)
+
     # Framework-facing interface
     def moduleTypeResolver(self, accelerators):
-        return ModuleTypeResolverAlpaka(accelerators, self._backend)
+        return ModuleTypeResolverAlpaka(accelerators, self._backend, self._synchronize)
 
     def apply(self, process, accelerators):
         # Propagate the AlpakaService messages through the MessageLogger
         if not hasattr(process.MessageLogger, "AlpakaService"):
             process.MessageLogger.AlpakaService = cms.untracked.PSet()
 
-        # Check if the CPU backend is available
-        try:
-            if not "cpu" in accelerators:
-                raise False
+        # The CPU backend is effectively always available, ensure the AlpakaServiceSerialSync is loaded
+        if not hasattr(process, "AlpakaServiceSerialSync"):
             from HeterogeneousCore.AlpakaServices.AlpakaServiceSerialSync_cfi import AlpakaServiceSerialSync
-        except:
-            # the CPU backend is not available, do not load the AlpakaServiceSerialSync
-            if hasattr(process, "AlpakaServiceSerialSync"):
-                del process.AlpakaServiceSerialSync
-        else:
-            # the CPU backend is available, ensure the AlpakaServiceSerialSync is loaded
-            if not hasattr(process, "AlpakaServiceSerialSync"):
-                process.add_(AlpakaServiceSerialSync)
+            process.add_(AlpakaServiceSerialSync)
 
         # Check if CUDA is available, and if the system has at least one usable NVIDIA GPU
         try:

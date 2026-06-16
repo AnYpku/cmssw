@@ -1,28 +1,25 @@
-#include "DataFormats/PortableTestObjects/interface/alpaka/TestDeviceCollection.h"
+#include "DataFormats/HGCRecHit/interface/HGCRecHitCollections.h"
+#include "DataFormats/HGCalReco/interface/HGCalSoARecHitsHostCollection.h"
+#include "DataFormats/HGCalReco/interface/alpaka/HGCalSoARecHitsDeviceCollection.h"
 #include "FWCore/Framework/interface/ConsumesCollector.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/Utilities/interface/InputTag.h"
-#include "HeterogeneousCore/AlpakaCore/interface/alpaka/stream/EDProducer.h"
+#include "Geometry/HGCalGeometry/interface/HGCalGeometry.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/EDPutToken.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/ESGetToken.h"
+#include "HeterogeneousCore/AlpakaCore/interface/alpaka/stream/EDProducer.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
-#include "HeterogeneousCore/AlpakaTest/interface/AlpakaESTestRecords.h"
-#include "HeterogeneousCore/AlpakaTest/interface/alpaka/AlpakaESTestData.h"
 #include "RecoLocalCalo/HGCalRecAlgos/interface/RecHitTools.h"
-#include "Geometry/HGCalGeometry/interface/HGCalGeometry.h"
-#include "DataFormats/HGCRecHit/interface/HGCRecHitCollections.h"
-
-#include "DataFormats/HGCalReco/interface/HGCalSoARecHitsHostCollection.h"
-#include "DataFormats/HGCalReco/interface/alpaka/HGCalSoARecHitsDeviceCollection.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
   class HGCalSoARecHitsProducer : public stream::EDProducer<> {
   public:
     HGCalSoARecHitsProducer(edm::ParameterSet const& config)
-        : detector_(config.getParameter<std::string>("detector")),
+        : EDProducer(config),
+          detector_(config.getParameter<std::string>("detector")),
           initialized_(false),
           isNose_(detector_ == "HFNose"),
           maxNumberOfThickIndices_(config.getParameter<unsigned>("maxNumberOfThickIndices")),
@@ -69,7 +66,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       }
 
       // Allocate Host SoA will contain one entry for each RecHit above threshold
-      HGCalSoARecHitsHostCollection cells(index, iEvent.queue());
+      HGCalSoARecHitsHostCollection cells(iEvent.queue(), index);
       auto cellsView = cells.view();
 
       // loop over all hits and create the Hexel structure, skip energies below ecut
@@ -111,7 +108,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           entryInSoA.dim2() = position.y();
         }
         entryInSoA.dim3() = position.z();
-        entryInSoA.weight() = hgrh.energy();
+        entryInSoA.energy() = hgrh.energy();
+        entryInSoA.mipEnergy() = hgrh.energy();  // TODO: CHANGE TO MIP
         entryInSoA.sigmaNoise() = sigmaNoise;
         entryInSoA.layer() = layer;
         entryInSoA.recHitIndex() = i;
@@ -128,7 +126,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       if constexpr (!std::is_same_v<Device, alpaka_common::DevHost>) {
         // Trigger copy async to GPU
         //std::cout << "GPU" << std::endl;
-        HGCalSoARecHitsDeviceCollection deviceProduct{cells->metadata().size(), iEvent.queue()};
+        HGCalSoARecHitsDeviceCollection deviceProduct{iEvent.queue(), cells->metadata().size()};
         alpaka::memcpy(iEvent.queue(), deviceProduct.buffer(), cells.const_buffer());
         iEvent.emplace(deviceToken_, std::move(deviceProduct));
       } else {

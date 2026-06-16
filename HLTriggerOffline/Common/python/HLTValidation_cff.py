@@ -13,21 +13,32 @@ from HLTriggerOffline.Exotica.ExoticaValidation_cff import *
 from HLTriggerOffline.SMP.SMPValidation_cff import *
 from HLTriggerOffline.Btag.HltBtagValidation_cff import *
 from HLTriggerOffline.Egamma.HLTmultiTrackValidatorGsfTracks_cff import *
-from HLTriggerOffline.Muon.HLTmultiTrackValidatorMuonTracks_cff import *
 # HCAL
 from Validation.HcalDigis.HLTHcalDigisParam_cfi import *
 from Validation.HcalRecHits.HLTHcalRecHitParam_cfi import *
+## SiTracker Phase2
+from Validation.SiTrackerPhase2V.HLTPhase2TrackerValidationFirstStep_cff import *
+# Gen-level Validation
+from Validation.HLTrigger.HLTGenValidation_cff import *
+from Validation.Configuration.globalValidation_cff import *
+#MTD
+from Validation.MtdValidation.hltMtdValidation_cff import *
 
 # HGCAL Rechit Calibration
 from Validation.HGCalValidation.hgcalHitCalibrationDefault_cfi import hgcalHitCalibrationDefault as _hgcalHitCalibrationDefault
-hgcalHitCalibrationHLT = _hgcalHitCalibrationDefault.clone()
-hgcalHitCalibrationHLT.folder = "HGCalHitCalibrationHLT"
-hgcalHitCalibrationHLT.recHitsEE = cms.InputTag("HGCalRecHit", "HGCEERecHits", "HLT")
-hgcalHitCalibrationHLT.recHitsFH = cms.InputTag("HGCalRecHit", "HGCHEFRecHits", "HLT")
-hgcalHitCalibrationHLT.recHitsBH = cms.InputTag("HGCalRecHit", "HGCHEBRecHits", "HLT")
-hgcalHitCalibrationHLT.hgcalMultiClusters = cms.InputTag("None")
-hgcalHitCalibrationHLT.electrons = cms.InputTag("None")
-hgcalHitCalibrationHLT.photons = cms.InputTag("None")
+hgcalHitCalibrationHLT = _hgcalHitCalibrationDefault.clone(
+    folder = "HLT/HGCalHitCalibration",
+    recHitsEE = ("hltHGCalRecHit", "HGCEERecHits", "HLT"),
+    recHitsFH = ("hltHGCalRecHit", "HGCHEFRecHits", "HLT"),
+    recHitsBH = ("hltHGCalRecHit", "HGCHEBRecHits", "HLT"),
+    hgcalMultiClusters = "None",
+    electrons = "None",
+    photons = "None"
+)
+
+# HGCAL validation
+from Validation.HGCalValidation.HLTHGCalValidator_cff import *
+from RecoHGCal.TICL.HLTSimTracksters_cff import *
 
 # offline dqm:
 # from DQMOffline.Trigger.DQMOffline_Trigger_cff.py import *
@@ -46,17 +57,31 @@ hltassociation = cms.Sequence(
     +egammaSelectors
     +ExoticaValidationProdSeq
     +hltMultiTrackValidationGsfTracks
-    +hltMultiTrackValidationMuonTracks
+    +hltJetPreValidSeq
     )
 from Configuration.Eras.Modifier_phase1Pixel_cff import phase1Pixel
 
 # Temporary Phase-2 config
 from Configuration.Eras.Modifier_phase2_common_cff import phase2_common
-phase2_common.toReplaceWith(hltassociation, hltassociation.copyAndExclude([egammaSelectors,
-                                                                           ExoticaValidationProdSeq,
-                                                                           hltMultiTrackValidationGsfTracks,
-                                                                           hltMultiTrackValidationMuonTracks])
-)
+from Configuration.ProcessModifiers.ticl_barrel_cff import ticl_barrel
+
+# Create the modified sequence for phase 2
+_phase2_hltassociation = hltassociation.copyAndExclude([
+    egammaSelectors,
+    ExoticaValidationProdSeq,
+])
+
+# Add hltTrackerphase2ValidationSource to the sequence
+_phase2_hltassociation += hltTrackerphase2ValidationSource
+
+# Add HGCal SimTracksters
+_phase2_hltassociation += hltTiclSimTrackstersSeq
+
+# Add gentau reference for validation
+_phase2_hltassociation += tauPreValidSeq
+
+# Apply the modification
+phase2_common.toReplaceWith(hltassociation, _phase2_hltassociation)
 
 # hcal
 from DQMOffline.Trigger.HCALMonitoring_cff import *
@@ -80,11 +105,9 @@ hltvalidationWithMC = cms.Sequence(
     +hltHCALdigisAnalyzer+hltHCALRecoAnalyzer+hltHCALNoiseRates # HCAL
 )
 
-# Temporary Phase-2 config
 # Exclude everything except Muon and JetMET for now. Add HGCAL Hit Calibration
-from Configuration.Eras.Modifier_phase2_common_cff import phase2_common
 _hltvalidationWithMC_Phase2 = hltvalidationWithMC.copyAndExclude([#HLTMuonVal,
-  HLTTauVal,
+  #HLTTauVal,
   egammaValidationSequence,
   heavyFlavorValidationSequence,
   #HLTJetMETValSeq,
@@ -98,6 +121,16 @@ _hltvalidationWithMC_Phase2 = hltvalidationWithMC.copyAndExclude([#HLTMuonVal,
   hltHCALRecoAnalyzer,
   hltHCALNoiseRates])
 _hltvalidationWithMC_Phase2.insert(-1, hgcalHitCalibrationHLT)
+_hltvalidationWithMC_Phase2.insert(-1, hltHgcalValidator)
+_hltvalidationWithMC_Phase2.insert(0, hltGENValidation)
+
+# Add at the end only when mtd_at_hlt is active
+from Configuration.ProcessModifiers.mtd_at_hlt_cff import mtd_at_hlt
+mtd_at_hlt.toModify(
+    _hltvalidationWithMC_Phase2,
+    func=lambda seq: seq.insert(-1, hltMtdRecoValid)
+)
+
 phase2_common.toReplaceWith(hltvalidationWithMC, _hltvalidationWithMC_Phase2)
 
 hltvalidationWithData = cms.Sequence(
@@ -109,6 +142,41 @@ hltvalidation = cms.Sequence(
     hltvalidationWithData
 )
 
+# from Configuration.StandardSequences.Validation_cff import prevalidation
+# ImportError: cannot import name 'prevalidation' from partially initialized module 'Configuration.StandardSequences.Validation_cff' (most likely due to a circular import)
+hltprevalidation = cms.Sequence( cms.SequencePlaceholder("mix") * globalPrevalidation * hltassociation * metPreValidSeq * jetPreValidSeq )
+phase2_common.toReplaceWith(hltprevalidation, hltprevalidation.copyAndExclude([cms.SequencePlaceholder("mix"),globalPrevalidation,metPreValidSeq,jetPreValidSeq]))
+
+from Validation.Configuration.hltHGCalSimValid_cff import hltRecHitMapProducer as _hltRecHitMapProducer
+hltprevalidation.insert(-1, _hltRecHitMapProducer)
+
+from Validation.Configuration import hltHGCalSimValid_cff as _hltHGCalSimValid
+_hltprevalidation_Phase2 = hltprevalidation.copy()
+_hltprevalidation_Phase2.insert(-1, _hltHGCalSimValid.hltHgcalPrevalidation)
+phase2_common.toReplaceWith(hltprevalidation, _hltprevalidation_Phase2)
+
+from Validation.Configuration.hltBarrelSimValid_cff import *
+_hltprevalidation_Phase2_WithBarrel = _hltprevalidation_Phase2.copy()
+_hltprevalidation_Phase2_WithBarrel.insert(-1, hltBarrelPrevalidation)
+ticl_barrel.toReplaceWith(hltprevalidation, _hltprevalidation_Phase2_WithBarrel)
+
+hltvalidationCommon = hltvalidationCommon.copy()
+hltvalidationWithMC = hltvalidationWithMC.copy()
+hltvalidationWithData = hltvalidationWithData.copy()
+_hltvalidationWithMC_Phase2 = _hltvalidationWithMC_Phase2.copy()
+phase2_common.toReplaceWith(hltvalidationWithMC, _hltvalidationWithMC_Phase2)
+
+from Validation.HGCalValidation.HLTBarrelValidator_cff import hltBarrelValidator
+_hltvalidationWithMC_Phase2_WithBarrel = _hltvalidationWithMC_Phase2.copy()
+_hltvalidationWithMC_Phase2_WithBarrel.insert(-1, hltBarrelValidator)
+ticl_barrel.toReplaceWith(hltvalidationWithMC, _hltvalidationWithMC_Phase2_WithBarrel)
+
+hltvalidation = cms.Sequence(
+    hltvalidationCommon * # HCAL RecHit analyzer
+    hltvalidationWithMC *
+    hltvalidationWithData
+)
+
 # some hlt collections have no direct fastsim equivalent
 # remove the dependent modules for now
 # probably it would be rather easy to add or fake these collections
@@ -116,8 +184,7 @@ from Configuration.Eras.Modifier_fastSim_cff import fastSim
 fastSim.toReplaceWith(hltassociation, hltassociation.copyAndExclude([
     hltMultiTrackValidation,
     hltMultiPVValidation,
-    hltMultiTrackValidationGsfTracks,
-    hltMultiTrackValidationMuonTracks,
+    hltMultiTrackValidationGsfTracks
 ]))
 
 from Configuration.Eras.Modifier_pp_on_XeXe_2017_cff import pp_on_XeXe_2017
@@ -144,5 +211,3 @@ hltvalidation_withDQM = cms.Sequence(
     hltvalidation
     +trigdqm_forValidation
 )
-
-    

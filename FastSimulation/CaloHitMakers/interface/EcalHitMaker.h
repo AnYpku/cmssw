@@ -2,16 +2,12 @@
 #define FastSimulation_CaloHitMakers_EcalHitMaker_h
 
 #include "Geometry/CaloTopology/interface/CaloDirection.h"
-
-//#include "FastSimulation/Event/interface/FSimTrack.h"
 #include "FastSimulation/CaloHitMakers/interface/CaloHitMaker.h"
 #include "FastSimulation/CaloGeometryTools/interface/CaloPoint.h"
 #include "FastSimulation/CaloGeometryTools/interface/CaloSegment.h"
 #include "FastSimulation/CaloGeometryTools/interface/CrystalPad.h"
 #include "FastSimulation/CaloGeometryTools/interface/Crystal.h"
 #include "FastSimulation/Utilities/interface/FamosDebug.h"
-
-//#include <boost/cstdint.hpp>
 
 #include <vector>
 
@@ -28,7 +24,7 @@ public:
   typedef math::XYZVector XYZNormal;
   typedef ROOT::Math::Plane3D Plane3D;
 
-  EcalHitMaker(CaloGeometryHelper* calo,
+  EcalHitMaker(const CaloGeometryHelper* calo,
                const XYZPoint& ecalentrance,
                const DetId& cell,
                int onEcal,
@@ -114,7 +110,7 @@ public:
   /// get the map of the stored hits. Triggers the calculation of the grid if it has
   /// not been done.
 
-  const std::map<CaloHitID, float>& getHits() override;
+  const CaloHitMap& getHits() override;
 
   /// To retrieve the track
   const FSimTrack* getFSimTrack() const { return myTrack_; }

@@ -11,7 +11,7 @@
 #include "CalibTracker/Records/interface/SiStripDependentRecords.h"
 
 #include "DataFormats/Common/interface/Handle.h"
-#include "FWCore/Utilities/interface/RandomNumberGenerator.h"
+#include "FWCore/AbstractServices/interface/RandomNumberGenerator.h"
 
 //Data Formats
 #include "DataFormats/Common/interface/DetSetVector.h"
@@ -29,10 +29,10 @@
 #include "RecoLocalTracker/SiStripZeroSuppression/interface/SiStripFedZeroSuppression.h"
 
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 #include "Geometry/TrackerGeometryBuilder/interface/StripGeomDetUnit.h"
 #include "Geometry/CommonTopologies/interface/StripTopology.h"
-#include "Geometry/CommonDetUnit/interface/GeomDetType.h"
+#include "Geometry/CommonTopologies/interface/GeomDetType.h"
 
 #include "CLHEP/Random/RandFlat.h"
 

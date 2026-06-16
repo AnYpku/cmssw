@@ -27,7 +27,7 @@ Implementation:
 
 #include "Geometry/CSCGeometry/interface/CSCGeometry.h"
 #include "Geometry/Records/interface/MuonGeometryRecord.h"
-#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/GlobalTrackingGeometry.h"
 #include "Geometry/Records/interface/GlobalTrackingGeometryRecord.h"
 
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
@@ -82,7 +82,7 @@ public:
                   AlignableExtras* extras,
                   AlignmentParameterStore* alignmentParameterStore) override;
 
-  void startNewLoop() override{};
+  void startNewLoop() override {}
 
   void run(const edm::EventSetup& iSetup, const EventInfo& eventInfo) override;
 
@@ -490,7 +490,7 @@ void MuonAlignmentFromReference::run(const edm::EventSetup& iSetup, const EventI
             std::cout << "JUST AFTER PROCESS" << std::endl;
         }
       }  // end if track p is within range
-    }    // end if track pT is within range
+    }  // end if track pT is within range
     if (m_debug)
       std::cout << "JUST AFTER LOOP OVER trajTrackPairs" << std::endl;
 
@@ -726,10 +726,10 @@ void MuonAlignmentFromReference::processMuonResidualsFromTrack(MuonResidualsFrom
               assert(false);
 
           }  // end loop over chamberIds
-        }    // # crossed muon chambers ok
-      }      // endcap tracker ok
-    }        // chi2 ok
-  }          // trackerNumHits ok
+        }  // # crossed muon chambers ok
+      }  // endcap tracker ok
+    }  // chi2 ok
+  }  // trackerNumHits ok
 }
 
 void MuonAlignmentFromReference::terminate(const edm::EventSetup& iSetup) {
@@ -1615,7 +1615,11 @@ void MuonAlignmentFromReference::readTmpFiles() {
       throw cms::Exception("MuonAlignmentFromReference")
           << "file \"" << *fileName << "\" can't be opened (doesn't exist?)" << std::endl;
 
-    fread(&size, sizeof(int), 1, file);
+    if (fread(&size, sizeof(int), 1, file) != 1) {
+      fclose(file);
+      throw cms::Exception("MuonAlignmentFromReference")
+          << "file \"" << *fileName << "\" ended unexpectedly while reading the number of fitters" << std::endl;
+    }
     if (int(m_indexes.size()) != size)
       throw cms::Exception("MuonAlignmentFromReference")
           << "file \"" << *fileName << "\" has " << size << " fitters, but this job has " << m_indexes.size()
@@ -1625,7 +1629,12 @@ void MuonAlignmentFromReference::readTmpFiles() {
     for (std::vector<unsigned int>::const_iterator index = m_indexes.begin(); index != m_indexes.end(); ++index, ++i) {
       MuonResidualsTwoBin* fitter = m_fitterOrder[*index];
       unsigned int index_toread;
-      fread(&index_toread, sizeof(unsigned int), 1, file);
+      if (fread(&index_toread, sizeof(unsigned int), 1, file) != 1) {
+        fclose(file);
+        throw cms::Exception("MuonAlignmentFromReference")
+            << "file \"" << *fileName << "\" ended unexpectedly while reading fitter index at position " << i
+            << std::endl;
+      }
       if (*index != index_toread)
         throw cms::Exception("MuonAlignmentFromReference")
             << "file \"" << *fileName << "\" has index " << index_toread << " at position " << i
@@ -2027,7 +2036,7 @@ void MuonAlignmentFromReference::parseReference(align::Alignables& reference,
           }
         }
       }  // if (!parsing_error)
-    }    // endcap
+    }  // endcap
 
     if (parsing_error)
       throw cms::Exception("MuonAlignmentFromReference")

@@ -358,7 +358,7 @@ namespace cscdqm {
       mo->Fill(0.0);
       float alct_dav_number = mo->GetBinContent(1);
       if (getCSCHisto(h::CSC_DMB_FEB_DAV_EFFICIENCY, crateID, dmbID, mo)) {
-        mo->SetBinContent(1, ((float)alct_dav_number / (float)(DMBEvents)*100.0));
+        mo->SetBinContent(1, ((float)alct_dav_number / (float)(DMBEvents) * 100.0));
         mo->SetEntries((int)DMBEvents);
       }
     }
@@ -367,7 +367,7 @@ namespace cscdqm {
       mo->Fill(1.0);
       float tmb_dav_number = mo->GetBinContent(2);
       if (getCSCHisto(h::CSC_DMB_FEB_DAV_EFFICIENCY, crateID, dmbID, mo)) {
-        mo->SetBinContent(2, ((float)tmb_dav_number / (float)(DMBEvents)*100.0));
+        mo->SetBinContent(2, ((float)tmb_dav_number / (float)(DMBEvents) * 100.0));
         mo->SetEntries((int)DMBEvents);
       }
     }
@@ -376,7 +376,7 @@ namespace cscdqm {
       mo->Fill(2.0);
       float cfeb_dav2_number = mo->GetBinContent(3);
       if (getCSCHisto(h::CSC_DMB_FEB_DAV_EFFICIENCY, crateID, dmbID, mo)) {
-        mo->SetBinContent(3, ((float)cfeb_dav2_number / (float)(DMBEvents)*100.0));
+        mo->SetBinContent(3, ((float)cfeb_dav2_number / (float)(DMBEvents) * 100.0));
         mo->SetEntries((int)DMBEvents);
       }
     }
@@ -404,7 +404,7 @@ namespace cscdqm {
       float feb_combination_dav_number = mo->GetBinContent((int)(feb_combination_dav + 1.0));
       if (getCSCHisto(h::CSC_DMB_FEB_COMBINATIONS_DAV_EFFICIENCY, crateID, dmbID, mo)) {
         mo->SetBinContent((int)(feb_combination_dav + 1.0),
-                          ((float)feb_combination_dav_number / (float)(DMBEvents)*100.0));
+                          ((float)feb_combination_dav_number / (float)(DMBEvents) * 100.0));
         mo->SetEntries((int)DMBEvents);
       }
     }
@@ -412,12 +412,12 @@ namespace cscdqm {
     /** ALCT Found */
     if (data.nalct()) {
       const CSCALCTHeader* alctHeader = data.alctHeader();
-      int fwVersion = alctHeader->alctFirmwareVersion();
-      int fwRevision = alctHeader->alctFirmwareRevision();
       const CSCALCTTrailer* alctTrailer = data.alctTrailer();
       const CSCAnodeData* alctData = data.alctData();
 
       if (alctHeader && alctTrailer) {
+        int fwVersion = alctHeader->alctFirmwareVersion();
+        int fwRevision = alctHeader->alctFirmwareRevision();
         /** Summary plot for chambers with detected Run3 ALCT firmware */
         if (getEMUHisto(h::EMU_CSC_RUN3_ALCT_FORMAT, mo)) {
           /// ALCT Run3 firmware revision should be > 5
@@ -444,7 +444,7 @@ namespace cscdqm {
             if (config->getNEvents() > 0) {
               /** KK */
               /** h[hname]->SetBinContent(3, ((float)ALCTEvent/(float)(config->getNEvents()) * 100.0)); */
-              mo->SetBinContent(1, ((float)ALCTEvent / (float)(DMBEvents)*100.0));
+              mo->SetBinContent(1, ((float)ALCTEvent / (float)(DMBEvents) * 100.0));
               /** KKend */
               mo->SetEntries((int)DMBEvents);
             }
@@ -503,7 +503,7 @@ namespace cscdqm {
           mo->Fill(alctsDatas.size());
           int nALCT = (int)mo->GetBinContent((int)(alctsDatas.size() + 1));
           if (getCSCHisto(h::CSC_ALCT_NUMBER_EFFICIENCY, crateID, dmbID, mo))
-            mo->SetBinContent((int)(alctsDatas.size() + 1), (float)(nALCT) / (float)(DMBEvents)*100.0);
+            mo->SetBinContent((int)(alctsDatas.size() + 1), (float)(nALCT) / (float)(DMBEvents) * 100.0);
         }
 
         if (getCSCHisto(h::CSC_ALCT_WORD_COUNT, crateID, dmbID, mo))
@@ -790,7 +790,7 @@ namespace cscdqm {
         mo->Fill(0);
         int nALCT = (int)mo->GetBinContent(1);
         if (getCSCHisto(h::CSC_ALCT_NUMBER_EFFICIENCY, crateID, dmbID, mo))
-          mo->SetBinContent(1, (float)(nALCT) / (float)(DMBEvents)*100.0);
+          mo->SetBinContent(1, (float)(nALCT) / (float)(DMBEvents) * 100.0);
       }
 
       if ((alct_dav > 0) && (getCSCHisto(h::CSC_DMB_FEB_UNPACKED_VS_DAV, crateID, dmbID, mo))) {
@@ -871,12 +871,18 @@ namespace cscdqm {
           bool isRun3_df = false;
           bool isGEM_df = false;
           bool isTMB_hybrid_df = false;
+          bool isOTMB_ME11_Run3b = false;
           if (tmbHeader->FirmwareVersion() == 2020) {
-            // revision code major part: 0x0 - Run3 df, 0x1 - is legacy Run2 df
+            // revision code major part: 0x0 - Run3 df, 0x1 - is legacy Run2 df, 0x2 - Run3b df
             if (((tmbHeader->FirmwareRevision() >> 5) & 0xF) == 0x0)
               isRun3_df = true;
-            if (((tmbHeader->FirmwareRevision() >> 9) & 0xF) == 0x3)
+            if (((tmbHeader->FirmwareRevision() >> 9) & 0xF) == 0x3) {
               isGEM_df = true;
+              if (((tmbHeader->FirmwareRevision() >> 5) & 0xF) == 0x2) {
+                isRun3_df = true;
+                isOTMB_ME11_Run3b = true;
+              }
+            }
             if (((tmbHeader->FirmwareRevision() >> 9) & 0xF) == 0x4)
               isTMB_hybrid_df = true;
             /** Summary plot for chambers with detected (O)TMB Run3 data format */
@@ -959,12 +965,12 @@ namespace cscdqm {
                               /// Fill summary GEM VFATs occupancies plots for endcaps
                               if ((cid.endcap() == 1) && getEMUHisto(h::EMU_GEM_PLUS_ENDCAP_VFAT_OCCUPANCY, mo)) {
                                 int vfat = (pads_hits[0] / 192) + ((pads_hits[0] % 192) / 64) * 8;
-                                mo->Fill((cscPosition)*2 + i - 1, vfat);
+                                mo->Fill((cscPosition) * 2 + i - 1, vfat);
                               }
 
                               if ((cid.endcap() == 2) && getEMUHisto(h::EMU_GEM_MINUS_ENDCAP_VFAT_OCCUPANCY, mo)) {
                                 int vfat = (pads_hits[0] / 192) + ((pads_hits[0] % 192) / 64) * 8;
-                                mo->Fill((cscPosition)*2 + i - 1, vfat);
+                                mo->Fill((cscPosition) * 2 + i - 1, vfat);
                               }
 
                               for (unsigned pad = 0; pad < pads_hits.size(); pad++) {
@@ -1042,7 +1048,7 @@ namespace cscdqm {
                     }
                   }
                 }  // OTMB hasGEM
-              }    // isGEM_df
+              }  // isGEM_df
 
               /// Summary occupancy plot for Anode HMT bits from OTMB
               if (getEMUHisto(h::EMU_CSC_ANODE_HMT_REPORTING, mo)) {
@@ -1069,7 +1075,7 @@ namespace cscdqm {
                 mo->Fill(tmbHeader->clctHMT(), tmbHeader->alctHMT());
               }
 
-              if (getCSCHisto(h::CSC_CORR_LCT_RUN3_PATTERN_ID, crateID, dmbID, mo)) {
+              if (getCSCHisto(h::CSC_CORR_LCT_RUN3_PATTERN_ID, crateID, dmbID, mo) && !isOTMB_ME11_Run3b) {
                 mo->Fill(tmbHeader->run3_CLCT_patternID());
               }
             }
@@ -1166,7 +1172,7 @@ namespace cscdqm {
             }
 
             if (lct == 0) {
-              if (corr_lctsDatasTmp[lct].isRun3() || isTMB_hybrid_df) {
+              if (corr_lctsDatasTmp[lct].isRun3() || isTMB_hybrid_df || isOTMB_ME11_Run3b) {
                 /// Summary occupancy plot for combined HMT bits sent to MPC
                 if (getEMUHisto(h::EMU_CSC_LCT_HMT_REPORTING, mo)) {
                   if (corr_lctsDatasTmp[lct].getHMT() > 0)
@@ -1217,7 +1223,7 @@ namespace cscdqm {
 
           if (!corr_lctsDatas.empty()) {
             if (corr_lctsDatasTmp[0].isRun3()) {
-              if (getCSCHisto(h::CSC_CORR_LCT0_VS_LCT1_RUN3_PATTERN, crateID, dmbID, mo)) {
+              if (getCSCHisto(h::CSC_CORR_LCT0_VS_LCT1_RUN3_PATTERN, crateID, dmbID, mo) && !isOTMB_ME11_Run3b) {
                 int lct1_pattern = corr_lctsDatasTmp[1].getRun3Pattern();
                 if (!corr_lctsDatasTmp[1].isValid())
                   lct1_pattern = -1;
@@ -1228,7 +1234,7 @@ namespace cscdqm {
 
           for (uint32_t lct = 0; lct < corr_lctsDatas.size(); lct++) {
             /*
-                  LOG_DEBUG << "CorrelatedLCT Digis dump: "
+                  LOG_INFO << "CorrelatedLCT Digis dump: "
                             << "CorrLCT" << lct << " isRun3:" << corr_lctsDatasTmp[lct].isRun3()
                             << ", isValid: " << corr_lctsDatasTmp[lct].isValid()
                             << ", getStrip: " << corr_lctsDatasTmp[lct].getStrip()
@@ -1236,7 +1242,7 @@ namespace cscdqm {
                             << ", getQuality: " << corr_lctsDatasTmp[lct].getQuality()
                             << ", getFractionalStrip: " <<  corr_lctsDatasTmp[lct].getFractionalStrip()
                             << ", getQuartStrip: " << corr_lctsDatasTmp[lct].getQuartStripBit()
-                            << ", getEightStrip: " << corr_lctsDatasTmp[lct].getEightStripBit()
+                            << ", getEightStrip: " << corr_lctsDatasTmp[lct].getEighthStripBit()
                             << ",\n getSlope: " << corr_lctsDatasTmp[lct].getSlope() << std::dec
                             << ", getBend: " << corr_lctsDatasTmp[lct].getBend()
                             << ", getBX: " << corr_lctsDatasTmp[lct].getBX()
@@ -1245,7 +1251,7 @@ namespace cscdqm {
                             // << ", getRun3PatternID: " << std::dec << corr_lctsDatasTmp[lct].getRun3PatternID()
                             << ", getHMT: " << corr_lctsDatasTmp[lct].getHMT()
 			    << std::dec;
-*/
+			*/
             if (getCSCHisto(h::CSC_CORR_LCTXX_HITS_DISTRIBUTION, crateID, dmbID, lct, mo)) {
               mo->Fill(corr_lctsDatas[lct].getStrip(), corr_lctsDatas[lct].getKeyWG());
             }
@@ -1258,22 +1264,48 @@ namespace cscdqm {
               mo->Fill(corr_lctsDatas[lct].getStrip(2));
             }
 
-            if (corr_lctsDatas[lct].isRun3()) {
-              if (getCSCHisto(h::CSC_CORR_LCTXX_KEY_QUARTSTRIP, crateID, dmbID, lct, mo)) {
-                mo->Fill(corr_lctsDatas[lct].getStrip(4));
-              }
+            if (corr_lctsDatas[lct].isRun3() || isOTMB_ME11_Run3b) {
+              if (!isTMB_hybrid_df) {
+                if (getCSCHisto(h::CSC_CORR_LCTXX_KEY_QUARTSTRIP, crateID, dmbID, lct, mo)) {
+                  mo->Fill(corr_lctsDatas[lct].getStrip(4));
+                }
 
-              if (getCSCHisto(h::CSC_CORR_LCTXX_KEY_EIGHTSTRIP, crateID, dmbID, lct, mo)) {
-                mo->Fill(corr_lctsDatas[lct].getStrip(8));
-              }
+                if (getCSCHisto(h::CSC_CORR_LCTXX_KEY_EIGHTSTRIP, crateID, dmbID, lct, mo)) {
+                  mo->Fill(corr_lctsDatas[lct].getStrip(8));
+                }
 
-              if (getCSCHisto(h::CSC_CORR_LCTXX_RUN3_TO_RUN2_PATTERN, crateID, dmbID, lct, mo)) {
-                int bend = corr_lctsDatas[lct].getSlope() + ((corr_lctsDatas[lct].getBend() & 0x1) << 4);
-                mo->Fill(bend, corr_lctsDatas[lct].getPattern());
-              }
+                if (getCSCHisto(h::CSC_CORR_LCTXX_RUN3_TO_RUN2_PATTERN, crateID, dmbID, lct, mo)) {
+                  int bend = corr_lctsDatas[lct].getSlope() + ((corr_lctsDatas[lct].getBend() & 0x1) << 4);
+                  mo->Fill(bend, corr_lctsDatas[lct].getPattern());
+                }
 
-              if (getCSCHisto(h::CSC_CORR_LCTXX_BEND_VS_SLOPE, crateID, dmbID, lct, mo)) {
-                mo->Fill(corr_lctsDatas[lct].getSlope(), corr_lctsDatas[lct].getBend());
+                if (getCSCHisto(h::CSC_CORR_LCTXX_BEND_VS_SLOPE, crateID, dmbID, lct, mo)) {
+                  mo->Fill(corr_lctsDatas[lct].getSlope(), corr_lctsDatas[lct].getBend());
+                }
+
+                /// Fill Run3-b ME11-GEM LCT format histograms
+                if (isOTMB_ME11_Run3b) {
+                  if (getCSCHisto(h::CSC_CORR_LCTXX_RUN3B_SLOPE, crateID, dmbID, lct, mo)) {
+                    mo->Fill(corr_lctsDatasTmp[lct].getSlopeEx());
+                  }
+                  /// Check CSC-GEM match only ME11 quality
+                  if ((corr_lctsDatasTmp[lct].getQuality() == 5) || (corr_lctsDatasTmp[lct].getQuality() == 7)) {
+                    if (getCSCHisto(h::CSC_CORR_LCT_RUN3B_GEM_LAYERS, crateID, dmbID, mo)) {
+                      mo->Fill(corr_lctsDatasTmp[lct].getGemLayerUsedForSlopeComputation(), lct);
+                    }
+                    /// Fill summary histogram
+                    if (getEMUHisto(h::EMU_ME11_CORR_LCT_RUN3B_GEM_LAYERS, mo)) {
+                      if (cid.endcap() == 1) {  // z+
+                        mo->Fill(cscPosition,
+                                 4 + (lct * 2 + corr_lctsDatasTmp[lct].getGemLayerUsedForSlopeComputation()));
+                      }
+                      if (cid.endcap() == 2) {  // z-
+                        mo->Fill(cscPosition,
+                                 3 - (lct * 2 + corr_lctsDatasTmp[lct].getGemLayerUsedForSlopeComputation()));
+                      }
+                    }
+                  }
+                }
               }
 
               if (getCSCHisto(h::CSC_CORR_LCTXX_KEY_STRIP_TYPE, crateID, dmbID, lct, mo)) {
@@ -1309,7 +1341,7 @@ namespace cscdqm {
               }
 
               if (!alctsDatas.empty() && getCSCHisto(h::CSC_RUN3_HMT_COINCIDENCE_MATCH, crateID, dmbID, mo) &&
-                  corr_lctsDatasTmp[0].isRun3() && (corr_lctsDatasTmp[0].getHMT() > 0) &&
+                  (corr_lctsDatasTmp[0].isRun3() || isOTMB_ME11_Run3b) && (corr_lctsDatasTmp[0].getHMT() > 0) &&
                   (corr_lctsDatasTmp[0].getHMT() <= 0xF) && alctsDatas[0].isValid()) {
                 mo->Fill(1);  // Run3 HMT+ALCT match
               }
@@ -1389,7 +1421,7 @@ namespace cscdqm {
             config->setChamberCounterValue(CLCT_TRIGGERS, crateID, dmbID, CLCTEvent);
             if (getCSCHisto(h::CSC_CSC_EFFICIENCY, crateID, dmbID, mo)) {
               if (config->getNEvents() > 0) {
-                mo->SetBinContent(2, ((float)CLCTEvent / (float)(DMBEvents)*100.0));
+                mo->SetBinContent(2, ((float)CLCTEvent / (float)(DMBEvents) * 100.0));
                 mo->SetEntries(DMBEvents);
               }
             }
@@ -1440,7 +1472,7 @@ namespace cscdqm {
             mo->Fill(clctsDatas.size());
             int nCLCT = (int)mo->GetBinContent((int)(clctsDatas.size() + 1));
             if (getCSCHisto(h::CSC_CLCT_NUMBER, crateID, dmbID, mo))
-              mo->SetBinContent((int)(clctsDatas.size() + 1), (float)(nCLCT) / (float)(DMBEvents)*100.0);
+              mo->SetBinContent((int)(clctsDatas.size() + 1), (float)(nCLCT) / (float)(DMBEvents) * 100.0);
           }
 
           if (clctsDatas.size() == 1) {
@@ -1804,7 +1836,7 @@ namespace cscdqm {
         mo->Fill(0);
         int nCLCT = (int)mo->GetBinContent(1);
         if (getCSCHisto(h::CSC_CLCT_NUMBER, crateID, dmbID, mo))
-          mo->SetBinContent(1, (float)(nCLCT) / (float)(DMBEvents)*100.0);
+          mo->SetBinContent(1, (float)(nCLCT) / (float)(DMBEvents) * 100.0);
       }
       if ((tmb_dav > 0) && (getCSCHisto(h::CSC_DMB_FEB_UNPACKED_VS_DAV, crateID, dmbID, mo))) {
         mo->Fill(1.0, 1.0);
@@ -1886,7 +1918,7 @@ namespace cscdqm {
             config->setChamberCounterValue(CFEB_TRIGGERS, crateID, dmbID, CFEBEvent);
             if (getCSCHisto(h::CSC_CSC_EFFICIENCY, crateID, dmbID, mo)) {
               if (config->getNEvents() > 0) {
-                mo->SetBinContent(3, ((float)CFEBEvent / (float)(DMBEvents)*100.0));
+                mo->SetBinContent(3, ((float)CFEBEvent / (float)(DMBEvents) * 100.0));
                 mo->SetEntries((int)DMBEvents);
               }
             }

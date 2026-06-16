@@ -14,6 +14,7 @@
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/Framework/interface/ConsumesCollector.h"
+#include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "TrackingTools/TrajectoryState/interface/FreeTrajectoryState.h"
 #include "TrackingTools/PatternTools/interface/TSCBLBuilderNoMaterial.h"
 #include "TrackingTools/PatternTools/interface/TSCPBuilderNoMaterial.h"
@@ -22,12 +23,12 @@
 
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
-#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/GlobalTrackingGeometry.h"
 #include "Geometry/Records/interface/GlobalTrackingGeometryRecord.h"
 
 #include "DataFormats/GeometrySurface/interface/Surface.h"
 #include "DataFormats/GeometrySurface/interface/GloballyPositioned.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 #include "DataFormats/GeometryVector/interface/GlobalVector.h"
 #include "DataFormats/GeometryVector/interface/GlobalPoint.h"
 
@@ -73,6 +74,17 @@ public:
         beamSpotToken_(iC.consumes<reco::BeamSpot>(edm::InputTag("offlineBeamSpot"))),
         globalTrackingGeomToken_(iC.esConsumes()),
         theMFToken_(iC.esConsumes()) {}
+
+  static void fillPSetDescription(edm::ParameterSetDescription& desc) {
+    desc.add<double>("ptMin", 0.9);
+    desc.add<double>("minRapidity", -2.4);
+    desc.add<double>("maxRapidity", 2.4);
+    desc.add<double>("tip", 100.0);
+    desc.add<double>("lip", 100.0);
+    desc.add<int>("minHit", 0);
+    desc.add<bool>("chargedOnly", true);
+    desc.add<std::vector<int> >("pdgId", {});
+  }
 
   void select(const edm::Handle<collection>& c, const edm::Event& event, const edm::EventSetup& setup) {
     selected_.clear();

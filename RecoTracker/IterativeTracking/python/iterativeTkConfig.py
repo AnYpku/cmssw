@@ -2,6 +2,7 @@
 # iterations. It is used in RECO, DQM, and VALIDATION. Note that here
 # InitialStepPreSplitting is not counted as an iteration.
 import FWCore.ParameterSet.Config as cms
+import copy
 
 _defaultEraName = ""
 _nonDefaultEraNames = ["trackingLowPU", "trackingPhase1", "trackingPhase2PU140"]
@@ -50,19 +51,34 @@ _iterations_trackingPhase1 = [
 
 from Configuration.ProcessModifiers.displacedTracking_cff import displacedTracking
 displacedTracking.toModify(_iterations_trackingPhase1, func=lambda x: x.append('DisplacedGeneralStep'))
-
 _iterations_trackingPhase1.append('JetCoreRegionalStep')
 
-_iterations_trackingPhase2PU140 = [
+from Configuration.ProcessModifiers.trackingIters01_cff import trackingIters01
+trackingIters01.toModify(
+    _iterations_trackingPhase1,
+    func=lambda x: x.clear() or x.extend(["InitialStep", "HighPtTripletStep"])
+)
+
+_iterations_trackingPhase2PU140_VS = cms.PSet(names = cms.vstring(
     "InitialStep",
     "HighPtTripletStep",
     "LowPtQuadStep",
     "LowPtTripletStep",
     "DetachedQuadStep",
     "PixelPairStep",
-]
+))
 from Configuration.ProcessModifiers.vectorHits_cff import vectorHits
-vectorHits.toModify(_iterations_trackingPhase2PU140, func=lambda x: x.append('PixelLessStep'))
+vectorHits.toModify(_iterations_trackingPhase2PU140_VS.names, func=lambda x: x.append('PixelLessStep'))
+from Configuration.ProcessModifiers.jetCoreInPhase2_cff import jetCoreInPhase2
+jetCoreInPhase2.toModify(_iterations_trackingPhase2PU140_VS.names, func=lambda x: x.append('JetCoreRegionalStep'))
+trackingIters01.toModify(_iterations_trackingPhase2PU140_VS, names = ["InitialStep", "HighPtTripletStep"])
+
+# apply all procModifiers before this
+_iterations_trackingPhase2PU140 = _iterations_trackingPhase2PU140_VS.names.value()
+
+from Configuration.ProcessModifiers.jetCoreInPhase2_cff import jetCoreInPhase2
+jetCoreInPhase2.toModify(_iterations_trackingPhase2PU140, func=lambda x: x.append('JetCoreRegionalStep'))
+
 _iterations_muonSeeded = [
     "MuonSeededStepInOut",
     "MuonSeededStepOutIn",
@@ -72,10 +88,13 @@ _iterations_muonSeeded_trackingPhase1 = [
     "MuonSeededStepOutIn",
 ]
 #Phase2
-_iterations_muonSeeded_trackingPhase2PU140 = [
+_iterations_muonSeeded_trackingPhase2PU140_VS = cms.PSet(names = cms.vstring(
     "MuonSeededStepInOut",
     "MuonSeededStepOutIn",
-]
+))
+trackingIters01.toModify(_iterations_muonSeeded_trackingPhase2PU140_VS, names = [])
+_iterations_muonSeeded_trackingPhase2PU140 = _iterations_muonSeeded_trackingPhase2PU140_VS.names.value()
+
 _multipleSeedProducers = {
     "MixedTripletStep": ["A", "B"],
     "TobTecStep": ["Pair", "Tripl"],
@@ -170,14 +189,18 @@ def iterationAlgos(postfix, includeSequenceName=False):
     else:
         return [_modulePrefix(i) for i in iterations]
 
+from Configuration.ProcessModifiers.seedingLST_cff import seedingLST
+from Configuration.ProcessModifiers.trackingLST_cff import trackingLST
 def _seedOrTrackProducers(postfix, typ):
     ret = []
     iters = globals()["_iterations"+postfix]
+    _iters = copy.deepcopy(iters)
     if typ == "Seeds":
         multipleSeedProducers = globals()["_multipleSeedProducers"+postfix]
     else:
         multipleSeedProducers = None
-    for i in iters:
+        (seedingLST | trackingLST).toModify(_iters, func=lambda x: x.remove('InitialStep'))
+    for i in _iters:
         seeder = _modulePrefix(i)+typ
         if multipleSeedProducers is not None and i in multipleSeedProducers:
             ret.extend([seeder+m for m in multipleSeedProducers[i]])

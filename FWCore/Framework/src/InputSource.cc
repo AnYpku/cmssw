@@ -54,11 +54,9 @@ namespace edm {
         maxSecondsUntilRampdown_(desc.maxSecondsUntilRampdown_),
         processingMode_(RunsLumisAndEvents),
         moduleDescription_(desc.moduleDescription_),
-        productRegistry_(desc.productRegistry_),
         processHistoryRegistry_(new ProcessHistoryRegistry),
         branchIDListHelper_(desc.branchIDListHelper_),
         processBlockHelper_(desc.processBlockHelper_),
-        thinnedAssociationsHelper_(desc.thinnedAssociationsHelper_),
         processGUID_(edm::processGUID().toBinary()),
         time_(),
         newRun_(true),
@@ -67,8 +65,7 @@ namespace edm {
         state_(),
         runAuxiliary_(),
         lumiAuxiliary_(),
-        statusFileName_(),
-        numberOfEventsBeforeBigSkip_(0) {
+        statusFileName_() {
     if (pset.getUntrackedParameter<bool>("writeStatusFile", false)) {
       std::ostringstream statusfilename;
       statusfilename << "source_" << getpid();
@@ -137,7 +134,7 @@ namespace edm {
     ItemTypeInfo itemTypeInfo = callWithTryCatchAndPrint<ItemTypeInfo>([this]() { return getNextItemType(); },
                                                                        "Calling InputSource::getNextItemType");
 
-    if (itemTypeInfo == ItemType::IsEvent && processingMode() != RunsLumisAndEvents) {
+    if (itemTypeInfo.itemType() == ItemType::IsEvent && processingMode() != RunsLumisAndEvents) {
       skipEvents(1);
       return nextItemType_();
     }
@@ -152,43 +149,43 @@ namespace edm {
     ItemType oldType = state_.itemType();
     if (eventLimitReached()) {
       // If the maximum event limit has been reached, stop.
-      state_ = ItemType::IsStop;
+      state_ = ItemTypeInfo::isStop();
     } else if (lumiLimitReached()) {
       // If the maximum lumi limit has been reached, stop
       // when reaching a new file, run, or lumi.
       if (oldType == ItemType::IsInvalid || oldType == ItemType::IsFile || oldType == ItemType::IsRun ||
           processingMode() != RunsLumisAndEvents) {
-        state_ = ItemType::IsStop;
+        state_ = ItemTypeInfo::isStop();
       } else {
         ItemTypeInfo newState = nextItemType_();
         if (newState == ItemType::IsEvent) {
           assert(processingMode() == RunsLumisAndEvents);
-          state_ = ItemType::IsEvent;
+          state_ = ItemTypeInfo::isEvent();
         } else {
-          state_ = ItemType::IsStop;
+          state_ = ItemTypeInfo::isStop();
         }
       }
     } else {
       ItemTypeInfo newState = nextItemType_();
-      if (newState == ItemType::IsStop) {
-        state_ = ItemType::IsStop;
-      } else if (newState == ItemType::IsSynchronize) {
-        state_ = ItemType::IsSynchronize;
-      } else if (newState == ItemType::IsFile || oldType == ItemType::IsInvalid) {
-        state_ = ItemType::IsFile;
-      } else if (newState == ItemType::IsRun || oldType == ItemType::IsFile) {
+      if (newState.itemType() == ItemType::IsStop) {
+        state_ = ItemTypeInfo::isStop();
+      } else if (newState.itemType() == ItemType::IsSynchronize) {
+        state_ = ItemTypeInfo::isSynchronize();
+      } else if (newState.itemType() == ItemType::IsFile || oldType == ItemType::IsInvalid) {
+        state_ = ItemTypeInfo::isFile();
+      } else if (newState.itemType() == ItemType::IsRun || oldType == ItemType::IsFile) {
         runAuxiliary_ = readRunAuxiliary();
-        state_ = (newState == ItemType::IsRun) ? newState : ItemTypeInfo(ItemType::IsRun);
-      } else if (newState == ItemType::IsLumi || oldType == ItemType::IsRun) {
+        state_ = (newState.itemType() == ItemType::IsRun) ? newState : ItemTypeInfo::isRun();
+      } else if (newState.itemType() == ItemType::IsLumi || oldType == ItemType::IsRun) {
         assert(processingMode() != Runs);
         lumiAuxiliary_ = readLuminosityBlockAuxiliary();
-        state_ = (newState == ItemType::IsLumi) ? newState : ItemTypeInfo(ItemType::IsLumi);
+        state_ = (newState.itemType() == ItemType::IsLumi) ? newState : ItemTypeInfo::isLumi();
       } else {
         assert(processingMode() == RunsLumisAndEvents);
-        state_ = ItemType::IsEvent;
+        state_ = ItemTypeInfo::isEvent();
       }
     }
-    if (state_ == ItemType::IsStop) {
+    if (state_.itemType() == ItemType::IsStop) {
       lumiAuxiliary_.reset();
       runAuxiliary_.reset();
     }
@@ -205,7 +202,7 @@ namespace edm {
                                                                     "Calling InputSource::readRunAuxiliary_");
   }
 
-  void InputSource::doBeginJob() { this->beginJob(); }
+  void InputSource::doBeginJob(edm::ProductRegistry const& iReg) { this->beginJob(iReg); }
 
   void InputSource::doEndJob() { endJob(); }
 
@@ -221,7 +218,7 @@ namespace edm {
 
   // Return a dummy file block.
   std::shared_ptr<FileBlock> InputSource::readFile() {
-    assert(state_ == ItemType::IsFile);
+    assert(state_.itemType() == ItemType::IsFile);
     assert(!limitReached());
     return callWithTryCatchAndPrint<std::shared_ptr<FileBlock> >([this]() { return readFile_(); },
                                                                  "Calling InputSource::readFile_");
@@ -300,7 +297,7 @@ namespace edm {
   }
 
   void InputSource::readEvent(EventPrincipal& ep, StreamContext& streamContext) {
-    assert(state_ == ItemType::IsEvent);
+    assert(state_.itemType() == ItemType::IsEvent);
     assert(!eventLimitReached());
     {
       // block scope, in order to issue the PostSourceEvent signal before calling postRead and issueReports
@@ -436,7 +433,7 @@ namespace edm {
                                                                         "Calling InputSource::reverseState__");
   }
 
-  void InputSource::beginJob() {}
+  void InputSource::beginJob(ProductRegistry const&) {}
 
   void InputSource::endJob() {}
 
@@ -467,46 +464,46 @@ namespace edm {
 
   InputSource::EventSourceSentry::EventSourceSentry(InputSource const& source, StreamContext& sc)
       : source_(source), sc_(sc) {
-    source.actReg()->preSourceSignal_(sc_.streamID());
+    source.actReg()->preSourceSignal_.emit(sc_.streamID());
   }
 
-  InputSource::EventSourceSentry::~EventSourceSentry() { source_.actReg()->postSourceSignal_(sc_.streamID()); }
+  InputSource::EventSourceSentry::~EventSourceSentry() { source_.actReg()->postSourceSignal_.emit(sc_.streamID()); }
 
   InputSource::LumiSourceSentry::LumiSourceSentry(InputSource const& source, LuminosityBlockIndex index)
       : source_(source), index_(index) {
-    source_.actReg()->preSourceLumiSignal_(index_);
+    source_.actReg()->preSourceLumiSignal_.emit(index_);
   }
 
-  InputSource::LumiSourceSentry::~LumiSourceSentry() { source_.actReg()->postSourceLumiSignal_(index_); }
+  InputSource::LumiSourceSentry::~LumiSourceSentry() { source_.actReg()->postSourceLumiSignal_.emit(index_); }
 
   InputSource::RunSourceSentry::RunSourceSentry(InputSource const& source, RunIndex index)
       : source_(source), index_(index) {
-    source_.actReg()->preSourceRunSignal_(index_);
+    source_.actReg()->preSourceRunSignal_.emit(index_);
   }
 
-  InputSource::RunSourceSentry::~RunSourceSentry() { source_.actReg()->postSourceRunSignal_(index_); }
+  InputSource::RunSourceSentry::~RunSourceSentry() { source_.actReg()->postSourceRunSignal_.emit(index_); }
 
   InputSource::ProcessBlockSourceSentry::ProcessBlockSourceSentry(InputSource const& source,
                                                                   std::string const& processName)
       : source_(source), processName_(processName) {
-    source_.actReg()->preSourceProcessBlockSignal_();
+    source_.actReg()->preSourceProcessBlockSignal_.emit();
   }
 
   InputSource::ProcessBlockSourceSentry::~ProcessBlockSourceSentry() {
-    source_.actReg()->postSourceProcessBlockSignal_(processName_);
+    source_.actReg()->postSourceProcessBlockSignal_.emit(processName_);
   }
 
   InputSource::FileOpenSentry::FileOpenSentry(InputSource const& source, std::string const& lfn)
       : post_(source.actReg()->postOpenFileSignal_), lfn_(lfn) {
-    source.actReg()->preOpenFileSignal_(lfn);
+    source.actReg()->preOpenFileSignal_.emit(lfn);
   }
 
-  InputSource::FileOpenSentry::~FileOpenSentry() { post_(lfn_); }
+  InputSource::FileOpenSentry::~FileOpenSentry() { post_.emit(lfn_); }
 
   InputSource::FileCloseSentry::FileCloseSentry(InputSource const& source, std::string const& lfn)
       : post_(source.actReg()->postCloseFileSignal_), lfn_(lfn) {
-    source.actReg()->preCloseFileSignal_(lfn);
+    source.actReg()->preCloseFileSignal_.emit(lfn);
   }
 
-  InputSource::FileCloseSentry::~FileCloseSentry() { post_(lfn_); }
+  InputSource::FileCloseSentry::~FileCloseSentry() { post_.emit(lfn_); }
 }  // namespace edm

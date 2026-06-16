@@ -20,7 +20,7 @@
 #include "FWCore/Utilities/interface/InputTag.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "DataFormats/Math/interface/LorentzVector.h"
 
@@ -168,7 +168,7 @@ void L1TruthTrackFastJetProducer::produce(edm::Event& iEvent, const edm::EventSe
                                  iterL1Track->momentum().mag());
     JetInputs.push_back(psuedoJet);                     // input tracks for clustering
     JetInputs.back().set_user_index(this_l1track - 1);  // save track index in the collection
-  }                                                     // end loop over tracks
+  }  // end loop over tracks
 
   fastjet::ClusterSequence cs(JetInputs, jet_def);  // define the output jet collection
   std::vector<fastjet::PseudoJet> JetOutputs =

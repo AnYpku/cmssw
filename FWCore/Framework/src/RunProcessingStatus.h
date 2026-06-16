@@ -1,3 +1,4 @@
+// -*- C++ -*-
 #ifndef FWCore_Framework_RunProcessingStatus_h
 #define FWCore_Framework_RunProcessingStatus_h
 //
@@ -22,7 +23,7 @@
 
 #include <atomic>
 #include <memory>
-#include <vector>
+#include <optional>
 
 namespace edm {
 
@@ -36,8 +37,9 @@ namespace edm {
     RunProcessingStatus(RunProcessingStatus const&) = delete;
     RunProcessingStatus const& operator=(RunProcessingStatus const&) = delete;
 
-    WaitingTaskHolder& holderOfTaskInProcessRuns() { return holderOfTaskInProcessRuns_; }
-    void setHolderOfTaskInProcessRuns(WaitingTaskHolder const& holder) { holderOfTaskInProcessRuns_ = holder; }
+    std::optional<WaitingTaskHolder> releaseHolderOfTaskInProcessRuns();
+    void setHolderOfTaskInProcessRuns(WaitingTaskHolder const& holder);
+    void setHolderOfTaskInProcessRunsDoneWaiting();
 
     void setResumer(LimitedTaskQueue::Resumer iResumer) { globalRunQueueResumer_ = std::move(iResumer); }
     void resumeGlobalRunQueue() {
@@ -52,23 +54,15 @@ namespace edm {
     void resetBeginResources();
     void resetEndResources();
 
-    EventSetupImpl const& eventSetupImpl(unsigned subProcessIndex) const {
-      return *eventSetupImpls_.at(subProcessIndex);
-    }
+    EventSetupImpl const& eventSetupImpl() const { return *eventSetupImpl_; }
 
-    EventSetupImpl const& eventSetupImplEndRun(unsigned subProcessIndex) const {
-      return *eventSetupImplsEndRun_.at(subProcessIndex);
-    }
+    std::shared_ptr<const EventSetupImpl>& eventSetupImplPtr() { return eventSetupImpl_; }
 
-    std::vector<std::shared_ptr<const EventSetupImpl>>& eventSetupImpls() { return eventSetupImpls_; }
-    std::vector<std::shared_ptr<const EventSetupImpl>> const& eventSetupImpls() const { return eventSetupImpls_; }
+    EventSetupImpl const& eventSetupImplEndRun() const { return *eventSetupImplEndRun_; }
+
+    std::shared_ptr<const EventSetupImpl>& eventSetupImplPtrEndRun() { return eventSetupImplEndRun_; }
 
     WaitingTaskList& endIOVWaitingTasks() { return endIOVWaitingTasks_; }
-
-    std::vector<std::shared_ptr<const EventSetupImpl>>& eventSetupImplsEndRun() { return eventSetupImplsEndRun_; }
-    std::vector<std::shared_ptr<const EventSetupImpl>> const& eventSetupImplsEndRun() const {
-      return eventSetupImplsEndRun_;
-    }
 
     WaitingTaskList& endIOVWaitingTasksEndRun() { return endIOVWaitingTasksEndRun_; }
 
@@ -101,12 +95,12 @@ namespace edm {
     void setEndingEventSetupSucceeded(bool val) { endingEventSetupSucceeded_ = val; }
 
   private:
-    WaitingTaskHolder holderOfTaskInProcessRuns_;
+    std::optional<WaitingTaskHolder> holderOfTaskInProcessRuns_;
     LimitedTaskQueue::Resumer globalRunQueueResumer_;
     std::shared_ptr<RunPrincipal> runPrincipal_;
-    std::vector<std::shared_ptr<const EventSetupImpl>> eventSetupImpls_;
+    std::shared_ptr<const EventSetupImpl> eventSetupImpl_;
     WaitingTaskList endIOVWaitingTasks_;
-    std::vector<std::shared_ptr<const EventSetupImpl>> eventSetupImplsEndRun_;
+    std::shared_ptr<const EventSetupImpl> eventSetupImplEndRun_;
     WaitingTaskList endIOVWaitingTasksEndRun_;
     WaitingTaskHolder globalEndRunHolder_;
     std::atomic<unsigned int> nStreamsStillProcessingBeginRun_;
@@ -117,6 +111,7 @@ namespace edm {
     bool cleaningUpAfterException_{false};
     bool stopBeforeProcessingRun_{false};
     bool endingEventSetupSucceeded_{true};
+    std::atomic<bool> holderOfTaskInProcessRunsIsDone_{false};
   };
 }  // namespace edm
 

@@ -85,6 +85,7 @@ Run3FlatOpticsGaussVtxSigmaZ5p3cmSmearingParameters = cms.PSet(
 # Can restore correlation via MinT += (MinZ - MaxZ)/2 and MaxT += (MaxZ - MinZ)/2
 # in [ns] units (recall c_light = 29.98cm/ns)
 FlatVtxSmearingParameters = cms.PSet(
+    UseCylindricalCoords = cms.bool(False),
     MaxZ = cms.double(5.3),
     MaxX = cms.double(0.0015),
     MaxY = cms.double(0.0015),
@@ -94,6 +95,17 @@ FlatVtxSmearingParameters = cms.PSet(
     MaxT = cms.double(0.177),
     MinT = cms.double(-0.177)
 )
+
+FlatVtxDisplacedParameters = cms.PSet(
+    UseCylindricalCoords = cms.bool(True),
+    MaxR = cms.double(10.1),
+    MinR = cms.double(10.0),
+    MaxZ = cms.double(0.001),
+    MinZ = cms.double(0.000),
+    MaxT = cms.double(0.001),
+    MinT = cms.double(0.000),
+)
+
 #############################################
 # Beta functions smearing (pp 7+7 TeV)
 #
@@ -1069,6 +1081,58 @@ Realistic2023PbPbCollisionVtxSmearingParameters = cms.PSet(
     X0 = cms.double(0.0394727),
     Y0 = cms.double(-0.0157799),
     Z0 = cms.double(0.3064731)
+)
+
+# From 2024 ppRef data run 387590-387721
+Realistic2024ppRefCollisionVtxSmearingParameters = cms.PSet(
+    Phi = cms.double(0.0),
+    BetaStar = cms.double(310),
+    Emittance = cms.double(8.636e-08),
+    Alpha = cms.double(0.0),
+    SigmaZ = cms.double(5.82376),
+    TimeOffset = cms.double(0.0),
+    X0 = cms.double(0.0244619),
+    Y0 = cms.double(-0.0169181),
+    Z0 = cms.double(0.3513597)
+)
+
+# From 2024 PbPb data run 387998-388425
+Realistic2024PbPbCollisionVtxSmearingParameters = cms.PSet(
+    Phi = cms.double(0.0),
+    BetaStar = cms.double(50),
+    Emittance = cms.double(6.684e-08),
+    Alpha = cms.double(0.0),
+    SigmaZ = cms.double(4.9068349),
+    TimeOffset = cms.double(0.0),
+    X0 = cms.double(0.0302546),
+    Y0 = cms.double(-0.0170382),
+    Z0 = cms.double(0.2290316)
+)
+
+# Estimate for the 2025 OO beam conditions, based on the 2024 PbPb beam width parameters from Realistic2024PbPbCollisionVtxSmearingParameters with the pp beam centroid from runs 392109 and 392112
+Nominal2025OOCollisionVtxSmearingParameters = cms.PSet(
+    Phi = cms.double(0.0),
+    BetaStar = cms.double(50),
+    Emittance = cms.double(6.684e-08),
+    Alpha = cms.double(0.0),
+    SigmaZ = cms.double(4.9068349),
+    TimeOffset = cms.double(0.0),
+    X0 = cms.double(0.0184194),
+    Y0 = cms.double(-0.0141852),
+    Z0 = cms.double(0.3423956)
+)
+
+# From 2025 pO data runs 393975-394007)
+Realistic2025pOCollisionVtxSmearingParameters = cms.PSet(
+    Phi = cms.double(0.0),
+    BetaStar = cms.double(100),
+    Emittance = cms.double(3.835e-08),
+    Alpha = cms.double(0.0),
+    SigmaZ = cms.double(4.855060),
+    TimeOffset = cms.double(0.0),
+    X0 = cms.double(0.041049),
+    Y0 = cms.double(-0.008035),
+    Z0 = cms.double(0.569058)
 )
 
 # Parameters for HL-LHC operation at 13TeV

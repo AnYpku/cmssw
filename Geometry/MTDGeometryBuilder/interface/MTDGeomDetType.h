@@ -1,7 +1,7 @@
 #ifndef Geometry_MTDGeometryBuilder_MTDGeomDetType_H
 #define Geometry_MTDGeometryBuilder_MTDGeomDetType_H
 
-#include "Geometry/CommonDetUnit/interface/GeomDetType.h"
+#include "Geometry/CommonTopologies/interface/GeomDetType.h"
 #include "Geometry/CommonTopologies/interface/PixelTopology.h"
 
 #include <memory>
@@ -21,7 +21,7 @@ public:
   // Access to topologies
   const Topology& topology() const override { return *theTopology; }
 
-  virtual const TopologyType& specificTopology() const { return *theTopology; }
+  const TopologyType& specificTopology() const { return *theTopology; }
 
   MTDGeomDetType& operator=(const MTDGeomDetType& other) = delete;
   MTDGeomDetType(const MTDGeomDetType& other) = delete;

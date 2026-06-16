@@ -10,8 +10,8 @@
 
 #include "CommonTools/Statistics/interface/ChiSquaredProbability.h"
 #include "DataFormats/Common/interface/Handle.h"
-#include "DataFormats/EgammaTrackReco/interface/ConversionTrack.h"
-#include "DataFormats/EgammaTrackReco/interface/ConversionTrackFwd.h"
+#include "RecoEgamma/EgammaTools/interface/ConversionTrack.h"
+#include "RecoEgamma/EgammaTools/interface/ConversionTrackFwd.h"
 #include "DataFormats/TrackCandidate/interface/TrackCandidateCollection.h"
 #include "DataFormats/TrackReco/interface/Track.h"
 #include "DataFormats/TrackReco/interface/TrackBase.h"
@@ -23,7 +23,7 @@
 #include "FWCore/Framework/interface/stream/EDProducer.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 
@@ -111,10 +111,12 @@ void ConversionTrackMerger::produce(edm::Event& e, const edm::EventSetup& es) {
   int i;
 
   std::vector<int> selected1;
+  selected1.reserve(tC1.size());
   for (unsigned int i = 0; i < tC1.size(); ++i) {
     selected1.push_back(1);
   }
   std::vector<int> selected2;
+  selected2.reserve(tC2.size());
   for (unsigned int i = 0; i < tC2.size(); ++i) {
     selected2.push_back(1);
   }
@@ -246,9 +248,9 @@ void ConversionTrackMerger::produce(edm::Event& e, const edm::EventSetup& es) {
                                                     arbitratedMergedEcalGeneralPreferCollection == 2));
 
         }  //end got a duplicate
-      }    //end track2 loop
-    }      //end track loop
-  }        //end more than 1 track
+      }  //end track2 loop
+    }  //end track loop
+  }  //end more than 1 track
 
   //
   //  output selected tracks - if any
@@ -264,7 +266,7 @@ void ConversionTrackMerger::produce(edm::Event& e, const edm::EventSetup& es) {
       //fill the TrackCollection
       outputTrks->push_back(*track);
     }  //end faux loop over tracks
-  }    //end more than 0 track
+  }  //end more than 0 track
 
   //Fill the trajectories, etc. for 1st collection
 
@@ -278,7 +280,7 @@ void ConversionTrackMerger::produce(edm::Event& e, const edm::EventSetup& es) {
       //fill the TrackCollection
       outputTrks->push_back(*track);
     }  //end faux loop over tracks
-  }    //end more than 0 track
+  }  //end more than 0 track
 
   e.put(std::move(outputTrks));
   return;

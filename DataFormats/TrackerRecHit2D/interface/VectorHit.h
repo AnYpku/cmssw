@@ -19,7 +19,7 @@
 
 #include "DataFormats/Phase2TrackerCluster/interface/Phase2TrackerCluster1D.h"
 #include "DataFormats/GeometryVector/interface/LocalVector.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
 
 #include "DataFormats/TrackingRecHit/interface/KfComponentsHolder.h"
 
@@ -72,7 +72,7 @@ public:
 
   // returning methods
   LocalPoint localPosition() const override { return thePosition; }
-  virtual LocalVector localDirection() const { return theDirection; }
+  LocalVector localDirection() const { return theDirection; }
   const AlgebraicSymMatrix44& covMatrix() const;
   LocalError localPositionError() const override;
   LocalError localDirectionError() const;

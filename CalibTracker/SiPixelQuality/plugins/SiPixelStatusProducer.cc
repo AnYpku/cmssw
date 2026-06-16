@@ -21,7 +21,7 @@
 #include "CondFormats/RunInfo/interface/RunInfo.h"
 #include "CondFormats/DataRecord/interface/RunSummaryRcd.h"
 #include "CondFormats/SiPixelObjects/interface/SiPixelFrameConverter.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 
 // Header file
@@ -268,7 +268,7 @@ void SiPixelStatusProducer::endLuminosityBlock(edm::LuminosityBlock const&, edm:
           fDet_.fillFEDerror25(detid, chs[ich]);
         }
       }  // loop over detIds
-    }    // if non-empty FEDerror25
+    }  // if non-empty FEDerror25
 
   }  // only for non-zero events
 }

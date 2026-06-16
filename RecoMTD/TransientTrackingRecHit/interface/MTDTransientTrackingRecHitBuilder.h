@@ -6,7 +6,7 @@
 
 #include "TrackingTools/TransientTrackingRecHit/interface/TransientTrackingRecHitBuilder.h"
 
-#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/GlobalTrackingGeometry.h"
 #include "FWCore/Framework/interface/ESHandle.h"
 
 class MTDTransientTrackingRecHitBuilder : public TransientTrackingRecHitBuilder {
@@ -16,7 +16,7 @@ public:
 
   MTDTransientTrackingRecHitBuilder(edm::ESHandle<GlobalTrackingGeometry> trackingGeometry = nullptr);
 
-  ~MTDTransientTrackingRecHitBuilder() override{};
+  ~MTDTransientTrackingRecHitBuilder() override {}
 
   using TransientTrackingRecHitBuilder::build;
   /// Call the MTDTransientTrackingRecHit::specificBuild

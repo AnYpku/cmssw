@@ -1,3 +1,6 @@
+++ finished: construction of Services
+++ starting: construction of EventSetup modules
+++ finished: construction of EventSetup modules
 ++ starting: constructing source: EmptySource
 ++ finished: constructing source: EmptySource
 ++++ starting: constructing module with label 'TriggerResults' id = 1
@@ -16,26 +19,38 @@ Module type=IntProducer, Module label=one, Parameter Set ID=dd3aecb8f6531b74585c
 ++++ finished: constructing module with label 'result2' id = 6
 ++++ starting: constructing module with label 'result4' id = 7
 ++++ finished: constructing module with label 'result4' id = 7
+++ starting: finalize Schedule
+++ finished: finalize Schedule
+++ starting: creation of Run, LuminosityBlock, and Event Principals
+++ finished: creation of Run, LuminosityBlock, and Event Principals
 ++ preallocate: 1 concurrent runs, 1 concurrent luminosity sections, 1 streams
+++ starting: schedule consistency check
+++ finished: schedule consistency check
+++ starting: finalize EventSetup configuration
+++ finished: finalize EventSetup configuration
+++ starting: finalize EDModules' initialization
+++ finished: finalize EDModules' initialization
 ++ starting: begin job
+++++ starting: begin job for module with label 'TriggerResults' id = 1
+++++ finished: begin job for module with label 'TriggerResults' id = 1
+++++ starting: begin job for module with label 'get' id = 3
+++++ finished: begin job for module with label 'get' id = 3
 ++++ starting: begin job for module with label 'one' id = 4
 Module type=IntProducer, Module label=one, Parameter Set ID=dd3aecb8f6531b74585c9fe89286679e
 ++++ finished: begin job for module with label 'one' id = 4
 Module type=IntProducer, Module label=one, Parameter Set ID=dd3aecb8f6531b74585c9fe89286679e
+++++ starting: begin job for module with label 'p' id = 2
+++++ finished: begin job for module with label 'p' id = 2
 ++++ starting: begin job for module with label 'result1' id = 5
 ++++ finished: begin job for module with label 'result1' id = 5
 ++++ starting: begin job for module with label 'result2' id = 6
 ++++ finished: begin job for module with label 'result2' id = 6
 ++++ starting: begin job for module with label 'result4' id = 7
 ++++ finished: begin job for module with label 'result4' id = 7
-++++ starting: begin job for module with label 'get' id = 3
-++++ finished: begin job for module with label 'get' id = 3
-++++ starting: begin job for module with label 'TriggerResults' id = 1
-++++ finished: begin job for module with label 'TriggerResults' id = 1
-++++ starting: begin job for module with label 'p' id = 2
-++++ finished: begin job for module with label 'p' id = 2
 ++ finished: begin job
 ++ starting: begin stream 0
+++++ starting: begin stream for module: stream = 0 label = 'TriggerResults' id = 1
+++++ finished: begin stream for module: stream = 0 label = 'TriggerResults' id = 1
 ++++ starting: begin stream for module: stream = 0 label = 'get' id = 3
 ++++ finished: begin stream for module: stream = 0 label = 'get' id = 3
 ++++ starting: begin stream for module: stream = 0 label = 'one' id = 4
@@ -62,6 +77,8 @@ ModuleCallingContext state = Running
     runIndex = 4294967295  luminosityBlockIndex = 4294967295  unixTime = 0 microsecondOffset = 0
     ProcessContext: TEST cf65ff121f7d0ed0d094247b80407269
 
+++++ starting: begin stream for module: stream = 0 label = 'p' id = 2
+++++ finished: begin stream for module: stream = 0 label = 'p' id = 2
 ++++ starting: begin stream for module: stream = 0 label = 'result1' id = 5
 ++++ finished: begin stream for module: stream = 0 label = 'result1' id = 5
 ++++ starting: begin stream for module: stream = 0 label = 'result2' id = 6
@@ -79,30 +96,6 @@ ModuleCallingContext state = Running
 ++++ starting: global begin run 1 : time = 1000000
 ++++ finished: global begin run 1 : time = 1000000
 ++++ starting: begin run: stream = 0 run = 1 time = 1000000
-++++++ starting: begin run for module: stream = 0 label = 'one' id = 4
-StreamContext: StreamID = 0 transition = BeginRun
-    run: 1 lumi: 0 event: 0
-    runIndex = 0  luminosityBlockIndex = 4294967295  unixTime = 0 microsecondOffset = 1000000
-    ProcessContext: TEST cf65ff121f7d0ed0d094247b80407269
-ModuleCallingContext state = Running
-    moduleDescription: Module type=IntProducer, Module label=one, Parameter Set ID=dd3aecb8f6531b74585c9fe89286679e
-    StreamContext: StreamID = 0 transition = BeginRun
-    run: 1 lumi: 0 event: 0
-    runIndex = 0  luminosityBlockIndex = 4294967295  unixTime = 0 microsecondOffset = 1000000
-    ProcessContext: TEST cf65ff121f7d0ed0d094247b80407269
-
-++++++ finished: begin run for module: stream = 0 label = 'one' id = 4
-StreamContext: StreamID = 0 transition = BeginRun
-    run: 1 lumi: 0 event: 0
-    runIndex = 0  luminosityBlockIndex = 4294967295  unixTime = 0 microsecondOffset = 1000000
-    ProcessContext: TEST cf65ff121f7d0ed0d094247b80407269
-ModuleCallingContext state = Running
-    moduleDescription: Module type=IntProducer, Module label=one, Parameter Set ID=dd3aecb8f6531b74585c9fe89286679e
-    StreamContext: StreamID = 0 transition = BeginRun
-    run: 1 lumi: 0 event: 0
-    runIndex = 0  luminosityBlockIndex = 4294967295  unixTime = 0 microsecondOffset = 1000000
-    ProcessContext: TEST cf65ff121f7d0ed0d094247b80407269
-
 ++++ finished: begin run: stream = 0 run = 1 time = 1000000
 ++++ queuing: EventSetup synchronization run: 1 lumi: 1 event: 0
 ++++ pre: EventSetup synchronizing run: 1 lumi: 1 event: 0
@@ -112,30 +105,6 @@ ModuleCallingContext state = Running
 ++++ starting: global begin lumi: run = 1 lumi = 1 time = 1000000
 ++++ finished: global begin lumi: run = 1 lumi = 1 time = 1000000
 ++++ starting: begin lumi: stream = 0 run = 1 lumi = 1 time = 1000000
-++++++ starting: begin lumi for module: stream = 0 label = 'one' id = 4
-StreamContext: StreamID = 0 transition = BeginLuminosityBlock
-    run: 1 lumi: 1 event: 0
-    runIndex = 0  luminosityBlockIndex = 0  unixTime = 0 microsecondOffset = 1000000
-    ProcessContext: TEST cf65ff121f7d0ed0d094247b80407269
-ModuleCallingContext state = Running
-    moduleDescription: Module type=IntProducer, Module label=one, Parameter Set ID=dd3aecb8f6531b74585c9fe89286679e
-    StreamContext: StreamID = 0 transition = BeginLuminosityBlock
-    run: 1 lumi: 1 event: 0
-    runIndex = 0  luminosityBlockIndex = 0  unixTime = 0 microsecondOffset = 1000000
-    ProcessContext: TEST cf65ff121f7d0ed0d094247b80407269
-
-++++++ finished: begin lumi for module: stream = 0 label = 'one' id = 4
-StreamContext: StreamID = 0 transition = BeginLuminosityBlock
-    run: 1 lumi: 1 event: 0
-    runIndex = 0  luminosityBlockIndex = 0  unixTime = 0 microsecondOffset = 1000000
-    ProcessContext: TEST cf65ff121f7d0ed0d094247b80407269
-ModuleCallingContext state = Running
-    moduleDescription: Module type=IntProducer, Module label=one, Parameter Set ID=dd3aecb8f6531b74585c9fe89286679e
-    StreamContext: StreamID = 0 transition = BeginLuminosityBlock
-    run: 1 lumi: 1 event: 0
-    runIndex = 0  luminosityBlockIndex = 0  unixTime = 0 microsecondOffset = 1000000
-    ProcessContext: TEST cf65ff121f7d0ed0d094247b80407269
-
 ++++ finished: begin lumi: stream = 0 run = 1 lumi = 1 time = 1000000
 ++++ starting: source event
 ++++ finished: source event
@@ -483,60 +452,12 @@ ModuleCallingContext state = Running
 ++++ pre: EventSetup synchronizing run: 1 lumi: 4294967295 event: 18446744073709551615
 ++++ post: EventSetup synchronizing run: 1 lumi: 4294967295 event: 18446744073709551615
 ++++ starting: end lumi: stream = 0 run = 1 lumi = 1 time = 1000030
-++++++ starting: end lumi for module: stream = 0 label = 'one' id = 4
-StreamContext: StreamID = 0 transition = EndLuminosityBlock
-    run: 1 lumi: 1 event: 0
-    runIndex = 0  luminosityBlockIndex = 0  unixTime = 0 microsecondOffset = 1000030
-    ProcessContext: TEST cf65ff121f7d0ed0d094247b80407269
-ModuleCallingContext state = Running
-    moduleDescription: Module type=IntProducer, Module label=one, Parameter Set ID=dd3aecb8f6531b74585c9fe89286679e
-    StreamContext: StreamID = 0 transition = EndLuminosityBlock
-    run: 1 lumi: 1 event: 0
-    runIndex = 0  luminosityBlockIndex = 0  unixTime = 0 microsecondOffset = 1000030
-    ProcessContext: TEST cf65ff121f7d0ed0d094247b80407269
-
-++++++ finished: end lumi for module: stream = 0 label = 'one' id = 4
-StreamContext: StreamID = 0 transition = EndLuminosityBlock
-    run: 1 lumi: 1 event: 0
-    runIndex = 0  luminosityBlockIndex = 0  unixTime = 0 microsecondOffset = 1000030
-    ProcessContext: TEST cf65ff121f7d0ed0d094247b80407269
-ModuleCallingContext state = Running
-    moduleDescription: Module type=IntProducer, Module label=one, Parameter Set ID=dd3aecb8f6531b74585c9fe89286679e
-    StreamContext: StreamID = 0 transition = EndLuminosityBlock
-    run: 1 lumi: 1 event: 0
-    runIndex = 0  luminosityBlockIndex = 0  unixTime = 0 microsecondOffset = 1000030
-    ProcessContext: TEST cf65ff121f7d0ed0d094247b80407269
-
 ++++ finished: end lumi: stream = 0 run = 1 lumi = 1 time = 1000030
 ++++ starting: global end lumi: run = 1 lumi = 1 time = 1000000
 ++++ finished: global end lumi: run = 1 lumi = 1 time = 1000000
 ++++ starting: global write lumi: run = 1 lumi = 1 time = 1000000
 ++++ finished: global write lumi: run = 1 lumi = 1 time = 1000000
 ++++ starting: end run: stream = 0 run = 1 time = 1000030
-++++++ starting: end run for module: stream = 0 label = 'one' id = 4
-StreamContext: StreamID = 0 transition = EndRun
-    run: 1 lumi: 0 event: 0
-    runIndex = 0  luminosityBlockIndex = 4294967295  unixTime = 0 microsecondOffset = 1000030
-    ProcessContext: TEST cf65ff121f7d0ed0d094247b80407269
-ModuleCallingContext state = Running
-    moduleDescription: Module type=IntProducer, Module label=one, Parameter Set ID=dd3aecb8f6531b74585c9fe89286679e
-    StreamContext: StreamID = 0 transition = EndRun
-    run: 1 lumi: 0 event: 0
-    runIndex = 0  luminosityBlockIndex = 4294967295  unixTime = 0 microsecondOffset = 1000030
-    ProcessContext: TEST cf65ff121f7d0ed0d094247b80407269
-
-++++++ finished: end run for module: stream = 0 label = 'one' id = 4
-StreamContext: StreamID = 0 transition = EndRun
-    run: 1 lumi: 0 event: 0
-    runIndex = 0  luminosityBlockIndex = 4294967295  unixTime = 0 microsecondOffset = 1000030
-    ProcessContext: TEST cf65ff121f7d0ed0d094247b80407269
-ModuleCallingContext state = Running
-    moduleDescription: Module type=IntProducer, Module label=one, Parameter Set ID=dd3aecb8f6531b74585c9fe89286679e
-    StreamContext: StreamID = 0 transition = EndRun
-    run: 1 lumi: 0 event: 0
-    runIndex = 0  luminosityBlockIndex = 4294967295  unixTime = 0 microsecondOffset = 1000030
-    ProcessContext: TEST cf65ff121f7d0ed0d094247b80407269
-
 ++++ finished: end run: stream = 0 run = 1 time = 1000030
 ++++ starting: global end run 1 : time = 1000030
 ++++ finished: global end run 1 : time = 1000030
@@ -547,6 +468,8 @@ ModuleCallingContext state = Running
 ++++ starting: write process block
 ++++ finished: write process block
 ++ starting: end stream 0
+++++ starting: end stream for module: stream = 0 label = 'TriggerResults' id = 1
+++++ finished: end stream for module: stream = 0 label = 'TriggerResults' id = 1
 ++++ starting: end stream for module: stream = 0 label = 'get' id = 3
 ++++ finished: end stream for module: stream = 0 label = 'get' id = 3
 ++++ starting: end stream for module: stream = 0 label = 'one' id = 4
@@ -573,6 +496,8 @@ ModuleCallingContext state = Running
     runIndex = 4294967295  luminosityBlockIndex = 4294967295  unixTime = 0 microsecondOffset = 0
     ProcessContext: TEST cf65ff121f7d0ed0d094247b80407269
 
+++++ starting: end stream for module: stream = 0 label = 'p' id = 2
+++++ finished: end stream for module: stream = 0 label = 'p' id = 2
 ++++ starting: end stream for module: stream = 0 label = 'result1' id = 5
 ++++ finished: end stream for module: stream = 0 label = 'result1' id = 5
 ++++ starting: end stream for module: stream = 0 label = 'result2' id = 6
@@ -581,20 +506,20 @@ ModuleCallingContext state = Running
 ++++ finished: end stream for module: stream = 0 label = 'result4' id = 7
 ++ finished: end stream 0
 ++ starting: end job
+++++ starting: end job for module with label 'TriggerResults' id = 1
+++++ finished: end job for module with label 'TriggerResults' id = 1
+++++ starting: end job for module with label 'get' id = 3
+++++ finished: end job for module with label 'get' id = 3
 ++++ starting: end job for module with label 'one' id = 4
 Module type=IntProducer, Module label=one, Parameter Set ID=dd3aecb8f6531b74585c9fe89286679e
 ++++ finished: end job for module with label 'one' id = 4
 Module type=IntProducer, Module label=one, Parameter Set ID=dd3aecb8f6531b74585c9fe89286679e
+++++ starting: end job for module with label 'p' id = 2
+++++ finished: end job for module with label 'p' id = 2
 ++++ starting: end job for module with label 'result1' id = 5
 ++++ finished: end job for module with label 'result1' id = 5
 ++++ starting: end job for module with label 'result2' id = 6
 ++++ finished: end job for module with label 'result2' id = 6
 ++++ starting: end job for module with label 'result4' id = 7
 ++++ finished: end job for module with label 'result4' id = 7
-++++ starting: end job for module with label 'get' id = 3
-++++ finished: end job for module with label 'get' id = 3
-++++ starting: end job for module with label 'TriggerResults' id = 1
-++++ finished: end job for module with label 'TriggerResults' id = 1
-++++ starting: end job for module with label 'p' id = 2
-++++ finished: end job for module with label 'p' id = 2
 ++ finished: end job

@@ -7,12 +7,13 @@
 <use name="DataFormats/EcalRecHit"/>
 <use name="DataFormats/HcalDigi"/>
 <use name="DataFormats/HcalRecHit"/>
-<use name="DataFormats/Provenance"/>
+<use name="DataFormats/Provenance" source_only="1"/>
 <use name="DataFormats/RPCDigi"/>
 <use name="DataFormats/SiPixelDigi"/>
 <use name="DataFormats/SiStripDigi"/>
 <use name="DataFormats/TrackReco"/>
 <use name="DataFormats/HepMCCandidate"/>
+<use name="FWCore/AbstractServices"/>
 <use name="FWCore/Framework"/>
 <use name="FWCore/MessageLogger"/>
 <use name="FWCore/ParameterSet"/>

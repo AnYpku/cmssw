@@ -19,14 +19,14 @@
 #include "FWCore/Utilities/interface/InputTag.h"
 
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
-#include "Geometry/CommonDetUnit/interface/TrackerGeomDet.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetType.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/TrackerGeomDet.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetType.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
@@ -166,14 +166,14 @@ void Phase2OTValidateRecHit::fillOTHistos(const edm::Event& iEvent,
             }
           }
         }  //end loop over PSimhitcontainers
-      }    //end loop over simHits
+      }  //end loop over simHits
       if (!simhitClosest)
         continue;
       fillOTRecHitHistos(
           simhitClosest, &rechit, selectedSimTrackMap, nrechitLayerMapP_primary, nrechitLayerMapS_primary);
 
     }  //end loop over rechits of a detId
-  }    //End loop over DetSetVector
+  }  //End loop over DetSetVector
 
   //fill nRecHits per event
   //fill nRecHit counter per layer
@@ -188,7 +188,7 @@ void Phase2OTValidateRecHit::fillOTHistos(const edm::Event& iEvent,
 void Phase2OTValidateRecHit::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
   // call the base fillPsetDescription for the plots bookings
-  Phase2OTValidateRecHitBase::fillPSetDescription(desc);
+  Phase2OTValidateRecHitBase::fillPSetDescription(desc, false);
 
   //for macro-pixel sensors
   ///////

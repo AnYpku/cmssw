@@ -8,6 +8,8 @@ caloParticles = cms.PSet(
 #	alwaysAddAncestors = cms.bool(True),
         MinEnergy = cms.double(0.5),
         MaxPseudoRapidity = cms.double(5.0),
+        produceLegacySimCluster = cms.bool(True),
+        produceBoundaryAndMergedSimCluster = cms.bool(True),
         premixStage1 = cms.bool(False),
         doHGCAL = cms.bool(True),
 	maximumPreviousBunchCrossing = cms.uint32(0),
@@ -30,6 +32,9 @@ caloParticles = cms.PSet(
 	genParticleCollection = cms.InputTag('genParticles'),
 	allowDifferentSimHitProcesses = cms.bool(False), # should be True for FastSim, False for FullSim
 	HepMCProductLabel = cms.InputTag('generatorSmeared'),
+    simClusterMergerConfig = cms.PSet(
+        jetClusteringRadius = cms.double(0.05)
+    )
 )
 
 from Configuration.ProcessModifiers.premix_stage1_cff import premix_stage1
@@ -59,8 +64,8 @@ run3_ecalclustering.toModify(
 from Configuration.Eras.Modifier_fastSim_cff import fastSim
 fastSim.toReplaceWith(caloParticles, cms.PSet()) # don't allow this to run in fastsim
 
-from Configuration.Eras.Modifier_phase2_common_cff import phase2_common
-phase2_common.toModify(
+from Configuration.ProcessModifiers.ticl_barrel_cff import ticl_barrel
+ticl_barrel.toModify(
     caloParticles, 
     simHitCollections = cms.PSet(
         hgc = cms.VInputTag(

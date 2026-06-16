@@ -6,16 +6,17 @@
 
 #include <memory>
 #include <vector>
+#include <functional>
+#include <algorithm>
 #include "DataFormats/CaloRecHit/interface/CaloCluster.h"
 #include "DataFormats/HGCalReco/interface/Trackster.h"
 #include "DataFormats/HGCalReco/interface/TICLLayerTile.h"
 #include "DataFormats/HGCalReco/interface/TICLSeedingRegion.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "DataFormats/Common/interface/ValueMap.h"
-#include "RecoHGCal/TICL/interface/GlobalCache.h"
 #include "DataFormats/HGCalReco/interface/Common.h"
 #include "FWCore/Framework/interface/ConsumesCollector.h"
-#include "PhysicsTools/TensorFlow/interface/TensorFlow.h"
+#include "RecoLocalCalo/HGCalRecAlgos/interface/RecHitTools.h"
 
 namespace edm {
   class Event;
@@ -28,7 +29,7 @@ namespace ticl {
   public:
     PatternRecognitionAlgoBaseT(const edm::ParameterSet& conf, edm::ConsumesCollector)
         : algo_verbosity_(conf.getParameter<int>("algo_verbosity")) {}
-    virtual ~PatternRecognitionAlgoBaseT(){};
+    virtual ~PatternRecognitionAlgoBaseT() {};
 
     struct Inputs {
       const edm::Event& ev;
@@ -38,25 +39,33 @@ namespace ticl {
       const edm::ValueMap<std::pair<float, float>>& layerClustersTime;
       const TILES& tiles;
       const std::vector<TICLSeedingRegion>& regions;
-      const tensorflow::Session* tfSession;
-
       Inputs(const edm::Event& eV,
              const edm::EventSetup& eS,
              const std::vector<reco::CaloCluster>& lC,
              const std::vector<float>& mS,
              const edm::ValueMap<std::pair<float, float>>& lT,
              const TILES& tL,
-             const std::vector<TICLSeedingRegion>& rG,
-             const tensorflow::Session* tS)
-          : ev(eV), es(eS), layerClusters(lC), mask(mS), layerClustersTime(lT), tiles(tL), regions(rG), tfSession(tS) {}
+             const std::vector<TICLSeedingRegion>& rG)
+          : ev(eV), es(eS), layerClusters(lC), mask(mS), layerClustersTime(lT), tiles(tL), regions(rG) {}
     };
 
     virtual void makeTracksters(const Inputs& input,
                                 std::vector<Trackster>& result,
                                 std::unordered_map<int, std::vector<int>>& seedToTracksterAssociation) = 0;
 
+    virtual void filter(std::vector<Trackster>& output,
+                        const std::vector<Trackster>& inTracksters,
+                        const Inputs& input,
+                        std::unordered_map<int, std::vector<int>>& seedToTracksterAssociation) = 0;
+
+    virtual void setGeometry(hgcal::RecHitTools const& rhtools) = 0;
+
   protected:
     int algo_verbosity_;
+
+    bool geometryReady_ = false;
+
+    hgcal::RecHitTools const* rhtools_ = nullptr;  // non-owning, set in beginRun()
   };
 }  // namespace ticl
 

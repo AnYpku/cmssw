@@ -1,58 +1,55 @@
 <lcgdict>
- <class name="edmtest::DummyProduct" ClassVersion="10">
-  <version ClassVersion="10" checksum="4017626975"/>
+ <class name="edmtest::DummyProduct" ClassVersion="3">
+  <version ClassVersion="3" checksum="4017626975"/>
  </class>
- <class name="edmtest::IntProduct" ClassVersion="10">
-  <version ClassVersion="10" checksum="4286676158"/>
+ <class name="edmtest::IntProduct" ClassVersion="3">
+  <version ClassVersion="3" checksum="4286676158"/>
  </class>
  <class name="std::pair<edmtest::IntProduct, edm::RandomNumberGeneratorState>"/>
- <class name="edmtest::UInt64Product" ClassVersion="11">
-  <version ClassVersion="11" checksum="3240540910"/>
-  <version ClassVersion="10" checksum="380152127"/>
+ <class name="edmtest::MaybeUninitializedIntProduct" ClassVersion="3">
+  <version ClassVersion="3" checksum="3324182225"/>
  </class>
- <class name="edmtest::EnumProduct" ClassVersion="11">
-  <version ClassVersion="11" checksum="3817882977"/>
-  <version ClassVersion="10" checksum="3025325436"/>
+ <class name="edmtest::UInt64Product" ClassVersion="3">
+  <version ClassVersion="3" checksum="3240540910"/>
+ </class>
+ <class name="edmtest::EnumProduct" ClassVersion="3">
+  <version ClassVersion="3" checksum="3817882977"/>
  </class>
  <enum name="edmtest::TheEnumProduct"/>
- <class name="edmtest::ArrayProduct" ClassVersion="10">
-  <version ClassVersion="10" checksum="3635152897"/>
+ <class name="edmtest::ArrayProduct" ClassVersion="3">
+  <version ClassVersion="3" checksum="3635152897"/>
  </class>
- <class name="edmtest::TransientIntProduct" ClassVersion="11">
-  <version ClassVersion="10" checksum="304339852"/>
-  <version ClassVersion="11" checksum="639295444"/>
+ <class name="edmtest::TransientIntProduct" ClassVersion="3">
+  <version ClassVersion="3" checksum="639295444"/>
   <field name="dummy" transient="true"/>
  </class>
  <class name="edmtest::ATransientIntProduct" ClassVersion="3">
   <version ClassVersion="3" checksum="2661369959"/>
   <field name="dummy" transient="true"/>
  </class>
- <class name="edmtest::Int16_tProduct" ClassVersion="10">
-  <version ClassVersion="10" checksum="1443289058"/>
+ <class name="edmtest::Int16_tProduct" ClassVersion="3">
+  <version ClassVersion="3" checksum="1443289058"/>
  </class>
- <class name="edmtest::DoubleProduct" ClassVersion="10">
-  <version ClassVersion="10" checksum="927325064"/>
+ <class name="edmtest::DoubleProduct" ClassVersion="3">
+  <version ClassVersion="3" checksum="927325064"/>
  </class>
- <class name="edmtest::StringProduct" ClassVersion="10">
-  <version ClassVersion="10" checksum="2737503723"/>
+ <class name="edmtest::StringProduct" ClassVersion="3">
+  <version ClassVersion="3" checksum="2737503723"/>
  </class>
- <class name="edmtest::Prodigal" ClassVersion="11">
-  <version ClassVersion="10" checksum="3510691703"/>
-  <version ClassVersion="11" checksum="1159264709"/>
+ <class name="edmtest::Prodigal" ClassVersion="3">
+  <version ClassVersion="3" checksum="1159264709"/>
  </class>
- <class name="edmtest::Simple" ClassVersion="10">
-  <version ClassVersion="10" checksum="2533881336"/>
+ <class name="edmtest::Simple" ClassVersion="3">
+  <version ClassVersion="3" checksum="2533881336"/>
  </class>
- <class name="edmtest::SimpleDerived" ClassVersion="11">
-  <version ClassVersion="10" checksum="3753531674"/>
-  <version ClassVersion="11" checksum="802041948"/>
+ <class name="edmtest::SimpleDerived" ClassVersion="3">
+  <version ClassVersion="3" checksum="802041948"/>
  </class>
- <class name="edmtest::Sortable" ClassVersion="10">
-  <version ClassVersion="10" checksum="1166695033"/>
+ <class name="edmtest::Sortable" ClassVersion="3">
+  <version ClassVersion="3" checksum="1166695033"/>
  </class>
- <class name="edmtest::Unsortable" ClassVersion="11">
-  <version ClassVersion="10" checksum="2720085305"/>
-  <version ClassVersion="11" checksum="3812549796"/>
+ <class name="edmtest::Unsortable" ClassVersion="3">
+  <version ClassVersion="3" checksum="3812549796"/>
  </class>
  <class name="edm::SortedCollection<edmtest::Simple, edm::StrictWeakOrdering<edmtest::Simple> >"/>
  <class name="edm::OwnVector<edmtest::Simple, edm::ClonePolicy<edmtest::Simple> >"/>
@@ -85,6 +82,7 @@
  <class name="edm::Wrapper<edmtest::IntProduct>"/>
  <class name="std::vector<std::unique_ptr<edmtest::IntProduct>>"/>
  <class name="edm::Wrapper<std::vector<std::unique_ptr<edmtest::IntProduct>>>"/>
+ <class name="edm::Wrapper<edmtest::MaybeUninitializedIntProduct>"/>
  <class name="edm::Wrapper<edmtest::UInt64Product>"/>
  <class name="edm::Wrapper<edmtest::TransientIntProduct>" persistent="false"/>
  <class name="edm::Wrapper<edmtest::ATransientIntProduct>" persistent="false"/>
@@ -105,34 +103,34 @@
  <class name="edm::Wrapper<edmNew::DetSetVector<edmtest::SimpleDerived> >"/>
 
 
- <class name="edmtest::Thing" ClassVersion="10">
-  <version ClassVersion="10" checksum="2534966692"/>
+ <class name="edmtest::Thing" ClassVersion="3">
+  <version ClassVersion="3" checksum="2534966692"/>
  </class>
- <class name="edmtest::ThingWithMerge" ClassVersion="10">
-  <version ClassVersion="10" checksum="1109971102"/>
+ <class name="edmtest::ThingWithMerge" ClassVersion="3">
+  <version ClassVersion="3" checksum="1109971102"/>
  </class>
- <class name="edmtest::ThingWithIsEqual" ClassVersion="10">
-  <version ClassVersion="10" checksum="1399583220"/>
+ <class name="edmtest::ThingWithIsEqual" ClassVersion="3">
+  <version ClassVersion="3" checksum="1399583220"/>
  </class>
- <class name="edmtest::OtherThing" ClassVersion="10">
-  <version ClassVersion="10" checksum="3424405714"/>
+ <class name="edmtest::OtherThing" ClassVersion="3">
+  <version ClassVersion="3" checksum="3424405714"/>
  </class>
  <class name="std::vector<edmtest::Thing>"/>
  <class name="std::vector<edmtest::OtherThing>"/>
  <class name="edm::RefProd<std::vector<edmtest::Thing> >"/>
- <class name="edm::RefToBaseProd<edmtest::Thing>" rntupleSplit="false"/>
+ <class name="edm::RefToBaseProd<edmtest::Thing>" rntupleStreamerMode="true"/>
  <class name="edm::reftobase::BaseHolder<edmtest::Thing>"/>
  <class name="edm::reftobase::Holder<edmtest::Thing,edm::Ref<std::vector<edmtest::Thing>,edmtest::Thing,edm::refhelper::FindUsingAdvance<std::vector<edmtest::Thing>,edmtest::Thing> > >"/>
- <class name="edm::RefToBase<edmtest::Thing>" rntupleSplit="false"/>
- <class name="edm::RefToBaseVector<edmtest::Thing>" rntupleSplit="false"/>
+ <class name="edm::RefToBase<edmtest::Thing>" rntupleStreamerMode="true"/>
+ <class name="edm::RefToBaseVector<edmtest::Thing>" rntupleStreamerMode="true"/>
  <class name="edm::reftobase::BaseVectorHolder<edmtest::Thing>"/>
  <class name="edm::reftobase::VectorHolder<edmtest::Thing, edm::RefVector<std::vector<edmtest::Thing>,edmtest::Thing,edm::refhelper::FindUsingAdvance<std::vector<edmtest::Thing>,edmtest::Thing> > >"/>
  <class name="edm::Ptr<edmtest::Thing>"/>
  <class name="edm::PtrVector<edmtest::Thing>"/>
  <class name="edm::Ref<std::vector<edmtest::Thing>,edmtest::Thing,edm::refhelper::FindUsingAdvance<std::vector<edmtest::Thing>,edmtest::Thing> >"/>
  <class name="edm::RefVector<std::vector<edmtest::Thing>,edmtest::Thing,edm::refhelper::FindUsingAdvance<std::vector<edmtest::Thing>,edmtest::Thing> >"/>
- <class name="edmtest::TrackOfThings" ClassVersion="6">
-  <version ClassVersion="6" checksum="545056495"/>
+ <class name="edmtest::TrackOfThings" ClassVersion="3">
+  <version ClassVersion="3" checksum="545056495"/>
  </class>
  <class name="std::vector<edmtest::TrackOfThings>"/>
  <class name="edm::Wrapper<std::vector<edmtest::TrackOfThings> >"/>
@@ -141,6 +139,16 @@
  <class name="edm::Wrapper<edmtest::ThingWithIsEqual>"/>
  <class name="edm::Wrapper<std::vector<edmtest::Thing> >"/>
  <class name="edm::Wrapper<std::vector<edmtest::OtherThing> >"/>
+
+ <class name="edmtest::ThingWithPostInsert" ClassVersion="3">
+  <version ClassVersion="3" checksum="2193684721"/>
+ </class>
+ <class name="edm::Wrapper<edmtest::ThingWithPostInsert>"/>
+
+ <class name="edmtest::ThingWithDoNotSort" ClassVersion="3">
+  <version ClassVersion="3" checksum="1286605803"/>
+ </class>
+ <class name="edm::Wrapper<edmtest::ThingWithDoNotSort>"/>
 
  <class name="edmNew::DetSetVector<edmtest::Thing>"/>
  <class name="edm::Ref<edmNew::DetSetVector<edmtest::Thing>, edmtest::Thing, edmNew::DetSetVector<edmtest::Thing>::FindForDetSetVector>"/>
@@ -152,8 +160,8 @@
  <class name="std::vector<edmtest::TrackOfDSVThings>"/>
  <class name="edm::Wrapper<std::vector<edmtest::TrackOfDSVThings> >"/>
 
- <class name="edmtestprod::Simple" ClassVersion="10">
-  <version ClassVersion="10" checksum="2751437416"/>
+ <class name="edmtestprod::Simple" ClassVersion="3">
+  <version ClassVersion="3" checksum="2751437416"/>
  </class>
  <class name="edmtestprod::Ord<edmtestprod::Simple>"/>
  <class name="edmtestprod::StreamTestTmpl<edmtestprod::Ord<edmtestprod::Simple> >"/>
@@ -161,12 +169,12 @@
  <class name="std::vector<edmtestprod::Simple>"/>
  <class name="edm::SortedCollection<edmtestprod::Simple,edm::StrictWeakOrdering<edmtestprod::Simple> >"/>
  <class name="edm::Wrapper<edm::SortedCollection<edmtestprod::Simple,edm::StrictWeakOrdering<edmtestprod::Simple> > >"/>
- <class name="edmtestprod::StreamTestThing" ClassVersion="10">
-  <version ClassVersion="10" checksum="1618121316"/>
+ <class name="edmtestprod::StreamTestThing" ClassVersion="3">
+  <version ClassVersion="3" checksum="1618121316"/>
  </class>
  <class name="edm::Wrapper<edmtestprod::StreamTestThing>"/>
- <class name="edmtestprod::X0123456789012345678901234567890123456789012345678901234567890123456789012345678901" ClassVersion="10">
-  <version ClassVersion="10" checksum="3326113499"/>
+ <class name="edmtestprod::X0123456789012345678901234567890123456789012345678901234567890123456789012345678901" ClassVersion="3">
+  <version ClassVersion="3" checksum="3326113499"/>
  </class>
  <class name="edm::Wrapper<edmtestprod::X0123456789012345678901234567890123456789012345678901234567890123456789012345678901>"/>
  <class name="edmtest::DeleteEarly" ClassVersion="3">
@@ -207,42 +215,42 @@
  <class name="edm::Wrapper<edm::EventID>"/>
  <class name="edm::Wrapper<edm::ProductID>"/>
 
- <class name="edmtest::MissingDictionaryTestA" ClassVersion="10">
-  <version ClassVersion="10" checksum="924871709"/>
+ <class name="edmtest::MissingDictionaryTestA" ClassVersion="3">
+  <version ClassVersion="3" checksum="924871709"/>
  </class>
- <class name="edmtest::MissingDictionaryTestB" ClassVersion="10">
-  <version ClassVersion="10" checksum="3237077045"/>
+ <class name="edmtest::MissingDictionaryTestB" ClassVersion="3">
+  <version ClassVersion="3" checksum="3237077045"/>
  </class>
- <class name="edmtest::MissingDictionaryTestC" ClassVersion="10">
-  <version ClassVersion="10" checksum="276188887"/>
+ <class name="edmtest::MissingDictionaryTestC" ClassVersion="3">
+  <version ClassVersion="3" checksum="276188887"/>
  </class>
- <class name="edmtest::MissingDictionaryTestD" ClassVersion="10">
-  <version ClassVersion="10" checksum="525992233"/>
+ <class name="edmtest::MissingDictionaryTestD" ClassVersion="3">
+  <version ClassVersion="3" checksum="525992233"/>
  </class>
- <class name="edmtest::MissingDictionaryTestE" ClassVersion="10">
-  <version ClassVersion="10" checksum="525992341"/>
+ <class name="edmtest::MissingDictionaryTestE" ClassVersion="3">
+  <version ClassVersion="3" checksum="525992341"/>
  </class>
 <!--
 Commenting this out to intentionally cause the missing dictionary
 exception when running testMissingDictionaryChecking_cfg.py.
- <class name="edmtest::MissingDictionaryTestF" ClassVersion="10">
-  <version ClassVersion="10" checksum="3318785451"/>
+ <class name="edmtest::MissingDictionaryTestF" ClassVersion="3">
+  <version ClassVersion="3" checksum="3318785451"/>
  </class>
 -->
- <class name="edmtest::MissingDictionaryTestG" ClassVersion="10">
-  <version ClassVersion="10" checksum="525992557"/>
+ <class name="edmtest::MissingDictionaryTestG" ClassVersion="3">
+  <version ClassVersion="3" checksum="525992557"/>
  </class>
- <class name="edmtest::MissingDictionaryTestH" ClassVersion="10">
-  <version ClassVersion="10" checksum="525992665"/>
+ <class name="edmtest::MissingDictionaryTestH" ClassVersion="3">
+  <version ClassVersion="3" checksum="525992665"/>
  </class>
- <class name="edmtest::MissingDictionaryTestI" ClassVersion="10">
-  <version ClassVersion="10" checksum="325955792"/>
+ <class name="edmtest::MissingDictionaryTestI" ClassVersion="3">
+  <version ClassVersion="3" checksum="325955792"/>
  </class>
- <class name="edmtest::MissingDictionaryTestJ" ClassVersion="10">
-  <version ClassVersion="10" checksum="525992881"/>
+ <class name="edmtest::MissingDictionaryTestJ" ClassVersion="3">
+  <version ClassVersion="3" checksum="525992881"/>
  </class>
- <class name="edmtest::MissingDictionaryTestK" ClassVersion="10">
-  <version ClassVersion="10" checksum="525992989"/>
+ <class name="edmtest::MissingDictionaryTestK" ClassVersion="3">
+  <version ClassVersion="3" checksum="525992989"/>
  </class>
 
  <class name="std::vector<edmtest::MissingDictionaryTestA>"/>
@@ -281,6 +289,20 @@ exception when running testMissingDictionaryChecking_cfg.py.
  </class>
  <class name="edm::Wrapper<edmtest::VectorVectorTop>"/>
 
+ <!-- about VectorVectorElement versioning below
+
+  * v3 is with DataFormats_TestObjects_USE_OLD defined in
+    SchemaEvolutionTestObjects.h, but without
+    SchemaEvolutionAutoPtrToUniquePtr member. It was used for the 13_0_0
+    test file that did not include ROOT StreamerInfo in some cases.
+  * v4 is with DataFormats_TestObjects_USE_OLD defined in
+    SchemaEvolutionTestObjects.h and with
+    SchemaEvolutionAutoPtrToUniquePtr member
+  * v5 is with DataFormats_TestObjects_USE_OLD undefined in
+    SchemaEvolutionTestObjects.h and with
+    SchemaEvolutionAutoPtrToUniquePtr member
+ -->
+
 <!--
  <class name="edmtest::SchemaEvolutionChangeOrder" ClassVersion="3">
   <version ClassVersion="3" checksum="3343384061"/>
@@ -315,6 +337,10 @@ exception when running testMissingDictionaryChecking_cfg.py.
  <class name="edmtest::SchemaEvolutionPointerToUniquePtr" ClassVersion="3">
   <version ClassVersion="3" checksum="1545257825"/>
  </class>
+ <class name="std::auto_ptr<edmtest::SchemaEvolutionContained>"/>
+ <class name="edmtest::SchemaEvolutionAutoPtrToUniquePtr" ClassVersion="3">
+  <version ClassVersion="3" checksum="1427898213"/>
+ </class>
  <class name="edmtest::SchemaEvolutionCArrayToStdArray" ClassVersion="3">
   <version ClassVersion="3" checksum="2848265407"/>
  </class>
@@ -327,7 +353,8 @@ exception when running testMissingDictionaryChecking_cfg.py.
  <class name="edmtest::SchemaEvolutionMapToUnorderedMap" ClassVersion="3">
   <version ClassVersion="3" checksum="4049010227"/>
  </class>
- <class name="edmtest::VectorVectorElement" ClassVersion="3">
+ <class name="edmtest::VectorVectorElement" ClassVersion="4">
+  <version ClassVersion="4" checksum="1382603781"/>
   <version ClassVersion="3" checksum="62209940"/>
  </class>
  <class name="edmtest::VectorVectorElementNonSplit" ClassVersion="3">
@@ -336,70 +363,82 @@ exception when running testMissingDictionaryChecking_cfg.py.
 -->
 
  <class name="edmtest::SchemaEvolutionChangeOrder" ClassVersion="4">
-  <version ClassVersion="3" checksum="3343384061"/>
   <version ClassVersion="4" checksum="3343403663"/>
+  <version ClassVersion="3" checksum="3343384061"/>
  </class>
  <class name="edmtest::SchemaEvolutionAddMember" ClassVersion="4">
-  <version ClassVersion="3" checksum="1610659294"/>
   <version ClassVersion="4" checksum="548196481"/>
+  <version ClassVersion="3" checksum="1610659294"/>
  </class>
  <class name="edmtest::SchemaEvolutionRemoveMember" ClassVersion="4">
-  <version ClassVersion="3" checksum="868607665"/>
   <version ClassVersion="4" checksum="2937585049"/>
+  <version ClassVersion="3" checksum="868607665"/>
  </class>
  <class name="edmtest::SchemaEvolutionMoveToBase" ClassVersion="4">
-  <version ClassVersion="3" checksum="765817207"/>
   <version ClassVersion="4" checksum="288892591"/>
+  <version ClassVersion="3" checksum="765817207"/>
  </class>
  <class name="edmtest::SchemaEvolutionBase" ClassVersion="4">
-  <version ClassVersion="3" checksum="3149060785"/>
   <version ClassVersion="4" checksum="717584440"/>
+  <version ClassVersion="3" checksum="3149060785"/>
  </class>
  <class name="edmtest::SchemaEvolutionChangeType" ClassVersion="4">
-  <version ClassVersion="3" checksum="1127956593"/>
   <version ClassVersion="4" checksum="231165691"/>
+  <version ClassVersion="3" checksum="1127956593"/>
  </class>
  <class name="edmtest::SchemaEvolutionBaseA" ClassVersion="3">
   <version ClassVersion="3" checksum="857239365"/>
  </class>
  <class name="edmtest::SchemaEvolutionAddBase" ClassVersion="4">
-  <version ClassVersion="3" checksum="2069239453"/>
   <version ClassVersion="4" checksum="1505648056"/>
+  <version ClassVersion="3" checksum="2069239453"/>
  </class>
  <class name="edmtest::SchemaEvolutionContained" ClassVersion="3">
   <version ClassVersion="3" checksum="726645586"/>
  </class>
  <class name="edmtest::SchemaEvolutionPointerToMember" ClassVersion="4">
-  <version ClassVersion="3" checksum="113169654"/>
   <version ClassVersion="4" checksum="37723204"/>
+  <version ClassVersion="3" checksum="113169654"/>
  </class>
  <class name="edmtest::SchemaEvolutionPointerToUniquePtr" ClassVersion="4">
-  <version ClassVersion="3" checksum="1545257825"/>
   <version ClassVersion="4" checksum="3437951039"/>
+  <version ClassVersion="3" checksum="1545257825"/>
  </class>
+ <class name="edmtest::compat::deprecated_auto_ptr<edmtest::SchemaEvolutionContained>"/>
+ <class name="edmtest::SchemaEvolutionAutoPtrToUniquePtr" ClassVersion="4">
+  <version ClassVersion="4" checksum="2908944573"/>
+  <version ClassVersion="3" checksum="1427898213"/>
+ </class>
+ <ioread sourceClass="std::auto_ptr<edmtest::SchemaEvolutionContained>" targetClass="edmtest::compat::deprecated_auto_ptr<edmtest::SchemaEvolutionContained>"/>
+ <ioread sourceClass="edmtest::SchemaEvolutionAutoPtrToUniquePtr" version="[3]" targetClass="edmtest::SchemaEvolutionAutoPtrToUniquePtr" source="edmtest::compat::deprecated_auto_ptr<edmtest::SchemaEvolutionContained> contained_" target="contained_">
+  <![CDATA[
+   contained_.reset(onfile.contained_._M_ptr); onfile.contained_._M_ptr = nullptr;
+  ]]>
+ </ioread>
  <class name="edmtest::SchemaEvolutionCArrayToStdArray" ClassVersion="4">
-  <version ClassVersion="3" checksum="2848265407"/>
   <version ClassVersion="4" checksum="66373354"/>
+  <version ClassVersion="3" checksum="2848265407"/>
  </class>
  <class name="edmtest::SchemaEvolutionCArrayToStdVector" ClassVersion="4">
-  <version ClassVersion="3" checksum="3834066865"/>
   <version ClassVersion="4" checksum="1835343327"/>
+  <version ClassVersion="3" checksum="3834066865"/>
  </class>
  <class name="edmtest::SchemaEvolutionVectorToList" ClassVersion="4">
-  <version ClassVersion="3" checksum="354293136"/>
   <version ClassVersion="4" checksum="3857065429"/>
+  <version ClassVersion="3" checksum="354293136"/>
  </class>
  <class name="edmtest::SchemaEvolutionMapToUnorderedMap" ClassVersion="4">
-  <version ClassVersion="3" checksum="4049010227"/>
   <version ClassVersion="4" checksum="3999644942"/>
+  <version ClassVersion="3" checksum="4049010227"/>
  </class>
- <class name="edmtest::VectorVectorElement" ClassVersion="4">
+ <class name="edmtest::VectorVectorElement" ClassVersion="5">
+  <version ClassVersion="5" checksum="4210670970"/>
+  <version ClassVersion="4" checksum="1382603781"/>
   <version ClassVersion="3" checksum="62209940"/>
-  <version ClassVersion="4" checksum="4237216747"/>
  </class>
  <class name="edmtest::VectorVectorElementNonSplit" ClassVersion="4">
-  <version ClassVersion="3" checksum="15875282"/>
   <version ClassVersion="4" checksum="3857705420"/>
+  <version ClassVersion="3" checksum="15875282"/>
  </class>
 
 </lcgdict>

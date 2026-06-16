@@ -3,9 +3,9 @@
  *
  */
 
-#include "RecoMuon/MuonSeedGenerator/src/RPCSeedOverlapper.h"
+#include "RecoMuon/MuonSeedGenerator/interface/RPCSeedOverlapper.h"
 #include <Geometry/Records/interface/MuonGeometryRecord.h>
-#include <Geometry/CommonDetUnit/interface/GeomDet.h>
+#include <Geometry/CommonTopologies/interface/GeomDet.h>
 
 using namespace std;
 using namespace edm;

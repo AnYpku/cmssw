@@ -1,5 +1,3 @@
-from __future__ import print_function
-from __future__ import absolute_import
 from builtins import range
 import os
 import sys
@@ -1995,7 +1993,7 @@ class Plot:
             h.SetMarkerStyle(msty)
             h.SetMarkerColor(col)
             h.SetMarkerSize(0.7)
-            h.SetLineColor(1)
+            h.SetLineColor(col)
             h.SetLineWidth(1)
 
         def _styleHist(h, msty, col):
@@ -2399,15 +2397,14 @@ class PlotGroup(object):
         lx2def = 0.95
         ly1def = 0.85
         ly2def = 0.95
-
+        
         ret = []
-
         for plot in self._plots:
             if plot.isEmpty():
                 continue
 
-            canvas = _createCanvas(self._name+"Single", width, height)
-            canvasRatio = _createCanvas(self._name+"SingleRatio", width, int(height*self._ratioFactor))
+            canvas = _createCanvas(self._name+'Single', width, height)
+            canvasRatio = _createCanvas(self._name+'SingleRatio', width, int(height*self._ratioFactor))
 
             # from TDRStyle
             for c in [canvas, canvasRatio]:
@@ -2417,16 +2414,16 @@ class PlotGroup(object):
                 c.SetRightMargin(0.05)
 
             ratioForThisPlot = plot.isRatio(ratio)
-            c = canvas
             if ratioForThisPlot:
                 c = canvasRatio
                 c.cd()
                 self._modifyPadForRatio(c)
+            else:
+                c = canvas
 
             # Draw plot to canvas
             c.cd()
             plot.draw(c, ratioForThisPlot, self._ratioFactor, 1)
-
             if plot._legend:
                 # Setup legend
                 lx1 = lx1def
@@ -2444,12 +2441,14 @@ class PlotGroup(object):
                     lx2 += plot._legendDw
                 if plot._legendDh is not None:
                     ly1 -= plot._legendDh
-
                 c.cd()
                 legend = self._createLegend(plot, legendLabels, lx1, ly1, lx2, ly2, textSize=0.03,
                                             denomUncertainty=(ratioForThisPlot and plot.drawRatioUncertainty))
-
             ret.extend(self._save(c, saveFormat, prefix=prefix, postfix="/"+plot.getName(), single=True, directory=directory))
+
+            del canvas
+            del canvasRatio
+            
         return ret
 
     def _modifyPadForRatio(self, pad):
@@ -2473,7 +2472,7 @@ class PlotGroup(object):
         return l
 
     def _save(self, canvas, saveFormat, prefix=None, postfix=None, single=False, directory=""):
-        # Save the canvas to file and clear
+        """Save the canvas to file and clear."""
         name = self._name
         if not os.path.exists(directory+'/'+name):
             os.makedirs(directory+'/'+name, exist_ok=True)

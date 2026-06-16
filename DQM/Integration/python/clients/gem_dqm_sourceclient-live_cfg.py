@@ -1,8 +1,8 @@
 import FWCore.ParameterSet.Config as cms
 import sys
 
-from Configuration.Eras.Era_Run3_cff import Run3
-process = cms.Process('GEMDQM', Run3)
+from Configuration.Eras.Era_Run3_2025_cff import Run3_2025
+process = cms.Process('GEMDQM', Run3_2025)
 
 unitTest = False
 if 'unitTest=True' in sys.argv:
@@ -22,8 +22,8 @@ process.load("DQM.Integration.config.environment_cfi")
 process.dqmEnv.subSystemFolder = "GEM"
 process.dqmSaver.tag = "GEM"
 process.dqmSaver.runNumber = options.runNumber
-process.dqmSaverPB.tag = "GEM"
-process.dqmSaverPB.runNumber = options.runNumber
+# process.dqmSaverPB.tag = "GEM"
+# process.dqmSaverPB.runNumber = options.runNumber
 
 process.load("DQMServices.Components.DQMProvInfo_cfi")
 
@@ -42,7 +42,7 @@ if (process.runType.getRunType() == process.runType.hi_run):
 process.muonGEMDigis.useDBEMap = True
 process.muonGEMDigis.keepDAQStatus = True
 
-process.gemRecHits.ge21Off = cms.bool(False)
+process.gemRecHits.ge21Container = cms.bool(False)
 
 process.GEMDigiSource.runType = "online"
 process.GEMRecHitSource.runType = "online"
@@ -71,8 +71,8 @@ process.path = cms.Path(
 
 process.end_path = cms.EndPath(
     process.dqmEnv +
-    process.dqmSaver +
-    process.dqmSaverPB
+    process.dqmSaver #+
+    # process.dqmSaverPB
 )
 
 process.schedule = cms.Schedule(
@@ -84,4 +84,5 @@ process.dqmProvInfo.runType = process.runType.getRunTypeName()
 
 from DQM.Integration.config.online_customizations_cfi import *
 process = customise(process)
+print("Global Tag used:", process.GlobalTag.globaltag.value())
 print("Final Source settings:", process.source)

@@ -9,6 +9,7 @@
 // needed to compile with USER_CXXFLAGS="-DCOMPUTE_TDC_TIME"
 #include "DataFormats/HcalRecHit/interface/HcalSpecialTimes.h"
 #include "FWCore/Utilities/interface/CMSUnrollLoop.h"
+#include "FWCore/Utilities/interface/HostDeviceConstant.h"
 // TODO reuse some of the HCAL constats from
 //#include "RecoLocalCalo/HcalRecAlgos/interface/HcalConstants.h"
 
@@ -23,14 +24,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   using namespace cms::alpakatools;
   namespace hcal::reconstruction {
     namespace mahi {
-
-      ALPAKA_FN_HOST_ACC ALPAKA_FN_INLINE float uint_as_float(uint32_t val) {
-#if defined(__CUDA_ARCH__) or defined(__HIP_DEVICE_COMPILE__)
-        return __uint_as_float(val);
-#else
-        return edm::bit_cast<float>(val);
-#endif
-      }
 
       ALPAKA_FN_HOST_ACC ALPAKA_FN_INLINE uint32_t float_as_uint(float val) {
 #if defined(__CUDA_ARCH__) or defined(__HIP_DEVICE_COMPILE__)
@@ -50,7 +43,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
       // HcalQIEShapes are hardcoded in HcalQIEData.cc basically
       // + some logic to generate 128 and 256 value arrays...
-      ALPAKA_STATIC_ACC_MEM_CONSTANT float const qie8shape[129] = {
+      HOST_DEVICE_CONSTANT float qie8shape[129] = {
           -1,   0,    1,    2,    3,    4,    5,    6,    7,    8,    9,    10,   11,   12,   13,   14,   16,
           18,   20,   22,   24,   26,   28,   31,   34,   37,   40,   44,   48,   52,   57,   62,   57,   62,
           67,   72,   77,   82,   87,   92,   97,   102,  107,  112,  117,  122,  127,  132,  142,  152,  162,
@@ -60,7 +53,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           2547, 2672, 2797, 2922, 3047, 3172, 3297, 3422, 3547, 3672, 3922, 4172, 4422, 4672, 4922, 5172, 5422,
           5797, 6172, 6547, 6922, 7422, 7922, 8422, 9047, 9672, 10297};
 
-      ALPAKA_STATIC_ACC_MEM_CONSTANT float const qie11shape[257] = {
+      HOST_DEVICE_CONSTANT float qie11shape[257] = {
           -0.5,    0.5,     1.5,     2.5,     3.5,     4.5,     5.5,     6.5,     7.5,     8.5,     9.5,     10.5,
           11.5,    12.5,    13.5,    14.5,    15.5,    17.5,    19.5,    21.5,    23.5,    25.5,    27.5,    29.5,
           31.5,    33.5,    35.5,    37.5,    39.5,    41.5,    43.5,    45.5,    47.5,    49.5,    51.5,    53.5,
@@ -268,8 +261,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
       class Kernel_prep1d_sameNumberOfSamples {
       public:
-        template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
-        ALPAKA_FN_ACC void operator()(TAcc const& acc,
+        ALPAKA_FN_ACC void operator()(Acc2D const& acc,
                                       OProductType::View outputGPU,
                                       IProductTypef01::ConstView f01HEDigis,
                                       IProductTypef5::ConstView f5HBDigis,
@@ -328,7 +320,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                   // NOTE: assume that soi is high only for a single guy!
                   //   which must be the case. cpu version does not check for that
                   //   if that is not the case, we will see that with cuda mmecheck
-                  auto const soibit = soibit_for_sample<Flavor1>(&(f01HEDigis.data()[gch][0]), sample);
+                  auto const soibit = soibit_for_sample<Flavor1>(&(f01HEDigis[gch].data()[0]), sample);
                   if (soibit == 1)
                     soiSamples[gch] = sampleWithinWindow;
                 } else if (gch >= nchannelsf015) {
@@ -339,20 +331,20 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
                 // compute shrMem
                 auto const id = gch < f01HEDigis.size()
-                                    ? f01HEDigis.ids()[gch]
+                                    ? f01HEDigis[gch].ids()
                                     : (gch < nchannelsf015 ? f5HBDigis.ids()[gch - f01HEDigis.size()]
                                                            : f3HBDigis.ids()[gch - nchannelsf015]);
                 auto const did = HcalDetId{id};
 
                 auto const adc =
                     gch < f01HEDigis.size()
-                        ? adc_for_sample<Flavor1>(&(f01HEDigis.data()[gch][0]), sample)
+                        ? adc_for_sample<Flavor1>(&(f01HEDigis[gch].data()[0]), sample)
                         : (gch < nchannelsf015
                                ? adc_for_sample<Flavor5>(&(f5HBDigis.data()[gch - f01HEDigis.size()][0]), sample)
                                : adc_for_sample<Flavor3>(&(f3HBDigis.data()[gch - nchannelsf015][0]), sample));
                 auto const capid =
                     gch < f01HEDigis.size()
-                        ? capid_for_sample<Flavor1>(&(f01HEDigis.data()[gch][0]), sample)
+                        ? capid_for_sample<Flavor1>(&(f01HEDigis[gch].data()[0]), sample)
                         : (gch < nchannelsf015
                                ? capid_for_sample<Flavor5>(&(f5HBDigis.data()[gch - f01HEDigis.size()][0]), sample)
                                : capid_for_sample<Flavor3>(&(f3HBDigis.data()[gch - nchannelsf015][0]), sample));
@@ -371,10 +363,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                               mahi.offsetForHashes();
 
                 // conditions based on the hash
-                auto const qieType = mahi.qieTypes_values()[hashedId] > 0 ? 1 : 0;  // 2 types at this point
-                auto const* qieOffsets = mahi.qieCoders_offsets()[hashedId].data();
-                auto const* qieSlopes = mahi.qieCoders_slopes()[hashedId].data();
-                auto const pedestal = mahi.pedestals_value()[hashedId][capid];
+                auto const qieType = mahi[hashedId].qieTypes_values() > 0 ? 1 : 0;  // 2 types at this point
+                auto const* qieOffsets = mahi[hashedId].qieCoders_offsets().data();
+                auto const* qieSlopes = mahi[hashedId].qieCoders_slopes().data();
+                auto const pedestal = mahi[hashedId].pedestals_value()[capid];
 
                 // compute charge
                 auto const charge = compute_coder_charge(qieType, adc, capid, qieOffsets, qieSlopes);
@@ -394,11 +386,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
                 // initialize all output buffers
                 if (sampleWithinWindow == 0) {
-                  outputGPU.detId()[gch] = 0;
-                  outputGPU.energyM0()[gch] = 0;
-                  outputGPU.timeM0()[gch] = 0;
-                  outputGPU.energy()[gch] = 0;
-                  outputGPU.chi2()[gch] = 0;
+                  outputGPU[gch].detId() = 0;
+                  outputGPU[gch].energyM0() = 0;
+                  outputGPU[gch].timeM0() = 0;
+                  outputGPU[gch].energy() = 0;
+                  outputGPU[gch].chi2() = 0;
                 }
 
                 // offset output
@@ -418,20 +410,20 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                 ALPAKA_ASSERT_ACC(nsamples == nsamplesForCompute || nsamples - startingSample == nsamplesForCompute);
 
                 auto const id = gch < f01HEDigis.size()
-                                    ? f01HEDigis.ids()[gch]
+                                    ? f01HEDigis[gch].ids()
                                     : (gch < nchannelsf015 ? f5HBDigis.ids()[gch - f01HEDigis.size()]
                                                            : f3HBDigis.ids()[gch - nchannelsf015]);
                 auto const did = HcalDetId{id};
 
                 auto const adc =
                     gch < f01HEDigis.size()
-                        ? adc_for_sample<Flavor1>(&(f01HEDigis.data()[gch][0]), sample)
+                        ? adc_for_sample<Flavor1>(&(f01HEDigis[gch].data()[0]), sample)
                         : (gch < nchannelsf015
                                ? adc_for_sample<Flavor5>(&(f5HBDigis.data()[gch - f01HEDigis.size()][0]), sample)
                                : adc_for_sample<Flavor3>(&(f3HBDigis.data()[gch - nchannelsf015][0]), sample));
                 auto const capid =
                     gch < f01HEDigis.size()
-                        ? capid_for_sample<Flavor1>(&(f01HEDigis.data()[gch][0]), sample)
+                        ? capid_for_sample<Flavor1>(&(f01HEDigis[gch].data()[0]), sample)
                         : (gch < nchannelsf015
                                ? capid_for_sample<Flavor5>(&(f5HBDigis.data()[gch - f01HEDigis.size()][0]), sample)
                                : capid_for_sample<Flavor3>(&(f3HBDigis.data()[gch - nchannelsf015][0]), sample));
@@ -450,26 +442,26 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                               mahi.offsetForHashes();
 
                 // conditions based on the hash
-                auto const qieType = mahi.qieTypes_values()[hashedId] > 0 ? 1 : 0;  // 2 types at this point
-                auto const* qieOffsets = mahi.qieCoders_offsets()[hashedId].data();
-                auto const* qieSlopes = mahi.qieCoders_slopes()[hashedId].data();
+                auto const qieType = mahi[hashedId].qieTypes_values() > 0 ? 1 : 0;  // 2 types at this point
+                auto const* qieOffsets = mahi[hashedId].qieCoders_offsets().data();
+                auto const* qieSlopes = mahi[hashedId].qieCoders_slopes().data();
                 auto const* pedestalWidthsForChannel =
                     useEffectivePedestals && (gch < f01HEDigis.size() || gch >= nchannelsf015)
-                        ? mahi.effectivePedestalWidths()[hashedId].data()
-                        : mahi.pedestals_width()[hashedId].data();
+                        ? mahi[hashedId].effectivePedestalWidths().data()
+                        : mahi[hashedId].pedestals_width().data();
 
-                auto const gain = mahi.gains_value()[hashedId][capid];
-                auto const gain0 = mahi.gains_value()[hashedId][0];
-                auto const respCorrection = mahi.respCorrs_values()[hashedId];
-                auto const pedestal = mahi.pedestals_value()[hashedId][capid];
+                auto const gain = mahi[hashedId].gains_value()[capid];
+                auto const gain0 = mahi[hashedId].gains_value()[0];
+                auto const respCorrection = mahi[hashedId].respCorrs_values();
+                auto const pedestal = mahi[hashedId].pedestals_value()[capid];
                 auto const pedestalWidth = pedestalWidthsForChannel[capid];
                 // if needed, only use effective pedestals for f01
                 auto const pedestalToUseForMethod0 =
                     useEffectivePedestals && (gch < f01HEDigis.size() || gch >= nchannelsf015)
-                        ? mahi.effectivePedestals()[hashedId][capid]
+                        ? mahi[hashedId].effectivePedestals()[capid]
                         : pedestal;
-                auto const sipmType = mahi.sipmPar_type()[hashedId];
-                auto const fcByPE = mahi.sipmPar_fcByPE()[hashedId];
+                auto const sipmType = mahi[hashedId].sipmPar_type();
+                auto const fcByPE = mahi[hashedId].sipmPar_fcByPE();
                 auto const recoParam1 = recoParamsWithPS.recoParamView().param1()[hashedId];
                 auto const recoParam2 = recoParamsWithPS.recoParamView().param2()[hashedId];
 
@@ -496,7 +488,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                   printf("Found HBHE channel %d with invalid SOI %d\n", gch, soi);
 #endif
                   // mark the channel as bad
-                  outputGPU.chi2()[gch] = -9999.f;
+                  outputGPU[gch].chi2() = -9999.f;
                 }
 
                 // type index starts from 1 .. 6
@@ -534,20 +526,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
                 auto const dfc = compute_diff_charge_gain(
                     qieType, adc, capid, qieOffsets, qieSlopes, gch < f01HEDigis.size() || gch >= nchannelsf015);
-
-#ifdef COMPUTE_TDC_TIME
-                float tdcTime;
-                if (gch >= f01HEDigis.size() && gch < nchannelsf015) {
-                  tdcTime = HcalSpecialTimes::UNKNOWN_T_NOTDC;
-                } else {
-                  if (gch < f01HEDigis.size())
-                    tdcTime =
-                        HcalSpecialTimes::getTDCTime(tdc_for_sample<Flavor1>(&(f01HEDigis.data()[gch][0]), sample));
-                  else if (gch >= nchannelsf015)
-                    tdcTime = HcalSpecialTimes::getTDCTime(
-                        tdc_for_sample<Flavor3>(&(f3HBDigis.data()[gch - nchannelsf015][0]), sample));
-                }
-#endif  // COMPUTE_TDC_TIME
 
                 // compute method 0 quantities
                 // TODO: need to apply containment
@@ -610,16 +588,16 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                   //    https://github.com/cms-sw/cmssw/blob/6d2f66057131baacc2fcbdd203588c41c885b42c/CondCore/HcalPlugins/plugins/HcalChannelQuality_PayloadInspector.cc#L30
                   //      const bool taggedBadByDb = severity.dropChannel(digistatus->getValue());
                   //  do not run MAHI if taggedBadByDb = true
-                  auto const digiStatus_ = mahi.channelQuality_status()[hashedId];
+                  auto const digiStatus_ = mahi[hashedId].channelQuality_status();
                   const bool taggedBadByDb = (digiStatus_ / 32770);
 
                   if (taggedBadByDb)
-                    outputGPU.chi2()[gch] = -9999.f;
+                    outputGPU[gch].chi2() = -9999.f;
 
                   // check as in cpu version if mahi is not needed
                   // (use "not" and ">", instead of "<=", to ensure that a NaN value will pass the check, and the hit be flagged as invalid)
                   if (not(energym0_per_ts_gain0 > ts4Thresh)) {
-                    outputGPU.chi2()[gch] = -9999.f;
+                    outputGPU[gch].chi2() = -9999.f;
                   }
                 }
                 //
@@ -636,7 +614,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                 electronicNoiseTermsForChannel[sampleWithinWindow] = pedestalWidth;
 
               }  //end sample loop
-            }    // end channel loop
+            }  // end channel loop
             alpaka::syncBlockThreads(acc);
 
             // compute energy using shrMethod0EnergySamplePair
@@ -645,6 +623,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
               auto const lch = channel.local;
               for (auto i_sample : independent_group_elements_x(acc, nsamplesForCompute)) {
                 auto const sampleWithinWindow = i_sample;
+                auto const sample = i_sample + startingSample;
 
                 int32_t const soi =
                     gch < f01HEDigis.size()
@@ -652,33 +631,76 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                         : (gch < nchannelsf015 ? f5HBDigis.npresamples()[gch - f01HEDigis.size()] : soiSamples[gch]);
 
                 auto const id = gch < f01HEDigis.size()
-                                    ? f01HEDigis.ids()[gch]
+                                    ? f01HEDigis[gch].ids()
                                     : (gch < nchannelsf015 ? f5HBDigis.ids()[gch - f01HEDigis.size()]
                                                            : f3HBDigis.ids()[gch - nchannelsf015]);
-                auto const did = HcalDetId{id};
-                auto const hashedId =
-                    did.subdetId() == HcalBarrel
-                        ? did2linearIndexHB(id, mahi.maxDepthHB(), mahi.firstHBRing(), mahi.lastHBRing(), mahi.nEtaHB())
-                        : did2linearIndexHE(id,
-                                            mahi.maxDepthHE(),
-                                            mahi.maxPhiHE(),
-                                            mahi.firstHERing(),
-                                            mahi.lastHERing(),
-                                            mahi.nEtaHE()) +
-                              mahi.offsetForHashes();
 
-                auto const recoParam1 = recoParamsWithPS.recoParamView().param1()[hashedId];
-                auto const recoParam2 = recoParamsWithPS.recoParamView().param2()[hashedId];
-
-                auto const nsamplesToAdd = recoParam1 < 10 ? recoParam2 : (recoParam1 >> 14) & 0xF;
                 // NOTE: must take soi, as values for that thread are used...
                 // NOTE: does not run if soi is bad, because it does not match any sampleWithinWindow
                 if (sampleWithinWindow == static_cast<unsigned>(soi)) {
                   auto const method0_energy = shrMethod0EnergyAccum[lch];
+
+                  HcalDetId didtmp(id);
+                  auto subdetectorType = didtmp.subdet();
+                  auto subdetectorDepth = didtmp.depth();
+
+                  float tdcTime = 0.f;
+                  if (gch >= f01HEDigis.size() && gch < nchannelsf015) {
+                    tdcTime = HcalSpecialTimes::UNKNOWN_T_NOTDC;
+                  } else {
+                    if (gch < f01HEDigis.size())
+                      tdcTime =
+                          HcalSpecialTimes::getTDCTime(tdc_for_sample<Flavor1>(f01HEDigis[gch].data().data(), sample),
+                                                       subdetectorType,
+                                                       subdetectorDepth);
+                    else if (gch >= nchannelsf015)
+                      tdcTime = HcalSpecialTimes::getTDCTime(
+                          tdc_for_sample<Flavor3>(f3HBDigis[gch - nchannelsf015].data().data(), sample),
+                          subdetectorType,
+                          subdetectorDepth);
+                  }
+                  // store method0 quantities to global mem
+                  outputGPU[gch].detId() = id;
+                  outputGPU[gch].energyM0() = method0_energy;
+                  outputGPU[gch].timeM0() = tdcTime;
+
+                  // check as in cpu version if mahi is not needed
+                  // FIXME: KNOWN ISSUE: observed a problem when rawCharge and pedestal
+                  // are basically equal and generate -0.00000...
+                  // needs to be treated properly
+                  // (use "not" and ">", instead of "<=", to ensure that a NaN value will pass the check, and the hit be flagged as invalid)
+                  if (not(shrEnergyM0TotalAccum[lch] > 0)) {
+                    outputGPU[gch].chi2() = -9999.f;
+                  }
+
+#ifdef HCAL_MAHI_GPUDEBUG
+                  printf("tsTOT = %f tstrig = %f ts4Thresh = %f\n",
+                         shrEnergyM0TotalAccum[lch],
+                         energym0_per_ts_gain0,
+                         ts4Thresh);
+#endif
+
+#ifdef HCAL_MAHI_GPUDEBUG
+                  auto const did = HcalDetId{id};
+                  auto const hashedId =
+                      did.subdetId() == HcalBarrel
+                          ? did2linearIndexHB(
+                                id, mahi.maxDepthHB(), mahi.firstHBRing(), mahi.lastHBRing(), mahi.nEtaHB())
+                          : did2linearIndexHE(id,
+                                              mahi.maxDepthHE(),
+                                              mahi.maxPhiHE(),
+                                              mahi.firstHERing(),
+                                              mahi.lastHERing(),
+                                              mahi.nEtaHE()) +
+                                mahi.offsetForHashes();
+
+                  auto const recoParam1 = recoParamsWithPS.recoParamView().param1()[hashedId];
+                  auto const recoParam2 = recoParamsWithPS.recoParamView().param2()[hashedId];
+                  auto const nsamplesToAdd = recoParam1 < 10 ? recoParam2 : (recoParam1 >> 14) & 0xF;
                   auto const val = shrMethod0EnergySamplePair[lch];
                   int const max_sample = (val >> 32) & 0xffffffff;
 
-                  float const max_energy = uint_as_float(static_cast<uint32_t>(val & 0xffffffff));
+                  float const max_energy = std::bit_cast<float>(static_cast<uint32_t>(val & 0xffffffff));
 
                   float const max_energy_1 = static_cast<unsigned>(max_sample) < nsamplesForCompute - 1
                                                  ? shrEnergyM0PerTS[lch * nsamplesForCompute + max_sample + 1]
@@ -691,29 +713,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                   // really needed
                   float const time =
                       max_energy > 0.f && max_energy_1 > 0.f ? 25.f * (position + max_energy_1 / sum) : 25.f * position;
-
-                  // store method0 quantities to global mem
-                  outputGPU.detId()[gch] = id;
-                  outputGPU.energyM0()[gch] = method0_energy;
-                  outputGPU.timeM0()[gch] = time;
-
-                  // check as in cpu version if mahi is not needed
-                  // FIXME: KNOWN ISSUE: observed a problem when rawCharge and pedestal
-                  // are basically equal and generate -0.00000...
-                  // needs to be treated properly
-                  // (use "not" and ">", instead of "<=", to ensure that a NaN value will pass the check, and the hit be flagged as invalid)
-                  if (not(shrEnergyM0TotalAccum[lch] > 0)) {
-                    outputGPU.chi2()[gch] = -9999.f;
-                  }
-
-#ifdef HCAL_MAHI_GPUDEBUG
-                  printf("tsTOT = %f tstrig = %f ts4Thresh = %f\n",
-                         shrEnergyM0TotalAccum[lch],
-                         energym0_per_ts_gain0,
-                         ts4Thresh);
-#endif
-
-#ifdef HCAL_MAHI_GPUDEBUG
                   printf(" method0_energy = %f max_sample = %d max_energy = %f time = %f\n",
                          method0_energy,
                          max_sample,
@@ -737,23 +736,26 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                     noiseADC,
                     sample,
                     noisePhotoSq,
-                    outputGPU.chi2()[gch]);
+                    outputGPU[gch].chi2());
 #endif
 
               }  // loop for sample
-            }    // loop for channels
-          }      // loop for channgel groups
+            }  // loop for channels
+
+            // make sure one iteration over the channel does not spill into the next
+            alpaka::syncBlockThreads(acc);
+
+          }  // loop for channel groups
         }
       };  //Kernel_prep1d_sameNumberOfSamples
 
       class Kernel_prep_pulseMatrices_sameNumberOfSamples {
       public:
-        template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
-        ALPAKA_FN_ACC void operator()(TAcc const& acc,
+        ALPAKA_FN_ACC void operator()(Acc3D const& acc,
                                       float* pulseMatrices,
                                       float* pulseMatricesM,
                                       float* pulseMatricesP,
-                                      HcalMahiPulseOffsetsPortableDevice::ConstView pulseOffsets,
+                                      HcalMahiPulseOffsetsSoA::ConstView pulseOffsets,
                                       float const* amplitudes,
                                       IProductTypef01::ConstView f01HEDigis,
                                       IProductTypef5::ConstView f5HBDigis,
@@ -784,9 +786,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
               for (auto sample : independent_group_elements_x(acc, nsamples)) {
                 // conditions
                 auto const id = channel < f01HEDigis.size()
-                                    ? f01HEDigis.ids()[channel]
-                                    : (channel < nchannelsf015 ? f5HBDigis.ids()[channel - f01HEDigis.size()]
-                                                               : f3HBDigis.ids()[channel - nchannelsf015]);
+                                    ? f01HEDigis[channel].ids()
+                                    : (channel < nchannelsf015 ? f5HBDigis[channel - f01HEDigis.size()].ids()
+                                                               : f3HBDigis[channel - nchannelsf015].ids());
                 auto const deltaT =
                     channel >= f01HEDigis.size() && channel < nchannelsf015 ? timeSigmaHPD : timeSigmaSiPM;
 
@@ -812,7 +814,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
                 // amplitude per ipulse
                 int const soi = soiSamples[channel];
-                int const pulseOffset = pulseOffsets.offsets()[ipulse];
+                int const pulseOffset = pulseOffsets[ipulse].offsets();
                 auto const amplitude = amplitudes[channel * nsamples + pulseOffset + soi];
 
                 if (amplitude <= 0.f) {
@@ -903,8 +905,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                 pulseMatrixP[ipulse * nsamples + sample] = value_t0p;
 
               }  // loop over sample
-            }    // loop over pulse
-          }      // loop over channels
+            }  // loop over pulse
+          }  // loop over channels
         }
       };  // Kernel_prep_pulseMatrices_sameNumberOfSamples
 
@@ -968,14 +970,13 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       template <int NSAMPLES, int NPULSES>
       class Kernel_minimize {
       public:
-        template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
-        ALPAKA_FN_ACC void operator()(TAcc const& acc,
+        ALPAKA_FN_ACC void operator()(Acc1D const& acc,
                                       OProductType::View outputGPU,
                                       float const* amplitudes,
                                       float* pulseMatrices,
                                       float* pulseMatricesM,
                                       float* pulseMatricesP,
-                                      HcalMahiPulseOffsetsPortableDevice::ConstView pulseOffsetsView,
+                                      HcalMahiPulseOffsetsSoA::ConstView pulseOffsetsView,
                                       float* noiseTerms,
                                       float* electronicNoiseTerms,
                                       int8_t* soiSamples,
@@ -1001,7 +1002,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
               auto const lch = channel.local;
 
               // if chi2 is set to -9999 do not run minimization
-              if (outputGPU.chi2()[gch] == -9999.f)
+              if (outputGPU[gch].chi2() == -9999.f)
                 continue;
 
               // configure shared mem
@@ -1010,7 +1011,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
               float* shrAtAStorage = shrmem + calo::multifit::MapSymM<float, NPULSES>::total * (lch + threadsPerBlock);
 
               // conditions for pedestal widths
-              auto const id = gch < f01HEDigis.size() ? f01HEDigis.ids()[gch]
+              auto const id = gch < f01HEDigis.size() ? f01HEDigis[gch].ids()
                                                       : (gch < nchannelsf015 ? f5HBDigis.ids()[gch - f01HEDigis.size()]
                                                                              : f3HBDigis.ids()[gch - nchannelsf015]);
               auto const did = DetId{id};
@@ -1028,18 +1029,18 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
               // conditions based on the hash
               auto const* pedestalWidthsForChannel =
                   useEffectivePedestals && (gch < f01HEDigis.size() || gch >= nchannelsf015)
-                      ? mahi.effectivePedestalWidths()[hashedId].data()
-                      : mahi.pedestals_width()[hashedId].data();
+                      ? mahi[hashedId].effectivePedestalWidths().data()
+                      : mahi[hashedId].pedestals_width().data();
               auto const averagePedestalWidth2 = 0.25 * (pedestalWidthsForChannel[0] * pedestalWidthsForChannel[0] +
                                                          pedestalWidthsForChannel[1] * pedestalWidthsForChannel[1] +
                                                          pedestalWidthsForChannel[2] * pedestalWidthsForChannel[2] +
                                                          pedestalWidthsForChannel[3] * pedestalWidthsForChannel[3]);
 
               // FIXME on cpu ts 0 capid was used - does it make any difference
-              auto const gain = mahi.gains_value()[hashedId][0];
+              auto const gain = mahi[hashedId].gains_value()[0];
 
-              auto const respCorrection = mahi.respCorrs_values()[hashedId];
-              auto const noisecorr = mahi.sipmPar_auxi2()[hashedId];
+              auto const respCorrection = mahi[hashedId].respCorrs_values();
+              auto const noisecorr = mahi[hashedId].sipmPar_auxi2();
 
 #ifdef HCAL_MAHI_GPUDEBUG
 #ifdef HCAL_MAHI_GPUDEBUG_FILTERDETID
@@ -1271,12 +1272,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
               printf("chi2 = %f\n", chi2);
 #endif
 
-              outputGPU.chi2()[gch] = chi2;
+              outputGPU[gch].chi2() = chi2;
               auto const idx_for_energy = std::abs(pulseOffsetsView.offsets()[0]);
-              outputGPU.energy()[gch] = (gain * resultAmplitudesVector(idx_for_energy)) * respCorrection;
+              outputGPU[gch].energy() = (gain * resultAmplitudesVector(idx_for_energy)) * respCorrection;
 
             }  // loop over channels
-          }    //loop over group of channels
+          }  //loop over group of channels
         }
       };  // Kernel_minimize
 
@@ -1290,7 +1291,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                       HcalMahiConditionsPortableDevice::ConstView const& mahi,
                       HcalSiPMCharacteristicsPortableDevice::ConstView const& sipmCharacteristics,
                       HcalRecoParamWithPulseShapeDevice::ConstView const& recoParamsWithPS,
-                      HcalMahiPulseOffsetsPortableDevice::ConstView const& mahiPulseOffsets,
+                      HcalMahiPulseOffsetsSoA::ConstView const& mahiPulseOffsets,
                       ConfigParameters const& configParameters) {
       auto const totalChannels =
           f01HEDigis.metadata().size() + f5HBDigis.metadata().size() + f3HBDigis.metadata().size();
@@ -1408,11 +1409,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
 
 namespace alpaka::trait {
+  using namespace ALPAKA_ACCELERATOR_NAMESPACE;
   using namespace ALPAKA_ACCELERATOR_NAMESPACE::hcal::reconstruction::mahi;
 
   //! The trait for getting the size of the block shared dynamic memory for Kernel_prep_1d_and_initialize.
-  template <typename TAcc>
-  struct BlockSharedMemDynSizeBytes<Kernel_prep1d_sameNumberOfSamples, TAcc> {
+  template <>
+  struct BlockSharedMemDynSizeBytes<Kernel_prep1d_sameNumberOfSamples, Acc2D> {
     //! \return The size of the shared memory allocated for a block.
     template <typename TVec, typename... TArgs>
     ALPAKA_FN_HOST_ACC static auto getBlockSharedMemDynSizeBytes(Kernel_prep1d_sameNumberOfSamples const&,
@@ -1431,8 +1433,8 @@ namespace alpaka::trait {
   };
 
   //! The trait for getting the size of the block shared dynamic memory for kernel_minimize.
-  template <int NSAMPLES, int NPULSES, typename TAcc>
-  struct BlockSharedMemDynSizeBytes<Kernel_minimize<NSAMPLES, NPULSES>, TAcc> {
+  template <int NSAMPLES, int NPULSES>
+  struct BlockSharedMemDynSizeBytes<Kernel_minimize<NSAMPLES, NPULSES>, Acc1D> {
     //! \return The size of the shared memory allocated for a block.
     template <typename TVec, typename... TArgs>
     ALPAKA_FN_HOST_ACC static auto getBlockSharedMemDynSizeBytes(Kernel_minimize<NSAMPLES, NPULSES> const&,

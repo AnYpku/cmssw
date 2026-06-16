@@ -36,11 +36,11 @@ New det-id.
 #include "FWCore/Framework/interface/ESHandle.h"
 
 // my includes
-//#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+//#include "Geometry/CommonTopologies/interface/GeomDet.h"
 
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetType.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetType.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"  //
 
 // for det id
@@ -636,7 +636,7 @@ void PixelSimHitsTest::analyze(const edm::Event &iEvent, const edm::EventSetup &
         //if(pid!=11 && moduleDirectionUp) hladder3idUp->Fill(float(ladder));
 
       }  // layers
-    }    // end fpix/bpix
+    }  // end fpix/bpix
   }
 
   hsimHitsPerLay1->Fill(float(totalNumOfSimHits1));

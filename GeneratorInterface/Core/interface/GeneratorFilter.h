@@ -183,10 +183,18 @@ namespace edm {
       // The external decay driver is being added to the system,
       // it should be called here
       //
-      if (decayer_) {  // handle only HepMC2 for the moment
-        auto t = decayer_->decay(event.get());
-        if (t != event.get()) {
-          event.reset(t);
+      if (decayer_) {
+        if (ivhepmc == 2) {  // handle HepMC2
+          auto t = decayer_->decay(event.get());
+          if (t != event.get()) {
+            event.reset(t);
+          }
+        }
+        if (ivhepmc == 3) {  // handle HepMC3
+          auto t = decayer_->decay(event3.get());
+          if (t != event3.get()) {
+            event3.reset(t);
+          }
         }
       }
       if (ivhepmc == 2 && !event.get())
@@ -253,7 +261,7 @@ namespace edm {
       ev.put(std::move(genEventInfo3));
 
       std::unique_ptr<HepMC3Product> bare_product(new HepMC3Product());
-      bare_product->addHepMCData(event3.release());
+      bare_product->addHepMCData(*event3);
       ev.put(std::move(bare_product), "unsmeared");
     }
 

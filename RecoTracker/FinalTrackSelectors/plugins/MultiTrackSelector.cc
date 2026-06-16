@@ -20,7 +20,10 @@ MultiTrackSelector::MultiTrackSelector(const edm::ParameterSet& cfg)
       hSrc_(consumes<TrackingRecHitCollection>(cfg.getParameter<edm::InputTag>("src"))),
       beamspot_(consumes<reco::BeamSpot>(cfg.getParameter<edm::InputTag>("beamspot"))),
       useVertices_(cfg.getParameter<bool>("useVertices")),
-      useVtxError_(cfg.getParameter<bool>("useVtxError"))
+      useVtxError_(cfg.getParameter<bool>("useVtxError")),
+      passThroughForAll_(cfg.getParameter<bool>("passThroughForAll")),
+      passThroughForDisplaced_(cfg.getParameter<bool>("passThroughForDisplaced")),
+      minLayersForDisplaced_(cfg.getParameter<uint32_t>("minLayersForDisplaced"))
 // now get the pset for each selector
 {
   if (useVertices_)
@@ -87,7 +90,7 @@ MultiTrackSelector::MultiTrackSelector(const edm::ParameterSet& cfg)
     qualityToSet_.push_back(TrackBase::undefQuality);
     // parameters for vertex selection
     vtxNumber_.push_back(useVertices_ ? trkSelectors[i].getParameter<int32_t>("vtxNumber") : 0);
-    vertexCut_.push_back(useVertices_ ? trkSelectors[i].getParameter<std::string>("vertexCut") : nullptr);
+    vertexCut_.push_back(useVertices_ ? trkSelectors[i].getParameter<std::string>("vertexCut") : "");
     //  parameters for adapted optimal cuts on chi2 and primary vertex compatibility
     res_par_.push_back(trkSelectors[i].getParameter<std::vector<double>>("res_par"));
     chi2n_par_.push_back(trkSelectors[i].getParameter<double>("chi2n_par"));
@@ -344,9 +347,18 @@ bool MultiTrackSelector::select(unsigned int tsNum,
 
   using namespace std;
 
+  if (passThroughForAll_)
+    return true;
+  uint32_t nlayers = tk.hitPattern().trackerLayersWithMeasurement();
+  uint32_t npixhits = tk.hitPattern().numberOfValidPixelHits();
+  if (passThroughForDisplaced_) {
+    if (npixhits == 0 && nlayers >= minLayersForDisplaced_)
+      return true;
+  }
+
   //cuts on number of valid hits
   auto nhits = tk.numberOfValidHits();
-  if (nhits >= min_hits_bypass_[tsNum])
+  if ((nhits >= min_hits_bypass_[tsNum]) || (nhits == 0))
     return true;
   if (nhits < min_nhits_[tsNum])
     return false;
@@ -368,7 +380,6 @@ bool MultiTrackSelector::select(unsigned int tsNum,
   ///////////////////////////////
 
   // Cuts on numbers of layers with hits/3D hits/lost hits.
-  uint32_t nlayers = tk.hitPattern().trackerLayersWithMeasurement();
   uint32_t nlayers3D =
       tk.hitPattern().pixelLayersWithMeasurement() + tk.hitPattern().numberOfValidStripLayersWithMonoAndStereo();
   uint32_t nlayersLost = tk.hitPattern().trackerLayersWithoutMeasurement(reco::HitPattern::TRACK_HITS);
@@ -422,6 +433,8 @@ bool MultiTrackSelector::select(unsigned int tsNum,
   int minLost = std::min(lostIn, lostOut);
   if (minLost > max_minMissHitOutOrIn_[tsNum])
     return false;
+  //numberOfValidHits is not 0 here
+  [[clang::suppress]]
   float lostMidFrac = tk.numberOfLostHits() / (tk.numberOfValidHits() + tk.numberOfLostHits());
   if (lostMidFrac > max_lostHitFraction_[tsNum])
     return false;

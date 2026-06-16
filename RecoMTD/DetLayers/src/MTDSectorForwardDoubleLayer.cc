@@ -2,7 +2,7 @@
 
 #include <RecoMTD/DetLayers/interface/MTDSectorForwardDoubleLayer.h>
 #include <RecoMTD/DetLayers/interface/MTDDetSector.h>
-#include <Geometry/CommonDetUnit/interface/GeomDet.h>
+#include <Geometry/CommonTopologies/interface/GeomDet.h>
 #include <DataFormats/GeometrySurface/interface/SimpleDiskBounds.h>
 #include <TrackingTools/GeomPropagators/interface/Propagator.h>
 #include <TrackingTools/DetLayers/interface/MeasurementEstimator.h>
@@ -140,7 +140,8 @@ vector<DetGroup> MTDSectorForwardDoubleLayer::groupedCompatibleDets(const Trajec
     result.push_back(DetGroup(detWithStates1));
   if (!detWithStates2.empty())
     result.push_back(DetGroup(detWithStates2));
-  LogTrace("MTDDetLayers") << "DoubleLayer Compatible dets: " << result.size();
+  LogTrace("MTDDetLayers") << "DoubleLayer Compatible dets: " << result.size() << " front: " << detWithStates1.size()
+                           << " back: " << detWithStates2.size();
   return result;
 }
 

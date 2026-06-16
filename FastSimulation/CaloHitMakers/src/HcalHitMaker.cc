@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cmath>
 
-typedef ROOT::Math::Transform3DPJ::Point Point;
+typedef ROOT::Math::Transform3D::Point Point;
 
 HcalHitMaker::HcalHitMaker(EcalHitMaker& grid, unsigned shower)
     : CaloHitMaker(grid.getCalorimeter(),
@@ -99,7 +99,7 @@ bool HcalHitMaker::addHit(const XYZPoint& point, unsigned layer) {
     //      std::cout << " FamosHcalHitMaker::addHit - the cell num " << cell
     //      		<< std::endl;
 
-    std::map<CaloHitID, float>::iterator cellitr;
+    CaloHitMap::iterator cellitr;
     cellitr = hitMap_.find(current_id);
     if (cellitr == hitMap_.end()) {
       hitMap_.insert(std::pair<CaloHitID, float>(current_id, spotEnergy));

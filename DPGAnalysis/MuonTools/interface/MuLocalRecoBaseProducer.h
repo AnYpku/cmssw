@@ -22,7 +22,7 @@
 
 #include "FWCore/Utilities/interface/ESGetToken.h"
 #include "FWCore/Framework/interface/ConsumesCollector.h"
-#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/GlobalTrackingGeometry.h"
 #include "Geometry/Records/interface/GlobalTrackingGeometryRecord.h"
 
 #include <algorithm>
@@ -53,7 +53,7 @@ class MuRecObjBaseProducer
 
 public:
   MuRecObjBaseProducer(edm::ParameterSet const &params)
-      : SimpleFlatTableProducerBase<RECO_T, COLLECTION>(params), m_token{this->template esConsumes()} {
+      : SimpleFlatTableProducerBase<RECO_T, COLLECTION>(params), m_token{this->esConsumes()} {
     auto varCfgs = params.getParameter<edm::ParameterSet>("detIdVariables");
     auto varNames = varCfgs.getParameterNamesForType<edm::ParameterSet>();
 

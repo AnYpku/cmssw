@@ -4,12 +4,10 @@
 #include "InputFile.h"
 #include "RootPrimaryFileSequence.h"
 #include "RootSecondaryFileSequence.h"
-#include "RunHelper.h"
-#include "DataFormats/Common/interface/ThinnedAssociation.h"
-#include "DataFormats/Provenance/interface/BranchDescription.h"
+#include "DataFormats/Provenance/interface/ProductDescription.h"
 #include "DataFormats/Provenance/interface/IndexIntoFile.h"
 #include "DataFormats/Provenance/interface/ProductRegistry.h"
-#include "DataFormats/Provenance/interface/ThinnedAssociationsHelper.h"
+
 #include "FWCore/Framework/interface/EventPrincipal.h"
 #include "FWCore/Framework/interface/FileBlock.h"
 #include "FWCore/Framework/interface/InputSourceDescription.h"
@@ -18,6 +16,8 @@
 #include "FWCore/Framework/interface/SharedResourcesRegistry.h"
 #include "FWCore/Framework/interface/SharedResourcesAcquirer.h"
 #include "FWCore/Framework/interface/RunPrincipal.h"
+#include "FWCore/Framework/interface/ProductResolversFactory.h"
+#include "FWCore/Sources/interface/InputSourceRunHelper.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/Utilities/interface/EDMException.h"
@@ -31,7 +31,6 @@ namespace edm {
   class BranchID;
   class LuminosityBlockID;
   class EventID;
-  class ThinnedAssociationsHelper;
 
   namespace {
     void checkHistoryConsistency(Principal const& primary, Principal const& secondary) {
@@ -65,11 +64,9 @@ namespace edm {
   PoolSource::PoolSource(ParameterSet const& pset, InputSourceDescription const& desc)
       : InputSource(pset, desc),
         rootServiceChecker_(),
-        catalog_(pset.getUntrackedParameter<std::vector<std::string> >("fileNames"),
-                 pset.getUntrackedParameter<std::string>("overrideCatalog", std::string())),
-        secondaryCatalog_(
-            pset.getUntrackedParameter<std::vector<std::string> >("secondaryFileNames", std::vector<std::string>()),
-            pset.getUntrackedParameter<std::string>("overrideCatalog", std::string())),
+        catalog_(pset),
+        secondaryCatalog_(pset.getUntrackedParameter<std::vector<std::string> >("secondaryFileNames"),
+                          pset.getUntrackedParameter<std::string>("overrideCatalog")),
         secondaryRunPrincipal_(),
         secondaryLumiPrincipal_(),
         secondaryEventPrincipals_(),
@@ -82,7 +79,7 @@ namespace edm {
         dropDescendants_(pset.getUntrackedParameter<bool>("dropDescendantsOfDroppedBranches")),
         labelRawDataLikeMC_(pset.getUntrackedParameter<bool>("labelRawDataLikeMC")),
         delayReadingEventProducts_(pset.getUntrackedParameter<bool>("delayReadingEventProducts")),
-        runHelper_(makeRunHelper(pset)),
+        runHelper_(makeInputSourceRunHelper(pset)),
         resourceSharedWithDelayedReaderPtr_(),
         // Note: primaryFileSequence_ and secondaryFileSequence_ need to be initialized last, because they use data members
         // initialized previously in their own initialization.
@@ -100,8 +97,8 @@ namespace edm {
       secondaryEventPrincipals_.reserve(nStreams_);
       for (unsigned int index = 0; index < nStreams_; ++index) {
         secondaryEventPrincipals_.emplace_back(new EventPrincipal(secondaryFileSequence_->fileProductRegistry(),
+                                                                  edm::productResolversFactory::makePrimary,
                                                                   secondaryFileSequence_->fileBranchIDListHelper(),
-                                                                  std::make_shared<ThinnedAssociationsHelper const>(),
                                                                   processConfiguration(),
                                                                   nullptr,
                                                                   index));
@@ -109,15 +106,11 @@ namespace edm {
       std::array<std::set<BranchID>, NumBranchTypes> idsToReplace;
       ProductRegistry::ProductList const& secondary = secondaryFileSequence_->fileProductRegistry()->productList();
       ProductRegistry::ProductList const& primary = primaryFileSequence_->fileProductRegistry()->productList();
-      std::set<BranchID> associationsFromSecondary;
       //this is the registry used by the 'outside' world and only has the primary file information in it at present
       ProductRegistry::ProductList& fullList = productRegistryUpdate().productListUpdator();
       for (auto const& item : secondary) {
         if (item.second.present()) {
           idsToReplace[item.second.branchType()].insert(item.second.branchID());
-          if (item.second.branchType() == InEvent && item.second.unwrappedType() == typeid(ThinnedAssociation)) {
-            associationsFromSecondary.insert(item.second.branchID());
-          }
           //now make sure this is marked as not dropped else the product will not be 'get'table from the Event
           auto itFound = fullList.find(item.first);
           if (itFound != fullList.end()) {
@@ -132,7 +125,6 @@ namespace edm {
       for (auto const& item : primary) {
         if (item.second.present()) {
           idsToReplace[item.second.branchType()].erase(item.second.branchID());
-          associationsFromSecondary.erase(item.second.branchID());
         }
       }
       if (idsToReplace[InEvent].empty() && idsToReplace[InLumi].empty() && idsToReplace[InRun].empty()) {
@@ -144,7 +136,6 @@ namespace edm {
             branchIDsToReplace_[i].push_back(id);
           }
         }
-        secondaryFileSequence_->initAssociationsFromSecondary(associationsFromSecondary);
       }
     }
   }
@@ -191,8 +182,11 @@ namespace edm {
       if (found) {
         std::shared_ptr<RunAuxiliary> secondaryAuxiliary = secondaryFileSequence_->readRunAuxiliary_();
         checkConsistency(runPrincipal.aux(), *secondaryAuxiliary);
-        secondaryRunPrincipal_ = std::make_shared<RunPrincipal>(
-            secondaryFileSequence_->fileProductRegistry(), processConfiguration(), nullptr, runPrincipal.index());
+        secondaryRunPrincipal_ = std::make_shared<RunPrincipal>(secondaryFileSequence_->fileProductRegistry(),
+                                                                edm::productResolversFactory::makePrimary,
+                                                                processConfiguration(),
+                                                                nullptr,
+                                                                runPrincipal.index());
         secondaryRunPrincipal_->setAux(*secondaryAuxiliary);
         secondaryFileSequence_->readRun_(*secondaryRunPrincipal_);
         checkHistoryConsistency(runPrincipal, *secondaryRunPrincipal_);
@@ -212,8 +206,12 @@ namespace edm {
         std::shared_ptr<LuminosityBlockAuxiliary> secondaryAuxiliary =
             secondaryFileSequence_->readLuminosityBlockAuxiliary_();
         checkConsistency(lumiPrincipal.aux(), *secondaryAuxiliary);
-        secondaryLumiPrincipal_ = std::make_shared<LuminosityBlockPrincipal>(
-            secondaryFileSequence_->fileProductRegistry(), processConfiguration(), nullptr, lumiPrincipal.index());
+        secondaryLumiPrincipal_ =
+            std::make_shared<LuminosityBlockPrincipal>(secondaryFileSequence_->fileProductRegistry(),
+                                                       edm::productResolversFactory::makePrimary,
+                                                       processConfiguration(),
+                                                       nullptr,
+                                                       lumiPrincipal.index());
         secondaryLumiPrincipal_->setAux(*secondaryAuxiliary);
         secondaryFileSequence_->readLuminosityBlock_(*secondaryLumiPrincipal_);
         checkHistoryConsistency(lumiPrincipal, *secondaryLumiPrincipal_);
@@ -227,14 +225,15 @@ namespace edm {
   }
 
   void PoolSource::readEvent_(EventPrincipal& eventPrincipal) {
-    bool readEventSucceeded = primaryFileSequence_->readEvent(eventPrincipal);
+    bool readAllProducts = not delayReadingEventProducts_;
+    bool readEventSucceeded = primaryFileSequence_->readEvent(eventPrincipal, readAllProducts);
     assert(readEventSucceeded);
     if (secondaryFileSequence_ && !branchIDsToReplace_[InEvent].empty()) {
       bool found = secondaryFileSequence_->skipToItem(
           eventPrincipal.run(), eventPrincipal.luminosityBlock(), eventPrincipal.id().event());
       if (found) {
         EventPrincipal& secondaryEventPrincipal = *secondaryEventPrincipals_[eventPrincipal.streamID().value()];
-        bool readEventSucceeded = secondaryFileSequence_->readEvent(secondaryEventPrincipal);
+        bool readEventSucceeded = secondaryFileSequence_->readEvent(secondaryEventPrincipal, readAllProducts);
         checkConsistency(eventPrincipal, secondaryEventPrincipal);
         checkHistoryConsistency(eventPrincipal, secondaryEventPrincipal);
         assert(readEventSucceeded);
@@ -246,7 +245,7 @@ namespace edm {
             << eventPrincipal.id() << " is not found in the secondary input files\n";
       }
     }
-    if (not delayReadingEventProducts_) {
+    if (readAllProducts) {
       eventPrincipal.readAllFromSourceAndMergeImmediately();
     }
   }
@@ -268,11 +267,11 @@ namespace edm {
     if (secondaryFileSequence_ && (ItemType::IsSynchronize != state())) {
       if (itemType == ItemType::IsRun || itemType == ItemType::IsLumi || itemType == ItemType::IsEvent) {
         if (!secondaryFileSequence_->containedInCurrentFile(run, lumi, event)) {
-          return ItemType::IsSynchronize;
+          return ItemTypeInfo::isSynchronize();
         }
       }
     }
-    return runHelper_->nextItemType(state(), itemType, run, lumi, event);
+    return InputSource::ItemTypeInfo(runHelper_->nextItemType(state(), itemType, run, lumi, event));
   }
 
   std::pair<SharedResourcesAcquirer*, std::recursive_mutex*> PoolSource::resourceSharedWithDelayedReader_() {
@@ -292,12 +291,11 @@ namespace edm {
 
     std::vector<std::string> defaultStrings;
     desc.setComment("Reads EDM/Root files.");
-    desc.addUntracked<std::vector<std::string> >("fileNames")->setComment("Names of files to be processed.");
+    InputFileCatalog::fillDescription(desc);
     desc.addUntracked<std::vector<std::string> >("secondaryFileNames", defaultStrings)
         ->setComment("Names of secondary files to be processed.");
     desc.addUntracked<bool>("needSecondaryFileNames", false)
         ->setComment("If True, 'secondaryFileNames' must be specified and be non-empty.");
-    desc.addUntracked<std::string>("overrideCatalog", std::string());
     desc.addUntracked<bool>("skipBadFiles", false)
         ->setComment(
             "True:  Ignore any missing or unopenable input file.\n"
@@ -319,7 +317,7 @@ namespace edm {
     ProductSelectorRules::fillDescription(desc, "inputCommands");
     InputSource::fillDescription(desc);
     RootPrimaryFileSequence::fillDescription(desc);
-    RunHelperBase::fillDescription(desc);
+    InputSourceRunHelperBase::fillDescription(desc);
 
     descriptions.add("source", desc);
   }

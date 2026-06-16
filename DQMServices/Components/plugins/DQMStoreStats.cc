@@ -62,25 +62,25 @@ public:
     ++totalHistos_;
     totalBins_ += nBins;
     totalEmptyBins_ += nEmptyBins;
-    totalMemory_ += (nBins *= sizeof(float));
+    totalMemory_ += (nBins * sizeof(float));
   }
   void AddBinsS(unsigned int nBins, unsigned int nEmptyBins) {
     ++totalHistos_;
     totalBins_ += nBins;
     totalEmptyBins_ += nEmptyBins;
-    totalMemory_ += (nBins *= sizeof(short));
+    totalMemory_ += (nBins * sizeof(short));
   }
   void AddBinsD(unsigned int nBins, unsigned int nEmptyBins) {
     ++totalHistos_;
     totalBins_ += nBins;
     totalEmptyBins_ += nEmptyBins;
-    totalMemory_ += (nBins *= sizeof(double));
+    totalMemory_ += (nBins * sizeof(double));
   }
   void AddBinsI(unsigned int nBins, unsigned int nEmptyBins) {
     ++totalHistos_;
     totalBins_ += nBins;
     totalEmptyBins_ += nEmptyBins;
-    totalMemory_ += (nBins *= sizeof(int));
+    totalMemory_ += (nBins * sizeof(int));
   }
 };
 
@@ -338,6 +338,7 @@ protected:
 
 private:
   int calcstats(int);
+  std::vector<double> GetTH2PolyArray(TH2Poly* poly);
   void calcIgProfDump(Folder&);
   void dumpMemoryProfile();
   std::pair<unsigned int, unsigned int> readMemoryEntry() const;
@@ -505,13 +506,21 @@ void DQMStoreStats::calcIgProfDump(Folder& root) {
   root.mainrows_cumulative(sql_statement);
   root.summary(sql_statement);
   VIterator<Folder*> subsystems = root.CreateIterator();
-  size_t ii = 0;
-  for (subsystems.First(); !subsystems.IsDone(); subsystems.Next(), ++ii) {
+  for (subsystems.First(); !subsystems.IsDone(); subsystems.Next()) {
     subsystems.CurrentItem()->mainrows(sql_statement);
     subsystems.CurrentItem()->parents(sql_statement);
     subsystems.CurrentItem()->children(sql_statement);
   }
   stream << sql_statement << std::endl;
+}
+
+std::vector<double> DQMStoreStats::GetTH2PolyArray(TH2Poly* poly) {
+  int nBins = poly->GetNumberOfBins();
+  std::vector<double> array(nBins + 1, 0.0);  // Initialize with zeros
+  for (int i = 1; i <= nBins; i++) {
+    array[i] = poly->GetBinContent(i);
+  }
+  return array;
 }
 
 ///
@@ -668,6 +677,13 @@ int DQMStoreStats::calcstats(int mode = DQMStoreStats::considerAllME) {
                      getEmptyMetric(it->getTH2I()->GetArray(), it->getNbinsX() + 2, it->getNbinsY() + 2, 0),
                      it->getNbinsX() * it->getNbinsY() * sizeof(int));
         break;
+      case MonitorElement::Kind::TH2Poly: {
+        std::vector<double> polyArray = GetTH2PolyArray(it->getTH2Poly());
+        int nBins = polyArray.size() - 1;
+        currentSubfolder.AddBinsD(nBins, getEmptyMetric(polyArray.data(), nBins + 1, 1, 0));
+        curr->update(nBins, getEmptyMetric(polyArray.data(), nBins + 1, 1, 0), nBins * sizeof(double));
+        break;
+      }
       case MonitorElement::Kind::TPROFILE2D:
         currentSubfolder.AddBinsD(
             it->getNbinsX() * it->getNbinsY(),

@@ -33,6 +33,7 @@
 #include "FWCore/Framework/interface/InputProcessBlockCacheImpl.h"
 #include "FWCore/Framework/interface/TransformerBase.h"
 #include "FWCore/Concurrency/interface/WaitingTaskWithArenaHolder.h"
+#include "FWCore/Concurrency/interface/WaitingTaskHolder.h"
 #include "FWCore/Utilities/interface/EDGetToken.h"
 #include "FWCore/Utilities/interface/EDMException.h"
 #include "FWCore/Utilities/interface/StreamID.h"
@@ -46,6 +47,8 @@ namespace edm {
   class WaitingTaskWithArenaHolder;
 
   namespace stream {
+    template <typename T, bool, bool>
+    struct CallInputProcessBlockImpl;
     namespace impl {
       class EmptyType {};
 
@@ -286,7 +289,7 @@ namespace edm {
         ExternalWork() = default;
         ExternalWork(ExternalWork const&) = delete;
         ExternalWork& operator=(ExternalWork const&) = delete;
-        virtual ~ExternalWork() noexcept(false){};
+        virtual ~ExternalWork() noexcept(false) {}
 
         virtual void acquire(Event const&, edm::EventSetup const&, WaitingTaskWithArenaHolder) = 0;
       };
@@ -296,10 +299,10 @@ namespace edm {
         WatchLuminosityBlocks() = default;
         WatchLuminosityBlocks(WatchLuminosityBlocks const&) = delete;
         WatchLuminosityBlocks& operator=(WatchLuminosityBlocks const&) = delete;
-        virtual ~WatchLuminosityBlocks() noexcept(false){};
+        virtual ~WatchLuminosityBlocks() noexcept(false) {}
 
-        // virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) = 0;
-        // virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) {}
+        virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) = 0;
+        virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) {}
       };
 
       class WatchRuns {
@@ -307,17 +310,17 @@ namespace edm {
         WatchRuns() = default;
         WatchRuns(WatchRuns const&) = delete;
         WatchRuns& operator=(WatchRuns const&) = delete;
-        virtual ~WatchRuns() noexcept(false){};
+        virtual ~WatchRuns() noexcept(false) {}
 
-        // virtual void beginRun(edm::Run const&, edm::EventSetup const&) = 0;
-        // virtual void endRun(edm::Run const&, edm::EventSetup const&) {}
+        virtual void beginRun(edm::Run const&, edm::EventSetup const&) = 0;
+        virtual void endRun(edm::Run const&, edm::EventSetup const&) {}
       };
       class Transformer : private TransformerBase, public EDProducerBase {
       public:
         Transformer() = default;
         Transformer(Transformer const&) = delete;
         Transformer& operator=(Transformer const&) = delete;
-        ~Transformer() noexcept(false) override{};
+        ~Transformer() noexcept(false) override {}
 
         template <typename G, typename F>
         void registerTransform(ProducerBase::BranchAliasSetterT<G> iSetter,
@@ -328,17 +331,17 @@ namespace edm {
 
         template <typename G, typename F>
         void registerTransform(edm::EDPutTokenT<G> iToken, F iF, std::string productInstance = std::string()) {
-          using ReturnTypeT = decltype(iF(std::declval<G>()));
+          using ReturnTypeT = decltype(iF(std::declval<edm::StreamID>(), std::declval<G>()));
           TypeID returnType(typeid(ReturnTypeT));
           TransformerBase::registerTransformImp(
               *this,
               EDPutToken(iToken),
               returnType,
               std::move(productInstance),
-              [f = std::move(iF)](std::any const& iGotProduct) {
+              [f = std::move(iF)](edm::StreamID id, std::any const& iGotProduct) {
                 auto pGotProduct = std::any_cast<edm::WrapperBase const*>(iGotProduct);
                 return std::make_unique<edm::Wrapper<ReturnTypeT>>(
-                    WrapperBase::Emplace{}, f(*static_cast<edm::Wrapper<G> const*>(pGotProduct)->product()));
+                    WrapperBase::Emplace{}, f(id, *static_cast<edm::Wrapper<G> const*>(pGotProduct)->product()));
               });
         }
 
@@ -347,25 +350,27 @@ namespace edm {
                                     P iPre,
                                     F iF,
                                     std::string productInstance = std::string()) {
-          using CacheTypeT = decltype(iPre(std::declval<G>(), WaitingTaskWithArenaHolder()));
-          using ReturnTypeT = decltype(iF(std::declval<CacheTypeT>()));
+          using CacheTypeT =
+              decltype(iPre(std::declval<edm::StreamID>(), std::declval<G>(), WaitingTaskWithArenaHolder()));
+          using ReturnTypeT = decltype(iF(std::declval<edm::StreamID>(), std::declval<CacheTypeT>()));
           TypeID returnType(typeid(ReturnTypeT));
           TransformerBase::registerTransformAsyncImp(
               *this,
               EDPutToken(iToken),
               returnType,
               std::move(productInstance),
-              [p = std::move(iPre)](edm::WrapperBase const& iGotProduct, WaitingTaskWithArenaHolder iHolder) {
-                return std::any(p(*static_cast<edm::Wrapper<G> const&>(iGotProduct).product(), std::move(iHolder)));
+              [p = std::move(iPre)](
+                  edm::StreamID id, edm::WrapperBase const& iGotProduct, WaitingTaskWithArenaHolder iHolder) {
+                return std::any(p(id, *static_cast<edm::Wrapper<G> const&>(iGotProduct).product(), std::move(iHolder)));
               },
-              [f = std::move(iF)](std::any const& iCache) {
+              [f = std::move(iF)](edm::StreamID id, std::any const& iCache) {
                 auto cache = std::any_cast<CacheTypeT>(iCache);
-                return std::make_unique<edm::Wrapper<ReturnTypeT>>(WrapperBase::Emplace{}, f(cache));
+                return std::make_unique<edm::Wrapper<ReturnTypeT>>(WrapperBase::Emplace{}, f(id, cache));
               });
         }
 
       private:
-        size_t transformIndex_(edm::BranchDescription const& iBranch) const noexcept final {
+        size_t transformIndex_(edm::ProductDescription const& iBranch) const noexcept final {
           return TransformerBase::findMatchingIndex(*this, iBranch);
         }
         ProductResolverIndex transformPrefetch_(std::size_t iIndex) const noexcept final {
@@ -390,14 +395,14 @@ namespace edm {
         Accumulator() = default;
         Accumulator(Accumulator const&) = delete;
         Accumulator& operator=(Accumulator const&) = delete;
-        ~Accumulator() noexcept(false) override{};
+        ~Accumulator() noexcept(false) override {}
 
         virtual void accumulate(Event const& ev, EventSetup const& es) = 0;
 
         void produce(Event& ev, EventSetup const& es) final { accumulate(ev, es); }
       };
     }  // namespace impl
-  }    // namespace stream
+  }  // namespace stream
 }  // namespace edm
 
 #endif

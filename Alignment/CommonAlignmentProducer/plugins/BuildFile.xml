@@ -35,7 +35,7 @@
   <use name="root"/>
   <use name="FWCore/ServiceRegistry"/>
   <use name="Geometry/Records"/>
-  <use name="Geometry/CommonDetUnit" source_only="1"/>
+  <use name="Geometry/CommonTopologies" source_only="1"/>
   <use name="MagneticField/Engine"/>
   <use name="MagneticField/Records"/>
   <use name="TrackingTools/GeomPropagators"/>
@@ -55,5 +55,10 @@
 
 <library file="LSNumberFilter.cc" name="AlignmentCommonAlignmentProducerFilter">
   <use name="HLTrigger/HLTcore"/>
+  <flags EDM_PLUGIN="1"/>
+</library>
+
+<library file="Alignment*MuonSelector.cc" name="AlignmentCommonAlignmentProducerSelector">
+  <use name="DataFormats/MuonReco"/>
   <flags EDM_PLUGIN="1"/>
 </library>

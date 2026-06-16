@@ -9,14 +9,14 @@
 
 #include "DataFormats/Provenance/interface/BranchID.h"
 #include "DataFormats/Provenance/interface/ProductRegistry.h"
-#include "FWCore/Catalog/interface/InputFileCatalog.h"
-#include "FWCore/Catalog/interface/SiteLocalConfig.h"
+#include "DataFormats/Provenance/interface/ProcessHistoryRegistry.h"
 #include "FWCore/Framework/interface/FileBlock.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
-#include "Utilities/StorageFactory/interface/StorageFactory.h"
+#include "FWStorage/Catalog/interface/SiteLocalConfig.h"
+#include "FWStorage/StorageFactory/interface/StorageFactory.h"
 
 namespace edm {
   RootPrimaryFileSequence::RootPrimaryFileSequence(ParameterSet const& pset,
@@ -25,7 +25,7 @@ namespace edm {
       : RootInputFileSequence(pset, catalog),
         input_(input),
         firstFile_(true),
-        branchesMustMatch_(BranchDescription::Permissive),
+        branchesMustMatch_(ProductDescription::Permissive),
         orderedProcessHistoryIDs_(),
         eventSkipperByID_(EventSkipperByID::create(pset).release()),
         initialNumberOfEventsToSkip_(pset.getUntrackedParameter<unsigned int>("skipEvents")),
@@ -56,20 +56,23 @@ namespace edm {
     std::string branchesMustMatch =
         pset.getUntrackedParameter<std::string>("branchesMustMatch", std::string("permissive"));
     if (branchesMustMatch == std::string("strict"))
-      branchesMustMatch_ = BranchDescription::Strict;
+      branchesMustMatch_ = ProductDescription::Strict;
 
     // Prestage the files
     for (setAtFirstFile(); !noMoreFiles(); setAtNextFile()) {
-      storage::StorageFactory::get()->stagein(fileNames()[0]);
+      storage::StorageFactory::get()->stagein(physicalFileNames()[0]);
     }
     // Open the first file.
     for (setAtFirstFile(); !noMoreFiles(); setAtNextFile()) {
       initFile(input_.skipBadFiles());
-      if (rootFile())
+      if (rootFile() and not rootFile()->empty())
         break;
     }
     if (rootFile()) {
-      input_.productRegistryUpdate().updateFromInput(rootFile()->productRegistry()->productList());
+      std::vector<std::string> processOrder;
+      processingOrderMerge(input_.processHistoryRegistry(), processOrder);
+
+      input_.productRegistryUpdate().updateFromInput(rootFile()->productRegistry()->productList(), processOrder);
       if (initialNumberOfEventsToSkip_ != 0) {
         skipEventsAtBeginning(initialNumberOfEventsToSkip_);
       }
@@ -126,7 +129,7 @@ namespace edm {
   void RootPrimaryFileSequence::closeFile_() {
     // close the currently open file, if any, and delete the RootFile object.
     if (rootFile()) {
-      auto sentry = std::make_unique<InputSource::FileCloseSentry>(input_, lfn());
+      auto sentry = std::make_unique<InputSource::FileCloseSentry>(input_, cfn());
       rootFile()->close();
       if (duplicateChecker_)
         duplicateChecker_->inputFileClosed();
@@ -143,40 +146,40 @@ namespace edm {
     initTheFile(skipBadFiles, deleteIndexIntoFile, &input_, "primaryFiles", InputType::Primary);
   }
 
-  RootPrimaryFileSequence::RootFileSharedPtr RootPrimaryFileSequence::makeRootFile(std::shared_ptr<InputFile> filePtr) {
+  RootPrimaryFileSequence::RootFileSharedPtr RootPrimaryFileSequence::makeRootFile(
+      std::shared_ptr<InputFile> filePtr, std::string const& physicalFileNameFirstCatalog) {
     size_t currentIndexIntoFile = sequenceNumberOfFile();
-    return std::make_shared<RootFile>(fileNames()[0],
-                                      input_.processConfiguration(),
-                                      logicalFileName(),
-                                      filePtr,
-                                      eventSkipperByID(),
-                                      initialNumberOfEventsToSkip_ != 0,
-                                      remainingEvents(),
-                                      remainingLuminosityBlocks(),
-                                      input_.nStreams(),
-                                      treeCacheSize_,
-                                      input_.treeMaxVirtualSize(),
-                                      input_.processingMode(),
-                                      input_.runHelper(),
-                                      noRunLumiSort_,
-                                      noEventSort_,
-                                      input_.productSelectorRules(),
-                                      InputType::Primary,
-                                      input_.branchIDListHelper(),
-                                      input_.processBlockHelper().get(),
-                                      input_.thinnedAssociationsHelper(),
-                                      nullptr,  // associationsFromSecondary
-                                      duplicateChecker(),
-                                      input_.dropDescendants(),
-                                      input_.processHistoryRegistryForUpdate(),
-                                      indexesIntoFiles(),
-                                      currentIndexIntoFile,
-                                      orderedProcessHistoryIDs_,
-                                      input_.bypassVersionCheck(),
-                                      input_.labelRawDataLikeMC(),
-                                      usingGoToEvent_,
-                                      enablePrefetching_,
-                                      enforceGUIDInFileName_);
+    return std::make_shared<RootFile>(
+        RootFile::FileOptions{.fileName = physicalFileNameFirstCatalog,
+                              .logicalFileName = logicalFileName(),
+                              .filePtr = filePtr,
+                              .bypassVersionCheck = input_.bypassVersionCheck(),
+                              .enforceGUIDInFileName = enforceGUIDInFileName_},
+        InputType::Primary,
+        RootFile::ProcessingOptions{.eventSkipperByID = eventSkipperByID(),
+                                    .skipAnyEvents = initialNumberOfEventsToSkip_ != 0,
+                                    .remainingEvents = remainingEvents(),
+                                    .remainingLumis = remainingLuminosityBlocks(),
+                                    .processingMode = input_.processingMode(),
+                                    .noRunLumiSort = noRunLumiSort_,
+                                    .noEventSort = noEventSort_,
+                                    .usingGoToEvent = usingGoToEvent_},
+        RootFile::TTreeOptions{.treeCacheSize = treeCacheSize_,
+                               .treeMaxVirtualSize = input_.treeMaxVirtualSize(),
+                               .enablePrefetching = enablePrefetching_,
+                               .promptReading = not input_.delayReadingEventProducts()},
+        RootFile::ProductChoices{.productSelectorRules = input_.productSelectorRules(),
+                                 .dropDescendantsOfDroppedProducts = input_.dropDescendants(),
+                                 .labelRawDataLikeMC = input_.labelRawDataLikeMC()},
+        RootFile::CrossFileInfo{.runHelper = input_.runHelper(),
+                                .branchIDListHelper = input_.branchIDListHelper(),
+                                .processBlockHelper = input_.processBlockHelper().get(),
+                                .duplicateChecker = duplicateChecker(),
+                                .indexesIntoFiles = indexesIntoFiles(),
+                                .currentIndexIntoFile = currentIndexIntoFile},
+        input_.nStreams(),
+        input_.processHistoryRegistryForUpdate(),
+        orderedProcessHistoryIDs_);
   }
 
   bool RootPrimaryFileSequence::nextFile() {
@@ -198,7 +201,7 @@ namespace edm {
 
     // make sure the new product registry is compatible with the main one
     std::string mergeInfo =
-        input_.productRegistryUpdate().merge(*rootFile()->productRegistry(), fileNames()[0], branchesMustMatch_);
+        input_.productRegistryUpdate().merge(*rootFile()->productRegistry(), rootFile()->file(), branchesMustMatch_);
     if (!mergeInfo.empty()) {
       throw Exception(errors::MismatchedInputFiles, "RootPrimaryFileSequence::nextFile()") << mergeInfo;
     }
@@ -216,7 +219,7 @@ namespace edm {
     if (rootFile()) {
       // make sure the new product registry is compatible to the main one
       std::string mergeInfo =
-          input_.productRegistryUpdate().merge(*rootFile()->productRegistry(), fileNames()[0], branchesMustMatch_);
+          input_.productRegistryUpdate().merge(*rootFile()->productRegistry(), rootFile()->file(), branchesMustMatch_);
       if (!mergeInfo.empty()) {
         throw Exception(errors::MismatchedInputFiles, "RootPrimaryFileSequence::previousEvent()") << mergeInfo;
       }
@@ -231,26 +234,26 @@ namespace edm {
                                                                      EventNumber_t& event) {
     if (noMoreFiles() || skipToStop_) {
       skipToStop_ = false;
-      return InputSource::ItemType::IsStop;
+      return InputSource::ItemTypeInfo::isStop();
     }
     if (firstFile_ || goToEventInNewFile_ || skipIntoNewFile_) {
-      return InputSource::ItemType::IsFile;
+      return InputSource::ItemTypeInfo::isFile();
     }
     if (rootFile()) {
       IndexIntoFile::EntryType entryType = rootFile()->getNextItemType(run, lumi, event);
       if (entryType == IndexIntoFile::kEvent) {
-        return InputSource::ItemType::IsEvent;
+        return InputSource::ItemTypeInfo::isEvent();
       } else if (entryType == IndexIntoFile::kLumi) {
-        return InputSource::ItemType::IsLumi;
+        return InputSource::ItemTypeInfo::isLumi();
       } else if (entryType == IndexIntoFile::kRun) {
-        return InputSource::ItemType::IsRun;
+        return InputSource::ItemTypeInfo::isRun();
       }
       assert(entryType == IndexIntoFile::kEnd);
     }
     if (atLastFile()) {
-      return InputSource::ItemType::IsStop;
+      return InputSource::ItemTypeInfo::isStop();
     }
-    return InputSource::ItemType::IsFile;
+    return InputSource::ItemTypeInfo::isFile();
   }
 
   // Rewind to before the first event that was read.

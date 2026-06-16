@@ -30,7 +30,7 @@ using namespace l1t;
 class L1TGlobalSummary : public edm::one::EDAnalyzer<edm::one::WatchRuns> {
 public:
   explicit L1TGlobalSummary(const edm::ParameterSet&);
-  ~L1TGlobalSummary() override{};
+  ~L1TGlobalSummary() override {}
   void analyze(const edm::Event&, const edm::EventSetup&) override;
   void beginRun(Run const&, EventSetup const&) override;
   void endRun(Run const&, EventSetup const&) override;
@@ -105,8 +105,13 @@ namespace {
 }  // namespace
 
 void L1TGlobalSummary::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
-  descriptions.add("L1TGlobalSummary", makeDesc(edm::InputTag("gtStage2Digis"), edm::InputTag("gtStage2Digis"), -2, 2));
   descriptions.addDefault(makeDesc(edm::InputTag(""), edm::InputTag(""), 0, 0));
+  edm::DescriptionCloner summary;
+  summary.set("AlgInputTag", edm::InputTag("gtStage2Digis"));
+  summary.set("ExtInputTag", edm::InputTag("gtStage2Digis"));
+  summary.set<int>("MinBx", -2);
+  summary.set<int>("MaxBx", 2);
+  descriptions.add("L1TGlobalSummary", summary);
 }
 
 void L1TGlobalSummary::beginRun(Run const&, EventSetup const& evSetup) {
@@ -185,11 +190,11 @@ void L1TGlobalSummary::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     LogDebug("l1t|Global") << "retrieved L1 data from GT Util" << endl;
 
     // grab the map for the final decisions
-    const std::vector<std::pair<std::string, bool>> initialDecisions = gtUtil_->decisionsInitial();
-    const std::vector<std::pair<std::string, bool>> intermDecisions = gtUtil_->decisionsInterm();
-    const std::vector<std::pair<std::string, bool>> finalDecisions = gtUtil_->decisionsFinal();
-    const std::vector<std::pair<std::string, double>> prescales = gtUtil_->prescales();
-    const std::vector<std::pair<std::string, std::vector<int>>> masks = gtUtil_->masks();
+    const auto& initialDecisions = gtUtil_->decisionsInitial();
+    const auto& intermDecisions = gtUtil_->decisionsInterm();
+    const auto& finalDecisions = gtUtil_->decisionsFinal();
+    const auto& prescales = gtUtil_->prescales();
+    const auto& masks = gtUtil_->masks();
 
     if ((decisionCount_.size() != gtUtil_->decisionsInitial().size()) ||
         (intermCount_.size() != gtUtil_->decisionsInterm().size()) ||
@@ -211,7 +216,7 @@ void L1TGlobalSummary::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     }
     for (unsigned int i = 0; i < initialDecisions.size(); i++) {
       // get the name and trigger result
-      std::string name = (initialDecisions.at(i)).first;
+      std::string name{(initialDecisions.at(i)).first};
       if (name == "NULL")
         continue;
 

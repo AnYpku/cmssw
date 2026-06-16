@@ -25,8 +25,10 @@ namespace l1gt {
   typedef ap_fixed<13, 13, AP_RND_CONV> phi_t;
   typedef ap_fixed<14, 14, AP_RND_CONV, AP_SAT> eta_t;
   // While bitwise identical to the l1ct::z0_t value, we store z0 in mm to profit of ap_fixed goodies
-  typedef ap_fixed<10, 9, AP_RND_CONV, AP_SAT> z0_t;  // NOTE: mm instead of cm!!!
-  typedef ap_ufixed<10, 1, AP_RND, AP_SAT> b_tag_score_t;
+  typedef ap_fixed<10, 9, AP_RND_CONV, AP_SAT> z0_t;   // NOTE: mm instead of cm!!!
+  typedef ap_ufixed<8, 1, AP_RND, AP_SAT> id_proba_t;  // for IDs bounded in range [0-1]
+  typedef ap_ufixed<10, 1, AP_RND, AP_SAT> n_prong_score_t;
+  typedef ap_ufixed<17, 15, AP_RND_CONV, AP_SAT> mass2_t;
   typedef ap_uint<1> valid_t;
 
   // E/gamma fields
@@ -48,6 +50,7 @@ namespace l1gt {
     inline float floatEta(eta_t eta) { return eta.to_float() * ETAPHI_LSB; }
     inline float floatPhi(phi_t phi) { return phi.to_float() * ETAPHI_LSB; }
     inline float floatZ0(z0_t z0) { return z0.to_float() * Z0_UNITS; }
+    inline float floatMassSq(mass2_t massSq) { return massSq.to_float(); }
   }  // namespace Scales
 
   struct ThreeVector {
@@ -84,12 +87,20 @@ namespace l1gt {
   };
 
   struct Jet {
+    static const unsigned NTagFields = 8;
     valid_t valid;
     ThreeVector v3;
     z0_t z0;
-    b_tag_score_t hwBtagScore;
+    // class probabilities for tag categories
+    id_proba_t hwTagScores[NTagFields];
 
-    inline bool operator==(const Jet &other) const { return valid == other.valid && z0 == other.z0 && v3 == other.v3; }
+    inline bool operator==(const Jet &other) const {
+      bool eq = valid == other.valid && z0 == other.z0 && v3 == other.v3;
+      for (unsigned i = 0; i < NTagFields; i++) {
+        eq = eq && hwTagScores[i] == other.hwTagScores[i];
+      }
+      return eq;
+    }
 
     static const int BITWIDTH = 128;
     inline ap_uint<BITWIDTH> pack_ap() const {
@@ -98,7 +109,10 @@ namespace l1gt {
       pack_into_bits(ret, start, valid);
       pack_into_bits(ret, start, v3.pack());
       pack_into_bits(ret, start, z0);
-      pack_into_bits(ret, start, hwBtagScore);
+      start = start + 10;  //offset for LLP + unassigned
+      for (unsigned i = 0; i < NTagFields; i++) {
+        pack_into_bits(ret, start, hwTagScores[i]);
+      }
       return ret;
     }
 
@@ -123,7 +137,10 @@ namespace l1gt {
       unpack_from_bits(src, start, v3.phi);
       unpack_from_bits(src, start, v3.eta);
       unpack_from_bits(src, start, z0);
-      unpack_from_bits(src, start, hwBtagScore);
+      start = start + 10;  //offset for LLP + unassigned
+      for (unsigned i = 0; i < NTagFields; i++) {
+        unpack_from_bits(src, start, hwTagScores[i]);
+      }
     }
 
     inline static Jet unpack(const std::array<uint64_t, 2> &src) {
@@ -139,7 +156,89 @@ namespace l1gt {
       return unpack_ap(bits);
     }
 
+    inline static Jet unpack(const std::array<long long unsigned int, 2> &src) {
+      // unpack from two 64b ints
+      ap_uint<BITWIDTH> bits;
+      bits(63, 0) = src[0];
+      bits(127, 64) = src[1];
+      return unpack_ap(bits);
+    }
+
   };  // struct Jet
+
+  struct WideJet {
+    valid_t valid;
+    ThreeVector v3;
+    z0_t z0;
+    n_prong_score_t hwNProngScore;
+    mass2_t hwMassSq;
+
+    inline bool operator==(const WideJet &other) const {
+      return valid == other.valid && z0 == other.z0 && hwNProngScore == other.hwNProngScore &&
+             hwMassSq == other.hwMassSq && v3 == other.v3;
+    }
+
+    static const int BITWIDTH = 128;
+    inline ap_uint<BITWIDTH> pack_ap() const {
+      ap_uint<BITWIDTH> ret = 0;
+      unsigned int start = 0;
+      pack_into_bits(ret, start, valid);
+      pack_into_bits(ret, start, v3.pack());
+      pack_into_bits(ret, start, z0);
+      pack_into_bits(ret, start, hwNProngScore);
+      start = 64;  // Start second word
+      pack_into_bits(ret, start, hwMassSq);
+      return ret;
+    }
+
+    inline std::array<uint64_t, 2> pack() const {
+      std::array<uint64_t, 2> packed;
+      ap_uint<BITWIDTH> bits = this->pack_ap();
+      packed[0] = bits(63, 0);
+      packed[1] = bits(127, 64);
+      return packed;
+    }
+
+    inline static WideJet unpack_ap(const ap_uint<BITWIDTH> &src) {
+      WideJet ret;
+      ret.initFromBits(src);
+      return ret;
+    }
+
+    inline void initFromBits(const ap_uint<BITWIDTH> &src) {
+      unsigned int start = 0;
+      unpack_from_bits(src, start, valid);
+      unpack_from_bits(src, start, v3.pt);
+      unpack_from_bits(src, start, v3.phi);
+      unpack_from_bits(src, start, v3.eta);
+      unpack_from_bits(src, start, z0);
+      unpack_from_bits(src, start, hwNProngScore);
+      start = 64;  // Start second word
+      unpack_from_bits(src, start, hwMassSq);
+    }
+
+    inline static WideJet unpack(const std::array<uint64_t, 2> &src) {
+      ap_uint<BITWIDTH> bits;
+      bits(63, 0) = src[0];
+      bits(127, 64) = src[1];
+      return unpack_ap(bits);
+    }
+
+    inline static WideJet unpack(long long unsigned int &src) {
+      // unpack from single 64b int
+      ap_uint<BITWIDTH> bits = src;
+      return unpack_ap(bits);
+    }
+
+    inline static WideJet unpack(const std::array<long long unsigned int, 2> &src) {
+      // unpack from two 64b ints
+      ap_uint<BITWIDTH> bits;
+      bits(63, 0) = src[0];
+      bits(127, 64) = src[1];
+      return unpack_ap(bits);
+    }
+
+  };  // struct WideJet
 
   struct Sum {
     valid_t valid;
@@ -265,6 +364,7 @@ namespace l1gt {
     ap_uint<1> charge;
     z0_t z0;
     iso_t isolationPT;
+    id_proba_t idScore;
 
     static const int BITWIDTH = 96;
     inline ap_uint<BITWIDTH> pack() const {
@@ -276,6 +376,7 @@ namespace l1gt {
       pack_into_bits(ret, start, isolationPT);
       pack_into_bits(ret, start, charge);
       pack_into_bits(ret, start, z0);
+      pack_into_bits(ret, start, idScore);
       return ret;
     }
 
@@ -289,6 +390,7 @@ namespace l1gt {
       unpack_from_bits(src, start, isolationPT);
       unpack_from_bits(src, start, charge);
       unpack_from_bits(src, start, z0);
+      unpack_from_bits(src, start, idScore);
     }
 
     inline static Electron unpack_ap(const ap_uint<BITWIDTH> &src) {
@@ -382,6 +484,15 @@ namespace l1ct {
     return x * Scales::ETAPHI_CTtoGT_SCALE;
   }
 
+  inline l1gt::mass2_t CTtoGT_massSq(mass2_t x) { return (l1gt::mass2_t)x; }
+
+  inline l1gt::id_proba_t CTtoGT_idProba(id_score_t x) {
+    // l1ct::id_score_t is [-1, 1-LSB] with LSB = 1/512,
+    // l1gt::id_proba_t is [0, 1] with LSB = 1/128 although datatype can represent [0, 2-LSB]
+    typedef ap_fixed<id_score_t::width + 1, id_score_t::iwidth + 1, AP_RND_CONV, AP_SAT> id_score_ext_t;
+    id_score_ext_t x_ext = x;
+    return l1gt::id_proba_t((x_ext + id_score_ext_t(1)) >> 1);
+  }
 }  // namespace l1ct
 
 #endif

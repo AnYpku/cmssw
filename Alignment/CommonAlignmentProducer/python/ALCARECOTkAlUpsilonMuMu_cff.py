@@ -23,11 +23,7 @@ ALCARECOTkAlUpsilonMuMuDCSFilter = DPGAnalysis.Skims.skim_detstatus_cfi.dcsstatu
 
 import Alignment.CommonAlignmentProducer.TkAlMuonSelectors_cfi
 ALCARECOTkAlUpsilonMuMuGoodMuons = Alignment.CommonAlignmentProducer.TkAlMuonSelectors_cfi.TkAlGoodIdMuonSelector.clone()
-ALCARECOTkAlUpsilonMuMuRelCombIsoMuons = Alignment.CommonAlignmentProducer.TkAlMuonSelectors_cfi.TkAlRelCombIsoMuonSelector.clone(
-    src = 'ALCARECOTkAlUpsilonMuMuGoodMuons',
-    cut = '(isolationR03().sumPt + isolationR03().emEt + isolationR03().hadEt)/pt  < 0.3'
-
-)
+ALCARECOTkAlUpsilonMuMuRelCombIsoMuons = Alignment.CommonAlignmentProducer.TkAlMuonSelectors_cfi.TkAlRelCombIsoMuonSelector.clone(src = 'ALCARECOTkAlUpsilonMuMuGoodMuons')
 
 import Alignment.CommonAlignmentProducer.AlignmentTrackSelector_cfi
 ALCARECOTkAlUpsilonMuMu = Alignment.CommonAlignmentProducer.AlignmentTrackSelector_cfi.AlignmentTrackSelector.clone()
@@ -45,8 +41,8 @@ ALCARECOTkAlUpsilonMuMu.GlobalSelector.applyIsolationtest = False
 ALCARECOTkAlUpsilonMuMu.GlobalSelector.applyGlobalMuonFilter = True
 
 ALCARECOTkAlUpsilonMuMu.TwoBodyDecaySelector.applyMassrangeFilter = True
-ALCARECOTkAlUpsilonMuMu.TwoBodyDecaySelector.minXMass = 8.9 ##GeV
-ALCARECOTkAlUpsilonMuMu.TwoBodyDecaySelector.maxXMass = 9.9 ##GeV
+ALCARECOTkAlUpsilonMuMu.TwoBodyDecaySelector.minXMass = 8.5 ##GeV
+ALCARECOTkAlUpsilonMuMu.TwoBodyDecaySelector.maxXMass = 11.4 ##GeV
 ALCARECOTkAlUpsilonMuMu.TwoBodyDecaySelector.daughterMass = 0.105 ##GeV (Muons)
 ALCARECOTkAlUpsilonMuMu.TwoBodyDecaySelector.applyChargeFilter = True
 ALCARECOTkAlUpsilonMuMu.TwoBodyDecaySelector.charge = 0

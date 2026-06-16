@@ -17,7 +17,7 @@
 #include "FWCore/Framework/interface/ModuleFactory.h"
 
 #include "Geometry/Records/interface/GlobalTrackingGeometryRecord.h"
-#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/GlobalTrackingGeometry.h"
 #include "TrackingTools/Records/interface/TransientRecHitRecord.h"
 
 #include <memory>
@@ -51,8 +51,8 @@ std::unique_ptr<TransientTrackingRecHitBuilder> MuonTransientTrackingRecHitBuild
 
 void MuonTransientTrackingRecHitBuilderESProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
-  desc.add<string>("ComponentName");
-  descriptions.addDefault(desc);
+  desc.add<string>("ComponentName", "MuonRecHitBuilder");
+  descriptions.addWithDefaultLabel(desc);
 }
 
 DEFINE_FWK_EVENTSETUP_MODULE(MuonTransientTrackingRecHitBuilderESProducer);

@@ -5,11 +5,11 @@
 #include <RecoMTD/DetLayers/interface/MTDSectorForwardDoubleLayer.h>
 #include <RecoMTD/DetLayers/interface/MTDDetSector.h>
 #include <DataFormats/ForwardDetId/interface/ETLDetId.h>
-#include <Geometry/CommonDetUnit/interface/GeomDet.h>
+#include <Geometry/CommonTopologies/interface/GeomDet.h>
 #include <Geometry/MTDCommonData/interface/MTDTopologyMode.h>
 
 #include <Utilities/General/interface/precomputed_value_sort.h>
-#include <Geometry/CommonDetUnit/interface/DetSorting.h>
+#include <Geometry/CommonTopologies/interface/DetSorting.h>
 #include <FWCore/MessageLogger/interface/MessageLogger.h>
 
 #include <iostream>
@@ -21,15 +21,10 @@ pair<vector<DetLayer*>, vector<DetLayer*> > ETLDetLayerGeometryBuilder::buildLay
   vector<DetLayer*> result[2];  // one for each endcap
 
   const int mtdTopologyMode = topo.getMTDTopologyMode();
-  ETLDetId::EtlLayout etlL = MTDTopologyMode::etlLayoutFromTopoMode(mtdTopologyMode);
-  // number of layers is identical for post TDR scenarios, pick v4
+  MTDTopologyMode::EtlLayout etlL = MTDTopologyMode::etlLayoutFromTopoMode(mtdTopologyMode);
   // loop on number of sectors per face, two faces per disc (i.e. layer) taken into account in layer building (front/back)
   unsigned int nSector(1);
-  if (etlL == ETLDetId::EtlLayout::v4) {
-    nSector *= ETLDetId::kETLv4maxSector;
-  } else if (etlL == ETLDetId::EtlLayout::v5) {
-    nSector *= ETLDetId::kETLv5maxSector;
-  } else if (etlL == ETLDetId::EtlLayout::v8) {
+  if (static_cast<int>(etlL) >= static_cast<int>(MTDTopologyMode::EtlLayout::v5)) {
     nSector *= ETLDetId::kETLv5maxSector;
   } else {
     throw cms::Exception("MTDDetLayers") << "Not implemented scenario " << mtdTopologyMode;

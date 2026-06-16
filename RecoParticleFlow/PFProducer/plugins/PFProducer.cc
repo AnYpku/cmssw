@@ -34,7 +34,7 @@ This producer makes use of PFAlgo, the particle flow algorithm.
 \date   July 2006
 */
 
-class PFProducer : public edm::stream::EDProducer<> {
+class PFProducer : public edm::stream::EDProducer<edm::stream::WatchRuns> {
 public:
   explicit PFProducer(const edm::ParameterSet&);
 
@@ -291,8 +291,8 @@ void PFProducer::produce(Event& iEvent, const EventSetup& iSetup) {
   }
 
   // Write in the event
-  iEvent.emplace(pfCandidatesToken_, pOutputCandidateCollection);
-  iEvent.emplace(pfCleanedCandidatesToken_, pfAlgo_.getCleanedCandidates());
+  iEvent.emplace(pfCandidatesToken_, std::move(pOutputCandidateCollection));
+  iEvent.emplace(pfCleanedCandidatesToken_, std::move(pfAlgo_.getCleanedCandidates()));
 
   if (postMuonCleaning_) {
     auto& muAlgo = *pfAlgo_.getPFMuonAlgo();
@@ -309,6 +309,7 @@ void PFProducer::produce(Event& iEvent, const EventSetup& iSetup) {
     // Save added muon candidates
     iEvent.put(muAlgo.transferAddedMuonCandidates(), "AddedMuonsAndHadrons");
   }
+  pfAlgo_.clear();
 }
 
 void PFProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {

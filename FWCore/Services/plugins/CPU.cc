@@ -8,6 +8,8 @@
 // Original Author:  Natalia Garcia
 // CPU.cc: v 1.0 2009/01/08 11:31:07
 
+#include "FWCore/AbstractServices/interface/CPUServiceBase.h"
+#include "FWCore/AbstractServices/interface/ResourceInformation.h"
 #include "FWCore/MessageLogger/interface/JobReport.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ServiceRegistry/interface/ActivityRegistry.h"
@@ -15,8 +17,6 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
-#include "FWCore/Utilities/interface/CPUServiceBase.h"
-#include "FWCore/Utilities/interface/ResourceInformation.h"
 
 #include "cpu_features/cpu_features_macros.h"
 
@@ -40,7 +40,7 @@
 #include <set>
 #include <utility>
 #include <vector>
-#include <fmt/format.h>
+#include <format>
 
 #ifdef __linux__
 #include <sched.h>
@@ -70,7 +70,6 @@ namespace edm {
       void postEndJob();
     };
 
-    inline bool isProcessWideService(CPU const *) { return true; }
   }  // namespace service
 }  // namespace edm
 
@@ -248,16 +247,16 @@ namespace edm {
       model = info.brand_string;
 #elif defined(CPU_FEATURES_ARCH_ARM)
       const auto info{GetArmInfo()};
-      model = fmt::format("ARM {} {} {}", info.implementer, info.architecture, info.variant);
+      model = std::format("ARM {} {} {}", info.implementer, info.architecture, info.variant);
 #elif defined(CPU_FEATURES_ARCH_AARCH64)
       const auto info{GetAarch64Info()};
-      model = fmt::format("aarch64 {} {}", info.implementer, info.variant);
+      model = std::format("aarch64 {} {}", info.implementer, info.variant);
 #elif defined(CPU_FEATURES_ARCH_PPC)
       const auto strings{GetPPCPlatformStrings()};
       model = strings.machine;
 #elif defined(CPU_FEATURES_ARCH_RISCV)
       const auto info{GetRiscvInfo()};
-      model = fmt::format("riscv64 {} {}", info.vendor, info.uarch);
+      model = std::format("riscv64 {} {}", info.vendor, info.uarch);
 #endif
       return model;
     }

@@ -53,11 +53,11 @@
 #include <CondFormats/DataRecord/interface/SiStripFedCablingRcd.h>
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
-#include "Geometry/CommonDetUnit/interface/GeomDetType.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDetType.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 #include <Geometry/CommonTopologies/interface/Topology.h>
 #include <Geometry/CommonTopologies/interface/StripTopology.h>
-#include <Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h>
+#include <Geometry/CommonTopologies/interface/PixelGeomDetUnit.h>
 #include <Geometry/CommonTopologies/interface/PixelTopology.h>
 #include "DataFormats/Common/interface/Ref.h"
 #include "DataFormats/DetId/interface/DetId.h"
@@ -713,6 +713,7 @@ void TrackerDpgAnalysis::analyze(const edm::Event& iEvent, const edm::EventSetup
 
   // build the reverse map tracks -> vertex
   std::vector<std::map<size_t, int> > trackVertices;
+  trackVertices.reserve(trackSize);
   for (size_t i = 0; i < trackSize; ++i) {
     trackVertices.push_back(inVertex(trackCollection[0], vertexColl, globalvertexid_ + 1));
   }
@@ -775,10 +776,12 @@ void TrackerDpgAnalysis::analyze(const edm::Event& iEvent, const edm::EventSetup
 
   // determine if each cluster is on a track or not, and record the trackid
   std::vector<std::vector<int> > stripClusterOntrackIndices;
+  stripClusterOntrackIndices.reserve(trackSize);
   for (size_t i = 0; i < trackSize; ++i) {
     stripClusterOntrackIndices.push_back(onTrack(clusters, trackCollection[i], globaltrackid_[i] + 1));
   }
   std::vector<std::vector<int> > pixelClusterOntrackIndices;
+  pixelClusterOntrackIndices.reserve(trackSize);
   for (size_t i = 0; i < trackSize; ++i) {
     pixelClusterOntrackIndices.push_back(onTrack(pixelclusters, trackCollection[i], globaltrackid_[i] + 1));
   }

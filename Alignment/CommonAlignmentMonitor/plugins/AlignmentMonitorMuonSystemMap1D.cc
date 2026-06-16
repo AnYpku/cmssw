@@ -19,7 +19,7 @@
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
-#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/GlobalTrackingGeometry.h"
 #include "Geometry/Records/interface/GlobalTrackingGeometryRecord.h"
 
 #include "TH1F.h"
@@ -276,7 +276,7 @@ void AlignmentMonitorMuonSystemMap1D::book() {
           }
         }
       }  // endcaps
-  }      // stations
+  }  // stations
 
   m_counter_event = 0;
   m_counter_track = 0;
@@ -322,7 +322,7 @@ void AlignmentMonitorMuonSystemMap1D::event(const edm::Event &iEvent,
           processMuonResidualsFromTrack(muonResidualsFromTrack, iEvent);
         }
       }  // end if track has acceptable momentum
-    }    // end loop over tracks
+    }  // end loop over tracks
   } else {
     const edm::Handle<reco::MuonCollection> &muons = iEvent.getHandle(muonToken_);
 

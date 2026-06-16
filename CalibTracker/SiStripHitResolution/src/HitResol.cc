@@ -44,9 +44,9 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
-#include "Geometry/CommonDetUnit/interface/GeomDetType.h"
-#include "Geometry/CommonDetUnit/interface/GluedGeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDetType.h"
+#include "Geometry/CommonTopologies/interface/GluedGeomDet.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/Records/interface/TrackerTopologyRcd.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
@@ -442,9 +442,9 @@ void HitResol::analyze(const edm::Event& e, const edm::EventSetup& es) {
             reso->Fill();
           }
         }  //itTraj2 != TMeas.end()
-      }    //hit1->isValid()....
-    }      // itm
-  }        // it
+      }  //hit1->isValid()....
+    }  // itm
+  }  // it
 }
 
 void HitResol::endJob() {

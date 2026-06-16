@@ -5,13 +5,13 @@
  */
 
 #include "RecoMuon/MuonSeedGenerator/plugins/MuonSeedProducer.h"
-#include "RecoMuon/MuonSeedGenerator/src/MuonSeedBuilder.h"
+#include "RecoMuon/MuonSeedGenerator/interface/MuonSeedBuilder.h"
 
 // Data Formats
 #include "DataFormats/TrajectorySeed/interface/TrajectorySeedCollection.h"
 
 // Geometry
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 #include "TrackingTools/DetLayers/interface/DetLayer.h"
 
 // Framework
@@ -72,3 +72,6 @@ void MuonSeedProducer::produce(edm::Event& event, const edm::EventSetup& eSetup)
   // Append muon seed collection to event
   event.put(std::move(output));
 }
+
+#include "FWCore/Framework/interface/MakerMacros.h"
+DEFINE_FWK_MODULE(MuonSeedProducer);

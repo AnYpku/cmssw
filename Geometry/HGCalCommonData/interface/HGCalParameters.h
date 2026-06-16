@@ -16,7 +16,7 @@ class HGCalParameters {
 public:
   struct waferInfo {
     int32_t type, part, orient, cassette;
-    waferInfo(int32_t t = 0, int32_t p = 0, int32_t o = 0, int32_t c = 0) : type(t), part(p), orient(o), cassette(c){};
+    waferInfo(int32_t t = 0, int32_t p = 0, int32_t o = 0, int32_t c = 0) : type(t), part(p), orient(o), cassette(c) {}
   };
   struct tileInfo {
     int32_t type, sipm, cassette, hex[6];
@@ -74,11 +74,21 @@ public:
   void fillTrForm(const hgtrform& mytr);
   hgtrform getTrForm(unsigned int k) const;
   void addTrForm(const CLHEP::Hep3Vector& h3v);
+  std::array<int, 4> getID(unsigned int k) const;
   void scaleTrForm(double);
   int scintCells(const int layer) const { return nPhiBinBH_[scintType(layer)]; }
-  double scintCellSize(const int layer) const { return cellSize_[scintType(layer)]; }
-  int scintType(const int layer) const { return ((layer < layerFrontBH_[1]) ? 0 : 1); }
-  std::array<int, 4> getID(unsigned int k) const;
+  double scintCellSize(const int layer) const { return ((2.0 * M_PI) / nPhiBinBH_[scintType(layer)]); }
+  bool scintFine(int indx) const { return ((!tileRingFineR_.empty()) && (nPhiLayer_[indx] > 288)); }
+  double scintRing(int indx, int irad) const;
+  int scintType(const int layer) const { return ((layer < layerFrontBH_[1]) ? 1 : 0); }
+  bool scintValidRing(int indx, int irad) const {
+    return (scintFine(indx) ? ((irad >= iradMinBHFine_[indx]) && (irad <= (iradMaxBHFine_[indx] + 1)))
+                            : ((irad >= iradMinBH_[indx]) && (irad <= (iradMaxBH_[indx] + 1))));
+  }
+  bool waferExist(int layer, int waferU, int waferV) const;
+  bool waferIsHD(int layer, int waferU, int waferV) const;
+  bool waferPartial(int layer, int waferU, int waferV) const;
+  int waferPlacementIndex(int zside, int layer, int waferU, int waferV) const;
 
   std::string name_;
   int detectorType_ = 0;
@@ -162,6 +172,7 @@ public:
   int nCellsFine_ = 0;
   int nCellsCoarse_ = 0;
   double waferSize_ = 0.;
+  double waferSizeNominal_ = 0.;
   double waferThick_ = 0.;
   double sensorSeparation_ = 0.;
   double sensorSizeOffset_ = 0.;
@@ -186,6 +197,8 @@ public:
   std::vector<double> radiusLayer_[2];
   std::vector<int> iradMinBH_;
   std::vector<int> iradMaxBH_;
+  std::vector<int> iradMinBHFine_;
+  std::vector<int> iradMaxBHFine_;
   double minTileSize_ = 0.;
   std::vector<int> firstModule_;
   std::vector<int> lastModule_;
@@ -197,6 +210,7 @@ public:
   wafer_map typesInLayers_;
   waferT_map waferTypes_;
   int waferMaskMode_ = 0;
+  int waferNoGap_ = 0;
   int waferZSide_ = 0;
   waferInfo_map waferInfoMap_;
   std::vector<std::pair<double, double> > layerRotV_;
@@ -205,18 +219,24 @@ public:
   std::vector<std::pair<int, int> > tileRingRange_;
   std::vector<std::pair<double, double> > tileRingFineR_;
   std::vector<std::pair<int, int> > tileRingFineRange_;
+  std::vector<int> nPhiLayer_;
   int cassettes_ = 0;
   int nphiCassette_ = 0;
   int nphiFineCassette_ = 0;
   int phiOffset_ = 0;
   std::vector<double> cassetteShift_;
   std::vector<double> cassetteShiftTile_;
+  std::vector<double> cassetteRetractTile_;
   double calibCellRHD_ = 0.;
   std::vector<int> calibCellFullHD_;
   std::vector<int> calibCellPartHD_;
   double calibCellRLD_ = 0.;
   std::vector<int> calibCellFullLD_;
   std::vector<int> calibCellPartLD_;
+  int tileUVMax_ = 0;
+  int tileUVMaxFine_ = 0;
+  int coldBoxMode_ = 0;              // non-zero for ColdBox geometry
+  std::vector<double> coldBoxRots_;  // layer rotation angles (phi)
 
   COND_SERIALIZABLE;
 

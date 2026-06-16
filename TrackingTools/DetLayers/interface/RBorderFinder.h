@@ -12,7 +12,7 @@
 #include <DataFormats/GeometrySurface/interface/GeometricSorting.h>
 
 #include <Utilities/General/interface/precomputed_value_sort.h>
-#include <Geometry/CommonDetUnit/interface/GeomDet.h>
+#include <Geometry/CommonTopologies/interface/GeomDet.h>
 #include <TrackingTools/DetLayers/interface/ForwardDetRing.h>
 #include <TrackingTools/DetLayers/interface/simple_stat.h>
 #include <FWCore/Utilities/interface/Exception.h>
@@ -26,7 +26,7 @@ public:
 
   RBorderFinder(const std::vector<const Det*>& utheDets);
 
-  virtual ~RBorderFinder(){};
+  virtual ~RBorderFinder() {}
 
   /// Returns true if the Dets are periodic in R.
   inline bool isRPeriodic() const { return isRPeriodic_; }

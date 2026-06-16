@@ -1,24 +1,20 @@
-#include "DataFormats/PortableTestObjects/interface/alpaka/TestDeviceCollection.h"
+#include "DataFormats/HGCalReco/interface/HGCalSoAClusters.h"
+#include "DataFormats/HGCalReco/interface/HGCalSoARecHitsHostCollection.h"
+#include "DataFormats/HGCalReco/interface/alpaka/HGCalSoAClustersDeviceCollection.h"
+#include "DataFormats/HGCalReco/interface/alpaka/HGCalSoARecHitsExtraDeviceCollection.h"
 #include "FWCore/Framework/interface/ConsumesCollector.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/Utilities/interface/InputTag.h"
-#include "HeterogeneousCore/AlpakaCore/interface/alpaka/stream/SynchronizingEDProducer.h"
+#include "Geometry/HGCalGeometry/interface/HGCalGeometry.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/EDPutToken.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/ESGetToken.h"
+#include "HeterogeneousCore/AlpakaCore/interface/alpaka/stream/SynchronizingEDProducer.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
-#include "HeterogeneousCore/AlpakaTest/interface/AlpakaESTestRecords.h"
-#include "HeterogeneousCore/AlpakaTest/interface/alpaka/AlpakaESTestData.h"
-#include "RecoLocalCalo/HGCalRecProducers/interface/HGCalTilesConstants.h"
-#include "Geometry/HGCalGeometry/interface/HGCalGeometry.h"
-#include "DataFormats/HGCRecHit/interface/HGCRecHitCollections.h"
-
-#include "DataFormats/HGCalReco/interface/HGCalSoARecHitsHostCollection.h"
-#include "DataFormats/HGCalReco/interface/alpaka/HGCalSoAClustersDeviceCollection.h"
-#include "DataFormats/HGCalReco/interface/alpaka/HGCalSoARecHitsExtraDeviceCollection.h"
-#include "DataFormats/HGCalReco/interface/HGCalSoAClusters.h"
 #include "RecoLocalCalo/HGCalRecProducers/interface/HGCalSoAClustersExtra.h"
+#include "RecoLocalCalo/HGCalRecProducers/interface/HGCalTilesConstants.h"
+
 #include "HGCalLayerClustersSoAAlgoWrapper.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
@@ -26,7 +22,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   class HGCalSoALayerClustersProducer : public stream::SynchronizingEDProducer<> {
   public:
     HGCalSoALayerClustersProducer(edm::ParameterSet const& config)
-        : getTokenDeviceRecHits_{consumes(config.getParameter<edm::InputTag>("hgcalRecHitsSoA"))},
+        : SynchronizingEDProducer(config),
+          getTokenDeviceRecHits_{consumes(config.getParameter<edm::InputTag>("hgcalRecHitsSoA"))},
           getTokenDeviceClusters_{consumes(config.getParameter<edm::InputTag>("hgcalRecHitsLayerClustersSoA"))},
           deviceTokenSoAClusters_{produces()},
           thresholdW0_(config.getParameter<double>("thresholdW0")),
@@ -61,10 +58,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       auto const& deviceInputClusters = iEvent.get(getTokenDeviceClusters_);
       auto const inputClusters_v = deviceInputClusters.view();
 
-      HGCalSoAClustersDeviceCollection output(num_clusters_, iEvent.queue());
+      HGCalSoAClustersDeviceCollection output(iEvent.queue(), num_clusters_);
       auto output_v = output.view();
       // Allocate workspace SoA cluster
-      HGCalSoAClustersExtraDeviceCollection outputWorkspace(num_clusters_, iEvent.queue());
+      HGCalSoAClustersExtraDeviceCollection outputWorkspace(iEvent.queue(), num_clusters_);
       auto output_workspace_v = outputWorkspace.view();
 
       algo_.run(iEvent.queue(),

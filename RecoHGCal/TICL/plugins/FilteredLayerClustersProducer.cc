@@ -20,7 +20,7 @@
 
 #include <string>
 
-class FilteredLayerClustersProducer : public edm::stream::EDProducer<> {
+class FilteredLayerClustersProducer : public edm::stream::EDProducer<edm::stream::WatchRuns> {
 public:
   FilteredLayerClustersProducer(const edm::ParameterSet&);
   ~FilteredLayerClustersProducer() override {}
@@ -77,6 +77,17 @@ void FilteredLayerClustersProducer::produce(edm::Event& evt, const edm::EventSet
   edm::Handle<std::vector<float>> inputClustersMaskHandle;
   evt.getByToken(clusters_token_, clusterHandle);
   evt.getByToken(clustersMask_token_, inputClustersMaskHandle);
+
+  // Protection against missing input collections
+  if (!clusterHandle.isValid() || !inputClustersMaskHandle.isValid()) {
+    edm::LogWarning("FilteredLayerClustersProducer") << "Missing input collections. Producing an empty mask.";
+
+    // Produce an empty mask and exit
+    auto emptyMask = std::make_unique<std::vector<float>>();
+    evt.put(std::move(emptyMask), iteration_label_);
+    return;
+  }
+
   const auto& inputClusterMask = *inputClustersMaskHandle;
 
   // Transfer input mask in output

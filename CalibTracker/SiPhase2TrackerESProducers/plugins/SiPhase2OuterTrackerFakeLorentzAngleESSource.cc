@@ -17,7 +17,7 @@
 // user include files
 #include "CondFormats/DataRecord/interface/SiPhase2OuterTrackerLorentzAngleRcd.h"
 #include "CondFormats/SiPhase2TrackerObjects/interface/SiPhase2OuterTrackerLorentzAngle.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
 #include "DataFormats/SiStripDetId/interface/StripSubdetector.h"
 #include "CalibTracker/SiPhase2TrackerESProducers/interface/SiPhase2OuterTrackerFakeLorentzAngleESSource.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
@@ -61,21 +61,21 @@ namespace fakeOTLA {
             edm::LogError("SiPhase2OuterTrackerFakeLorentzAngleESSource")
                 << "[SiPhase2OuterTrackerFakeLorentzAngleESSource::produce] detid already exists" << std::endl;
         }  // if it's a OT DetId
-      }    // check if Tracker
-    }      // loop on DetIds
+      }  // check if Tracker
+    }  // loop on DetIds
     return std::unique_ptr<T>(obj);
   }
 }  // namespace fakeOTLA
 
 std::unique_ptr<SiPhase2OuterTrackerLorentzAngle> SiPhase2OuterTrackerFakeLorentzAngleESSource::produceOTLA(
     const SiPhase2OuterTrackerLorentzAngleRcd& rcd) {
-  const auto& geomDet = rcd.getRecord<TrackerTopologyRcd>().get(m_geomDetToken);
+  const auto& geomDet = rcd.get(m_geomDetToken);
   return fakeOTLA::produceRecord<SiPhase2OuterTrackerLorentzAngle>(LAvalue_, geomDet);
 }
 
 std::unique_ptr<SiPhase2OuterTrackerLorentzAngle> SiPhase2OuterTrackerFakeLorentzAngleESSource::produceOTSimLA(
     const SiPhase2OuterTrackerLorentzAngleSimRcd& rcd) {
-  const auto& geomDet = rcd.getRecord<TrackerTopologyRcd>().get(m_geomDetToken);
+  const auto& geomDet = rcd.get(m_geomDetToken);
   return fakeOTLA::produceRecord<SiPhase2OuterTrackerLorentzAngle>(LAvalue_, geomDet);
 }
 

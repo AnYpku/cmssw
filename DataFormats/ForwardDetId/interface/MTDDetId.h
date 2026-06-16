@@ -18,52 +18,69 @@
 
 */
 
-class MTDDetId : public DetId {
-public:
-  /** Enumerated type for Forward sub-deteector systems. */
-  enum SubDetector { subUNKNOWN = 0, FastTime = 1 };
+namespace io_v1 {
+  class MTDDetId : public DetId {
+  public:
+    /** Enumerated type for Forward sub-deteector systems. */
+    enum SubDetector { subUNKNOWN = 0, FastTime = 1 };
 
-  /** Enumerated type for MTD sub-deteector systems. */
-  enum MTDType { typeUNKNOWN = 0, BTL = 1, ETL = 2 };
+    /** Enumerated type for MTD sub-deteector systems. */
+    enum MTDType { typeUNKNOWN = 0, BTL = 1, ETL = 2 };
 
-  static const uint32_t kMTDsubdOffset = 23;
-  static const uint32_t kMTDsubdMask = 0x3;
-  static const uint32_t kZsideOffset = 22;
-  static const uint32_t kZsideMask = 0x1;
-  static const uint32_t kRodRingOffset = 16;
-  static const uint32_t kRodRingMask = 0x3F;
+    static const uint32_t kMTDOffset = 25;
+    static const uint32_t kMTDsubdOffset = 23;
+    static const uint32_t kMTDsubdMask = 0x3;
+    static const uint32_t kZsideOffset = 22;
+    static const uint32_t kZsideMask = 0x1;
+    static const uint32_t kRodRingOffset = 16;
+    static const uint32_t kRodRingMask = 0x3F;
 
-  // ---------- Constructors, enumerated types ----------
+    static constexpr uint32_t kMTDMask = 0x31;  // DetId::Detector::Forward && MTDDetId::SubDetector::FastTime
+    static constexpr uint32_t kBTLMask = 0xc5;  // isMTD && MTDDetId::MTDType::BTL
+    static constexpr uint32_t kETLMask = 0xc6;  // isMTD && MTDDetId::MTDType::ETL
 
-  /** Construct a null id */
-  MTDDetId() : DetId() { ; }
+    // ---------- Constructors, enumerated types ----------
 
-  /** Construct from a raw value */
-  MTDDetId(const uint32_t& raw_id) : DetId(raw_id) { ; }
+    /** Construct a null id */
+    MTDDetId() : DetId() { ; }
 
-  /** Construct from generic DetId */
-  MTDDetId(const DetId& det_id) : DetId(det_id.rawId()) { ; }
+    /** Construct from a raw value */
+    MTDDetId(const uint32_t& raw_id) : DetId(raw_id) { ; }
 
-  /** Construct and fill only the det and sub-det fields. */
-  MTDDetId(Detector det, int subdet) : DetId(det, subdet) { ; }
+    /** Construct from generic DetId */
+    MTDDetId(const DetId& det_id) : DetId(det_id.rawId()) { ; }
 
-  // ---------- Common methods ----------
+    /** Construct and fill only the det and sub-det fields. */
+    MTDDetId(Detector det, int subdet) : DetId(det, subdet) { ; }
 
-  /** Returns enumerated type specifying MTD sub-detector. */
-  inline SubDetector subDetector() const { return static_cast<MTDDetId::SubDetector>(subdetId()); }
+    // ---------- Common methods ----------
 
-  /** Returns enumerated type specifying MTD sub-detector, i.e. BTL or ETL. */
-  inline int mtdSubDetector() const { return (id_ >> kMTDsubdOffset) & kMTDsubdMask; }
+    /** Returns enumerated type specifying MTD sub-detector. */
+    inline SubDetector subDetector() const { return static_cast<MTDDetId::SubDetector>(subdetId()); }
 
-  /** Returns MTD side, i.e. Z-=0 or Z+=1. */
-  inline int mtdSide() const { return (id_ >> kZsideOffset) & kZsideMask; }
-  /** Return MTD side, i.e. Z-=-1 or Z+=1. */
-  inline int zside() const { return (mtdSide() == 1 ? (1) : (-1)); }
+    /** Returns enumerated type specifying MTD sub-detector, i.e. BTL or ETL. */
+    inline int mtdSubDetector() const { return (id_ >> kMTDsubdOffset) & kMTDsubdMask; }
 
-  /** Returns MTD rod/ring number. */
-  inline int mtdRR() const { return (id_ >> kRodRingOffset) & kRodRingMask; }
-};
+    static inline bool testForMTD(const DetId& id) {
+      return (id.rawId() >> MTDDetId::kMTDOffset) == MTDDetId::kMTDMask;
+    }
+    static inline bool testForBTL(const DetId& id) {
+      return (id.rawId() >> MTDDetId::kMTDsubdOffset) == MTDDetId::kBTLMask;
+    }
+    static inline bool testForETL(const DetId& id) {
+      return (id.rawId() >> MTDDetId::kMTDsubdOffset) == MTDDetId::kETLMask;
+    }
 
-std::ostream& operator<<(std::ostream&, const MTDDetId&);
+    /** Returns MTD side, i.e. Z-=0 or Z+=1. */
+    inline int mtdSide() const { return (id_ >> kZsideOffset) & kZsideMask; }
+    /** Return MTD side, i.e. Z-=-1 or Z+=1. */
+    inline int zside() const { return (mtdSide() == 1 ? (1) : (-1)); }
 
+    /** Returns MTD rod/ring number. */
+    inline int mtdRR() const { return (id_ >> kRodRingOffset) & kRodRingMask; }
+  };
+
+  std::ostream& operator<<(std::ostream&, const MTDDetId&);
+}  // namespace io_v1
+using MTDDetId = io_v1::MTDDetId;
 #endif  // DataFormats_MTDDetId_MTDDetId_h

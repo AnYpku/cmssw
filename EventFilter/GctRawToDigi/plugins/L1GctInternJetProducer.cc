@@ -14,14 +14,12 @@
 #include <memory>
 
 // user include files
-#include "EventFilter/GctRawToDigi/plugins/L1GctInternJetProducer.h"
-
+#include "DataFormats/Common/interface/Handle.h"
+#include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 
-#include "DataFormats/Common/interface/Handle.h"
-#include "FWCore/Framework/interface/ESHandle.h"
-#include "DataFormats/Common/interface/OrphanHandle.h"
+#include "L1GctInternJetProducer.h"
 
 L1GctInternJetProducer::L1GctInternJetProducer(const edm::ParameterSet& iConfig)
     : internalJetSource_(iConfig.getParameter<edm::InputTag>("internalJetSource")),
@@ -62,8 +60,7 @@ void L1GctInternJetProducer::produce(edm::StreamID, edm::Event& iEvent, const ed
     //std::cout << "apparently the collection was found" <<std::endl;
     L1GctInternJetDataCollection::const_iterator jetItr = hwIntJetCands->begin();
     L1GctInternJetDataCollection::const_iterator jetEnd = hwIntJetCands->end();
-    int i;
-    for (i = 0; jetItr != jetEnd; ++jetItr, ++i) {
+    for (; jetItr != jetEnd; ++jetItr) {
       //std::cout << " JetS a plenty" <<std::endl;
       if (!jetItr->empty() && (!centralBxOnly_ || jetItr->bx() == 0)) {
         double et = (jetItr->oflow() ? (double)0xfff : (double)jetItr->et()) * etSumLSB + 1.e-6;
@@ -80,7 +77,7 @@ void L1GctInternJetProducer::produce(edm::StreamID, edm::Event& iEvent, const ed
     }
   }
 
-  OrphanHandle<L1JetParticleCollection> internalJetHandle = iEvent.put(std::move(internJetColl), "Internal");
+  iEvent.put(std::move(internJetColl), "Internal");
 }
 
 //define this as a plug-in

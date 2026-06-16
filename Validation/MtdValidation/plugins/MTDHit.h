@@ -7,6 +7,8 @@ struct MTDHit {
   float x;
   float y;
   float z;
+  float thetaAtEntry;
+  unsigned short prodType;
 };
 
 #endif  //Validation_MtdValidation_MTDHit_h

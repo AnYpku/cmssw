@@ -6,14 +6,17 @@
  */
 
 #include "RecoMTD/DetLayers/interface/MTDDetTray.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 #include "TrackingTools/GeomPropagators/interface/Propagator.h"
 #include "TrackingTools/DetLayers/interface/MeasurementEstimator.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
 #include <iostream>
 
+#include "DataFormats/Math/interface/Rounding.h"
+
 using namespace std;
+using namespace cms_rounding;
 
 MTDDetTray::MTDDetTray(vector<const GeomDet*>::const_iterator first, vector<const GeomDet*>::const_iterator last)
     : DetRodOneR(first, last) {

@@ -16,9 +16,7 @@
 namespace edm {
   void LuminosityBlockProcessingStatus::resetResources() {
     endIOVWaitingTasks_.doneWaiting(std::exception_ptr{});
-    for (auto& iter : eventSetupImpls_) {
-      iter.reset();
-    }
+    eventSetupImpl_.reset();
     resumeGlobalLumiQueue();
   }
 
@@ -27,31 +25,11 @@ namespace edm {
   }
 
   bool LuminosityBlockProcessingStatus::shouldStreamStartLumi() {
-    if (state_ == State::kNoMoreEvents)
+    if (haveStartedNextLumiOrEndedRun())
       return false;
 
-    bool changed = false;
-    do {
-      auto expected = State::kRunning;
-      changed = state_.compare_exchange_strong(expected, State::kUpdating);
-      if (expected == State::kNoMoreEvents)
-        return false;
-    } while (changed == false);
-
     ++nStreamsProcessingLumi_;
-    state_ = State::kRunning;
     return true;
-  }
-
-  void LuminosityBlockProcessingStatus::noMoreEventsInLumi() {
-    bool changed = false;
-    do {
-      auto expected = State::kRunning;
-      changed = state_.compare_exchange_strong(expected, State::kUpdating);
-      assert(expected != State::kNoMoreEvents);
-    } while (changed == false);
-    nStreamsStillProcessingLumi_.store(nStreamsProcessingLumi_);
-    state_ = State::kNoMoreEvents;
   }
 
   void LuminosityBlockProcessingStatus::setEndTime() {

@@ -2,13 +2,13 @@
     I. Bloch, E. James, S. Stoynev
  */
 
-#include "RecoMuon/MuonSeedGenerator/src/SETSeedFinder.h"
+#include "RecoMuon/MuonSeedGenerator/interface/SETSeedFinder.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "RecoMuon/TrackingTools/interface/MuonPatternRecoDumper.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "TrackingTools/DetLayers/interface/DetLayer.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 #include "DataFormats/MuonDetId/interface/MuonSubdetId.h"
 #include "DataFormats/MuonDetId/interface/CSCDetId.h"
 #include "TrackingTools/TrajectoryState/interface/TrajectoryStateTransform.h"

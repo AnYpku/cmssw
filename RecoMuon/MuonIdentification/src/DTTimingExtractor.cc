@@ -36,7 +36,7 @@
 #include "DataFormats/DTRecHit/interface/DTRecSegment2D.h"
 
 #include "Geometry/Records/interface/GlobalTrackingGeometryRecord.h"
-#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/GlobalTrackingGeometry.h"
 #include "TrackingTools/Records/interface/TrackingComponentsRecord.h"
 
 #include "DataFormats/MuonReco/interface/Muon.h"
@@ -214,7 +214,7 @@ void DTTimingExtractor::fillTiming(TimeMeasurementSequence& tmSequence,
         tms.push_back(thisHit);
       }
     }  // phi = (0,1)
-  }    // rechit
+  }  // rechit
 
   bool modified = false;
   std::vector<double> dstnc, local_t0, hitWeightTimeVtx, hitWeightInvbeta, left;

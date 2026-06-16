@@ -23,26 +23,27 @@ namespace {
 
 namespace edm {
   namespace friendlyname {
-    static std::regex const reBeginSpace("^ +");
-    static std::regex const reEndSpace(" +$");
-    static std::regex const reAllSpaces(" +");
-    static std::regex const reColons("::");
-    static std::regex const reComma(",");
-    static std::regex const reTemplateArgs("[^<]*<(.*)>$");
-    static std::regex const rePointer("\\*");
-    static std::regex const reArray("\\[\\]");
-    static std::regex const reUniquePtrDeleter("^std::unique_ptr< *(.*), *std::default_delete<\\1> *>");
-    static std::regex const reUniquePtr("^std::unique_ptr");
-    static std::string const emptyString("");
+    static std::string const& emptyString("");
 
-    std::string handleNamespaces(std::string const& iIn) { return std::regex_replace(iIn, reColons, emptyString); }
+    std::string handleNamespaces(std::string const& iIn) {
+      static std::regex const reColons("::");
+      return std::regex_replace(iIn, reColons, emptyString);
+    }
 
     std::string removeExtraSpaces(std::string const& iIn) {
+      static std::regex const reBeginSpace("^ +");
+      static std::regex const reEndSpace(" +$");
+
       return std::regex_replace(std::regex_replace(iIn, reBeginSpace, emptyString), reEndSpace, emptyString);
     }
 
-    std::string removeAllSpaces(std::string const& iIn) { return std::regex_replace(iIn, reAllSpaces, emptyString); }
+    std::string removeAllSpaces(std::string const& iIn) {
+      static std::regex const reAllSpaces(" +");
+
+      return std::regex_replace(iIn, reAllSpaces, emptyString);
+    }
     static std::regex const reWrapper("edm::Wrapper<(.*)>");
+    static std::regex const reVersion("io_v[0-9]+::");
     static std::regex const reString("std::basic_string<char>");
     static std::regex const reString2("std::string");
     static std::regex const reString3("std::basic_string<char,std::char_traits<char> >");
@@ -83,7 +84,7 @@ namespace edm {
         "edm::AssociationMap<edm::OneToManyWithQuality<(.*?), *(.*?), *(.*?), *u[a-z]*> >");
     static std::regex const reToVector("edm::AssociationVector<(.*), *(.*), *edm::Ref.*,.*>");
     //NOTE: if the item within a clone policy is a template, this substitution will probably fail
-    static std::regex const reToRangeMap("edm::RangeMap< *(.*), *(.*), *edm::ClonePolicy<([^>]*)> >");
+    static std::regex const reToRangeMap("edm::RangeMap< *(.*), *(.*), *edm::(Clone|Copy)Policy<([^>]*)> >");
     //NOTE: If container is a template with one argument which is its 'type' then can simplify name
     static std::regex const reToRefs1(
         "edm::RefVector< *(.*)< *(.*) *>, *\\2 *, *edm::refhelper::FindUsingAdvance< *\\1< *\\2 *> *, *\\2 *> *>");
@@ -112,7 +113,11 @@ namespace edm {
     std::string standardRenames(std::string const& iIn) {
       using std::regex;
       using std::regex_replace;
+      static std::regex const rePointer("\\*");
+      static std::regex const reArray("\\[\\]");
+
       std::string name = regex_replace(iIn, reWrapper, "$1");
+      name = regex_replace(name, reVersion, "");
       name = regex_replace(name, rePointer, "ptr");
       name = regex_replace(name, reArray, "As");
       name = regex_replace(name, reAIKR, "");
@@ -174,9 +179,12 @@ namespace edm {
       }
       // Handle unique_ptr, which may contain the deleter (but handle only std::default_delete)
       {
+        static std::regex const reUniquePtrDeleter("^std::unique_ptr< *(.*), *std::default_delete<\\1> *>");
+
         auto result2 =
             regex_replace(result, reUniquePtrDeleter, "UniquePtr<$1>", std::regex_constants::format_first_only);
         if (result2 == result) {
+          static std::regex const reUniquePtr("^std::unique_ptr");
           result2 = regex_replace(result, reUniquePtr, "UniquePtr", std::regex_constants::format_first_only);
         }
         result = std::move(result2);
@@ -216,6 +224,7 @@ namespace edm {
         }
         result = std::move(result2);
       }
+      static std::regex const reTemplateArgs("[^<]*<(.*)>$");
       if (smatch theMatch; regex_match(result, theMatch, reTemplateArgs)) {
         //std::cout <<"found match \""<<theMatch.str(1) <<"\"" <<std::endl;
         //static regex const templateClosing(">$");
@@ -301,6 +310,7 @@ namespace edm {
         }
       }
 
+      static std::regex const reComma(",");
       result = regex_replace(result2, reComma, "");
       if constexpr (debug) {
         std::cout << prefix << " reComma " << result << std::endl;

@@ -18,7 +18,7 @@
 #include "DataFormats/TrackReco/interface/Track.h"
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
 #include "RecoMuon/TrackingTools/interface/MuonServiceProxy.h"
-#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+#include "Geometry/CommonTopologies/interface/GlobalTrackingGeometry.h"
 #include "MagneticField/Engine/interface/MagneticField.h"
 #include "Geometry/Records/interface/GlobalTrackingGeometryRecord.h"
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
@@ -507,6 +507,5 @@ edm::ESHandle<Propagator> RealCosmicDataAnalyzer::propagator() const {
   return theService->propagator("SteppingHelixPropagatorAny");
 }
 
-//define this as a plug-in
-
+#include "FWCore/Framework/interface/MakerMacros.h"
 DEFINE_FWK_MODULE(RealCosmicDataAnalyzer);

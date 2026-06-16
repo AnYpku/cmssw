@@ -39,7 +39,7 @@
 #include "FWCore/Framework/interface/stream/EDProducer.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Utilities/interface/StreamID.h"
-#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
 #include "Geometry/CommonTopologies/interface/PixelTopology.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
@@ -238,7 +238,7 @@ const trajCrossings_t NearbyPixelClustersProducer::findAllTrajectoriesCrossings(
         treatedIds.push_back(rawId);
       }
     }  // loop on measurements in trajectory
-  }    // loop on trajectories
+  }  // loop on trajectories
 
   return crossings;
 }
@@ -374,7 +374,7 @@ const std::vector<edmNew::DetSet<SiPixelCluster>::const_iterator> NearbyPixelClu
         outputClusters.push_back(closest);
       }
     }  // loop on all clusters
-  }    // loop on the trajectory crossings
+  }  // loop on the trajectory crossings
 
   return outputClusters;
 }

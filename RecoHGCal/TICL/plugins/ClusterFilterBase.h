@@ -5,6 +5,7 @@
 #define RecoHGCal_TICL_ClusterFilterBase_H__
 
 #include "DataFormats/HGCalReco/interface/Common.h"
+#include "DataFormats/CaloRecHit/interface/CaloClusterFwd.h"
 #include "RecoLocalCalo/HGCalRecAlgos/interface/RecHitTools.h"
 
 #include <memory>
@@ -13,15 +14,11 @@
 namespace edm {
   class ParameterSet;
 }
-namespace reco {
-  class CaloCluster;
-}
-
 namespace ticl {
   class ClusterFilterBase {
   public:
-    explicit ClusterFilterBase(const edm::ParameterSet&){};
-    virtual ~ClusterFilterBase(){};
+    explicit ClusterFilterBase(const edm::ParameterSet&) {}
+    virtual ~ClusterFilterBase() {}
 
     virtual void filter(const std::vector<reco::CaloCluster>& layerClusters,
                         std::vector<float>& layerClustersMask,

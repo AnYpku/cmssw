@@ -12,7 +12,7 @@
 <use name="FWCore/Framework"/>
 <use name="FWCore/MessageLogger"/>
 <use name="FWCore/ParameterSet"/>
-<use name="Geometry/CommonDetUnit" source_only="1"/>
+<use name="Geometry/CommonTopologies" source_only="1"/>
 <use name="RecoMuon/MeasurementDet"/>
 <use name="RecoMuon/Navigation"/>
 <use name="RecoMuon/TrackingTools"/>
@@ -26,4 +26,6 @@
 <use name="TrackingTools/TrackFitters"/>
 <use name="TrackingTools/TrajectoryState"/>
 <use name="TrackingTools/TransientTrackingRecHit"/>
-<flags EDM_PLUGIN="1"/>
+<export>
+  <lib name="1"/>
+</export>

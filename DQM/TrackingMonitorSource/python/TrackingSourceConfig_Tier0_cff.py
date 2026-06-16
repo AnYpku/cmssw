@@ -395,9 +395,18 @@ _seedingDeepCore_TrackSeedMonSequence += (locals()["TrackSeedMonjetCoreRegionalS
 from Configuration.ProcessModifiers.seedingDeepCore_cff import seedingDeepCore
 seedingDeepCore.toReplaceWith(TrackSeedMonSequence,_seedingDeepCore_TrackSeedMonSequence)
 
+from Configuration.ProcessModifiers.seedingLST_cff import seedingLST
+from Configuration.ProcessModifiers.trackingLST_cff import trackingLST
+trackingLST.toModify(locals()["TrackSeedMonhighPtTripletStep"],
+    SeedProducer = "lstInputProducer"
+)
+_LST_TrackSeedMonSequence = TrackSeedMonSequence.copyAndExclude([locals()["TrackSeedMoninitialStep"]])
+(seedingLST | trackingLST).toReplaceWith(TrackSeedMonSequence, _LST_TrackSeedMonSequence)
+
 TrackingDQMSourceTier0 += TrackSeedMonSequence
 
 from DQM.TrackingMonitorSource.shortTrackResolution_cff import *
+from DQM.TrackingMonitorSource.trackToTrackCPU_cff import *
 
 # MessageLog
 for module in selectedModules :
@@ -407,6 +416,7 @@ TrackingDQMSourceTier0 += voMonitoringSequence
 TrackingDQMSourceTier0 += voWcutMonitoringSequence
 TrackingDQMSourceTier0 += primaryVertexResolution
 TrackingDQMSourceTier0 += shortTrackResolution3to8
+TrackingDQMSourceTier0 += trackToTrackCPUSequence
 TrackingDQMSourceTier0 += dqmInfoTracking
 
 

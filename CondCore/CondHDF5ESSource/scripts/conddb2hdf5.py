@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import argparse
+import bisect
+import datetime
 import sys
 import logging
 import sqlalchemy
@@ -254,8 +256,22 @@ class DBTag(object):
                     finalIOV = mergeIOVs(finalIOV, iovAndPayload)
 
             firstValues, lastValues = sinceToIOV( (x[0] for x in finalIOV), time_type)
-
-            self._iovsNPayloads = list(zip((IOVSyncValue(x[0],x[1]) for x in firstValues), (IOVSyncValue(x[0], x[1]) for x in lastValues), (x[1] for x in finalIOV)))
+            if self._args.run is None:
+                # include all IOVs
+                self._iovsNPayloads = list(zip((IOVSyncValue(x[0],x[1]) for x in firstValues), (IOVSyncValue(x[0], x[1]) for x in lastValues), (x[1] for x in finalIOV)))
+            else:
+                # include only the IOVs that contain the given run
+                if time_type == conddb.TimeType.Time.value:
+                    # time-based IOVs
+                    # TODO map run number to time with "conddb --noLimit listRuns", including a few minutes of tolerance
+                    self._iovsNPayloads = list(zip((IOVSyncValue(x[0],x[1]) for x in firstValues), (IOVSyncValue(x[0], x[1]) for x in lastValues), (x[1] for x in finalIOV)))
+                else:
+                    # run and lumi-based IOVs
+                    firstRunLumi = (self._args.run, 1)
+                    firstIndex = bisect.bisect(firstValues, firstRunLumi) - 1
+                    lastRunLumi = (self._args.run, 0xffffffff)
+                    lastIndex = bisect.bisect(lastValues, lastRunLumi) + 1
+                    self._iovsNPayloads = list(zip((IOVSyncValue(x[0],x[1]) for x in firstValues[firstIndex:lastIndex]), (IOVSyncValue(x[0], x[1]) for x in lastValues[firstIndex:lastIndex]), (x[1] for x in finalIOV[firstIndex:lastIndex])))
             self._session.flush()
             self._session.commit()
         return self._iovsNPayloads
@@ -547,16 +563,35 @@ def main():
     parser.add_argument('name', nargs='+', help="Name of the global tag.")
     parser.add_argument('--verbose', '-v', action='count', help='Verbosity level. -v prints debugging information of this tool, like tracebacks in case of errors. -vv prints, in addition, all SQL statements issued. -vvv prints, in addition, all results returned by queries.')
     parser.add_argument('--authPath','-a', default=None, help='Path of the authentication .netrc file. Default: the content of the COND_AUTH_PATH environment variable, when specified.')
+    parser.add_argument('--run', '-r', default=None, type=int, help='Include only the payloads with an IOV that is part of the given run.')
     parser.add_argument('--snapshot', '-T', default=None, help="Snapshot time. If provided, the output will represent the state of the IOVs inserted into database up to the given time. The format of the string must be one of the following: '2013-01-20', '2013-01-20 10:11:12' or '2013-01-20 10:11:12.123123'.")
     parser.add_argument('--exclude', '-e', nargs='*', help = 'list of records to exclude from the file (can not be used with --include)')
     parser.add_argument('--include', '-i', nargs='*', help = 'lost of the only records that should be included in the file (can not be used with --exclude')
     parser.add_argument('--output', '-o', default='test.h5cond', help='name of hdf5 output file to write')
-    parser.add_argument('--compressor', '-c', default='zlib', choices =['zlib','lzma','none'], help="compress data using 'zlib', 'lzma' or 'none'")    
+    parser.add_argument('--compressor', '-c', default='zlib', choices=['zlib', 'lzma', 'zstd', 'none'], help="compress data using 'zlib', 'lzma', 'zstd', or 'none'")
+    parser.add_argument('--level', '-l', default=None, type=int, help='Compression level: 1..9 for zlib (default is 6), 1..9 for lzma (default is 6), -9..-1,1-19,20-22 for zstd (default is 3)')
     args = parser.parse_args()
 
     if args.exclude and args.include:
         print("Can not use --exclude and --include at the same time")
         exit(-1)
+
+    if args.compressor == 'none':
+        if args.level is not None:
+            print("Can not use a compression level if the compression is set to 'none'")
+            exit(-1)
+    elif args.compressor == 'zlib':
+        if args.level < 1 or args.level > 9:
+            print("Invalid compression level '%d': 'zlib' supports compression levels from 1 (fastest) to 9 (best)" % args.level)
+            exit(-1)
+    elif args.compressor == 'lzma':
+        if args.level < 1 or args.level > 9:
+            print("Invalid compression level '%d': 'lzma' supports compression levels from 1 (fastest) to 9 (best)" % args.level)
+            exit(-1)
+    elif args.compressor == 'zstd':
+        if args.level < -9 or args.level == 0 or args.level > 22:
+            print("Invalid compression level '%d': 'zstd' supports compression levels from 1 (fast) to 19 (best), 20 to 22 (ultra) and from -1 to -9 (fastest)" % args.level)
+            exit(-1)
 
     connection = connect(args)
     session = connection.session()
@@ -568,7 +603,7 @@ def main():
     if args.include:
         includeRecords = set(args.include)
 
-    writeH5File(args.output, args.name, excludeRecords, includeRecords, lambda x: DBGlobalTag(args, session,  x), args.compressor )
+    writeH5File(args.output, args.name, excludeRecords, includeRecords, lambda x: DBGlobalTag(args, session, x), args.compressor, args.level)
     
 if __name__ == '__main__':
     main()

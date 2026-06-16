@@ -8,6 +8,7 @@
  */
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/Utilities/interface/EDGetToken.h"
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/ParameterSet/interface/FileInPath.h"
@@ -16,6 +17,7 @@
 #include "DataFormats/ParticleFlowReco/interface/PFCluster.h"
 #include "DataFormats/ParticleFlowCandidate/interface/PFCandidate.h"
 #include "DataFormats/HGCalReco/interface/Trackster.h"
+#include "DataFormats/HGCRecHit/interface/HGCRecHitCollections.h"
 #include "SimDataFormats/CaloAnalysis/interface/CaloParticle.h"
 #include "SimDataFormats/CaloAnalysis/interface/SimCluster.h"
 #include "SimDataFormats/Vertex/interface/SimVertex.h"
@@ -29,8 +31,13 @@
 
 #include "SimDataFormats/Associations/interface/LayerClusterToCaloParticleAssociator.h"
 #include "SimDataFormats/Associations/interface/LayerClusterToSimClusterAssociator.h"
+#include "SimDataFormats/Associations/interface/TICLAssociationMap.h"
 
-class PileupSummaryInfo;
+#include "CommonTools/Utils/interface/StringCutObjectSelector.h"
+#include "DataFormats/Common/interface/RefProdVector.h"
+#include "DataFormats/Common/interface/MultiSpan.h"
+
+#include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfoFwd.h"
 
 struct HGCalValidatorHistograms {
   HGVHistoProducerAlgoHistograms histoProducerAlgo;
@@ -41,6 +48,10 @@ struct HGCalValidatorHistograms {
 class HGCalValidator : public DQMGlobalEDAnalyzer<HGCalValidatorHistograms> {
 public:
   using Histograms = HGCalValidatorHistograms;
+  using TracksterToTracksterMap =
+      ticl::AssociationMap<ticl::mapWithSharedEnergyAndScore, std::vector<ticl::Trackster>, std::vector<ticl::Trackster>>;
+  using SimClusterToCaloParticleMap =
+      ticl::AssociationMap<ticl::oneToOneMapWithFraction, std::vector<SimCluster>, std::vector<CaloParticle>>;
 
   /// Constructor
   HGCalValidator(const edm::ParameterSet& pset);
@@ -59,12 +70,16 @@ public:
                                 std::vector<size_t>& selected_cPeff,
                                 unsigned int layers,
                                 std::unordered_map<DetId, const unsigned int> const&,
-                                std::vector<HGCRecHit> const& hits) const;
+                                edm::MultiSpan<HGCRecHit> const& hits) const;
+
+  static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
 protected:
   edm::ESGetToken<CaloGeometry, CaloGeometryRecord> caloGeomToken_;
   edm::InputTag label_lcl;
   std::vector<edm::InputTag> label_tst;
+  std::vector<edm::InputTag> allTracksterTracksterAssociatorsLabels_;
+  std::vector<edm::InputTag> allTracksterTracksterByHitsAssociatorsLabels_;
   edm::InputTag label_simTS, label_simTSFromCP;
   edm::InputTag associator_;
   edm::InputTag associatorSim_;
@@ -72,16 +87,15 @@ protected:
   const bool doCaloParticlePlots_;
   const bool doCaloParticleSelection_;
   const bool doSimClustersPlots_;
-  edm::InputTag label_SimClustersPlots_, label_SimClustersLevel_;
+  std::string label_SimClustersPlots_, label_SimClustersLevel_;
   const bool doLayerClustersPlots_;
-  edm::InputTag label_layerClustersPlots_, label_LCToCPLinking_;
+  std::string label_layerClustersPlots_, label_LCToCPLinking_;
   const bool doTrackstersPlots_;
-  std::string label_TS_, label_TSToCPLinking_, label_TSToSTSPR_;
+  std::string label_TS_, label_TSbyHitsCP_, label_TSbyHits_, label_TSbyLCsCP_, label_TSbyLCs_;
   std::vector<edm::InputTag> label_clustersmask;
   const bool doCandidatesPlots_;
   std::string label_candidates_;
   const edm::FileInPath cummatbudinxo_;
-  const bool isTICLv5_;
 
   std::vector<edm::EDGetTokenT<reco::CaloClusterCollection>> labelToken;
   edm::EDGetTokenT<std::vector<SimCluster>> simClusters_;
@@ -95,14 +109,17 @@ protected:
   edm::EDGetTokenT<std::vector<SimVertex>> simVertices_;
   std::vector<edm::EDGetTokenT<std::vector<float>>> clustersMaskTokens_;
   edm::EDGetTokenT<std::unordered_map<DetId, const unsigned int>> hitMap_;
-  edm::EDGetTokenT<ticl::RecoToSimCollection> associatorMapRtS;
-  edm::EDGetTokenT<ticl::SimToRecoCollection> associatorMapStR;
-  edm::EDGetTokenT<ticl::SimToRecoCollectionWithSimClusters> associatorMapSimtR;
-  edm::EDGetTokenT<ticl::RecoToSimCollectionWithSimClusters> associatorMapRtSim;
+  edm::EDGetTokenT<ticl::RecoToSimCollectionT<reco::CaloClusterCollection>> associatorMapRtS;
+  edm::EDGetTokenT<ticl::SimToRecoCollectionT<reco::CaloClusterCollection>> associatorMapStR;
+  edm::EDGetTokenT<ticl::SimToRecoCollectionWithSimClustersT<reco::CaloClusterCollection>> associatorMapSimtR;
+  edm::EDGetTokenT<ticl::RecoToSimCollectionWithSimClustersT<reco::CaloClusterCollection>> associatorMapRtSim;
   std::unique_ptr<HGVHistoProducerAlgo> histoProducerAlgo_;
-  std::vector<edm::InputTag> hits_label_;
-  std::vector<edm::EDGetTokenT<HGCRecHitCollection>> hits_token_;
+  edm::EDGetTokenT<edm::RefProdVector<HGCRecHitCollection>> hitsToken_;
   std::unique_ptr<TICLCandidateValidator> candidateVal_;
+  std::vector<edm::EDGetTokenT<TracksterToTracksterMap>> tracksterToTracksterAssociatorsTokens_;
+  std::vector<edm::EDGetTokenT<TracksterToTracksterMap>> tracksterToTracksterByHitsAssociatorsTokens_;
+  edm::EDGetTokenT<SimClusterToCaloParticleMap> scToCpMapToken_;
+  const StringCutObjectSelector<reco::Track> cutTk_;
 
 private:
   CaloParticleSelector cpSelector;

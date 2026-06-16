@@ -1,4 +1,4 @@
-#include "TauAnalysis/MCEmbeddingTools/plugins/TrackMergeremb.h"
+#include "TauAnalysis/MCEmbeddingTools/interface/TrackMergeremb.h"
 
 #include <memory>
 
@@ -12,8 +12,8 @@
 #include "DataFormats/EgammaReco/interface/SuperCluster.h"
 #include "DataFormats/EgammaReco/interface/SuperClusterFwd.h"
 
-#include "DataFormats/EgammaTrackReco/interface/ConversionTrack.h"
-#include "DataFormats/EgammaTrackReco/interface/ConversionTrackFwd.h"
+#include "RecoEgamma/EgammaTools/interface/ConversionTrack.h"
+#include "RecoEgamma/EgammaTools/interface/ConversionTrackFwd.h"
 
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
 #include "DataFormats/MuonReco/interface/MuonTrackLinks.h"
@@ -53,7 +53,7 @@ typedef TrackMergeremb<reco::PFCandidateCollection> PFColMerger;
 template <typename T1>
 TrackMergeremb<T1>::TrackMergeremb(const edm::ParameterSet &iConfig) {
   alias = iConfig.getParameter<std::string>("@module_label");
-  std::vector<edm::InputTag> inCollections = iConfig.getParameter<std::vector<edm::InputTag>>("mergCollections");
+  std::vector<edm::InputTag> inCollections = iConfig.getParameter<std::vector<edm::InputTag>>("mergeCollections");
   globalGeomToken_ = esConsumes();
   for (const auto &inCollection : inCollections) {
     inputs_[inCollection.instance()].push_back(consumes<TrackCollectionemb>(inCollection));
@@ -96,9 +96,7 @@ void TrackMergeremb<T1>::merg_and_put(edm::Event &iEvent,
     edm::Handle<TrackCollectionemb> track_col_in;
     iEvent.getByToken(akt_collection, track_col_in);
 
-    size_t sedref_it = 0;
-    for (typename TrackCollectionemb::const_iterator it = track_col_in->begin(); it != track_col_in->end();
-         ++it, ++sedref_it) {
+    for (typename TrackCollectionemb::const_iterator it = track_col_in->begin(); it != track_col_in->end(); ++it) {
       outTracks->push_back(typename T1::value_type(*it));
     }
 

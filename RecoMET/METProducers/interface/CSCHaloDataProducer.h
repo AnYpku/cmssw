@@ -96,9 +96,11 @@
 
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
+#include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/PluginManager/interface/ModuleDef.h"
 
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 #include "Geometry/CSCGeometry/interface/CSCGeometry.h"
 #include "Geometry/CSCGeometry/interface/CSCChamber.h"
 #include "Geometry/CSCGeometry/interface/CSCLayer.h"
@@ -130,7 +132,9 @@ namespace reco {
   class CSCHaloDataProducer : public edm::stream::EDProducer<> {
   public:
     explicit CSCHaloDataProducer(const edm::ParameterSet &);
-    ~CSCHaloDataProducer() override;
+    ~CSCHaloDataProducer() override = default;
+
+    static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
   private:
     void produce(edm::Event &, const edm::EventSetup &) override;

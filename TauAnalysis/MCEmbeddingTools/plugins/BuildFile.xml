@@ -2,6 +2,7 @@
 <use name="DataFormats/RPCRecHit"/>
 <use name="DataFormats/EcalRecHit"/>
 <use name="DataFormats/HcalRecHit"/>
+<use name="FWCore/AbstractServices"/>
 <use name="TrackingTools/TrackAssociator"/>
 <use name="CondFormats/BeamSpotObjects"/>
 <use name="SimDataFormats/GeneratorProducts"/>
@@ -10,5 +11,6 @@
 <use name="CondFormats/JetMETObjects"/>
 <use name="JetMETCorrections/Objects"/>
 <use name="JetMETCorrections/JetCorrector"/>
+<use name="RecoEgamma/EgammaTools"/>
 <use name="RecoMET/METAlgorithms"/>
 <flags EDM_PLUGIN="1"/>

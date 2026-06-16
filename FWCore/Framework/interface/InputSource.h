@@ -20,6 +20,7 @@ Some examples of InputSource subclasses are:
 #include "DataFormats/Provenance/interface/RunAuxiliary.h"
 #include "DataFormats/Provenance/interface/RunID.h"
 #include "DataFormats/Provenance/interface/Timestamp.h"
+#include "DataFormats/Provenance/interface/ProductRegistry.h"
 #include "FWCore/Common/interface/FWCoreCommonFwd.h"
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/ProcessingController.h"
@@ -43,11 +44,9 @@ namespace edm {
   class ParameterSetDescription;
   class ProcessContext;
   class ProcessHistoryRegistry;
-  class ProductRegistry;
   class StreamContext;
   class ModuleCallingContext;
   class SharedResourcesAcquirer;
-  class ThinnedAssociationsHelper;
 
   class InputSource {
   public:
@@ -56,17 +55,34 @@ namespace edm {
 
     class ItemTypeInfo {
     public:
-      constexpr ItemTypeInfo(ItemType type = ItemType::IsInvalid, ItemPosition position = ItemPosition::Invalid)
+      explicit constexpr ItemTypeInfo(ItemType type = ItemType::IsInvalid,
+                                      ItemPosition position = ItemPosition::Invalid)
           : type_(type), position_(position) {}
-      ItemType itemType() const { return type_; }
-      ItemPosition itemPosition() const { return position_; }
+
+      ItemTypeInfo(ItemTypeInfo const&) = default;
+      ItemTypeInfo(ItemTypeInfo&&) = default;
+      ItemTypeInfo& operator=(ItemTypeInfo const&) = default;
+      ItemTypeInfo& operator=(ItemTypeInfo&&) = default;
+      constexpr ItemType itemType() const noexcept { return type_; }
+      constexpr ItemPosition itemPosition() const noexcept { return position_; }
 
       // Note that conversion to ItemType is defined and often used to
       // compare an ItemTypeInfo with an ItemType.
       // operator== of two ItemTypeInfo's is intentionally NOT defined.
-      // The constructor also allows implicit conversion from ItemType and
-      // often assignment from ItemType to ItemTypeInfo occurs.
       operator ItemType() const { return type_; }
+
+      static constexpr ItemTypeInfo isInvalid() noexcept { return ItemTypeInfo(ItemType::IsInvalid); }
+      static constexpr ItemTypeInfo isStop() noexcept { return ItemTypeInfo(ItemType::IsStop); }
+      static constexpr ItemTypeInfo isSynchronize() noexcept { return ItemTypeInfo(ItemType::IsSynchronize); }
+      static constexpr ItemTypeInfo isFile() noexcept { return ItemTypeInfo(ItemType::IsFile); }
+      static constexpr ItemTypeInfo isRun(ItemPosition position = ItemPosition::Invalid) noexcept {
+        return ItemTypeInfo(ItemType::IsRun, position);
+      }
+      static constexpr ItemTypeInfo isLumi(ItemPosition position = ItemPosition::Invalid) noexcept {
+        return ItemTypeInfo(ItemType::IsLumi, position);
+      }
+      static constexpr ItemTypeInfo isEvent() noexcept { return ItemTypeInfo(ItemType::IsEvent); }
+      static constexpr ItemTypeInfo isRepeat() noexcept { return ItemTypeInfo(ItemType::IsRepeat); }
 
     private:
       ItemType type_;
@@ -158,11 +174,11 @@ namespace edm {
     /// issue an event report
     void issueReports(EventID const& eventID, StreamID streamID);
 
-    /// Register any produced products
+    /// Register any produced products into source's registry
     virtual void registerProducts();
 
     /// Accessors for product registry
-    std::shared_ptr<ProductRegistry const> productRegistry() const { return get_underlying_safe(productRegistry_); }
+    ProductRegistry const& productRegistry() const { return productRegistry_; }
 
     /// Accessors for process history registry.
     ProcessHistoryRegistry const& processHistoryRegistry() const { return *processHistoryRegistry_; }
@@ -180,14 +196,6 @@ namespace edm {
     }
     std::shared_ptr<ProcessBlockHelper>& processBlockHelper() { return get_underlying_safe(processBlockHelper_); }
 
-    /// Accessors for thinnedAssociationsHelper
-    std::shared_ptr<ThinnedAssociationsHelper const> thinnedAssociationsHelper() const {
-      return get_underlying_safe(thinnedAssociationsHelper_);
-    }
-    std::shared_ptr<ThinnedAssociationsHelper>& thinnedAssociationsHelper() {
-      return get_underlying_safe(thinnedAssociationsHelper_);
-    }
-
     /// Reset the remaining number of events/lumis to the maximum number.
     void repeat() {
       remainingEvents_ = maxEvents_;
@@ -196,9 +204,6 @@ namespace edm {
 
     /// Returns nullptr if no resource shared between the Source and a DelayedReader
     std::pair<SharedResourcesAcquirer*, std::recursive_mutex*> resourceSharedWithDelayedReader();
-
-    /// switch to a different ProductRegistry.
-    void switchTo(std::shared_ptr<ProductRegistry> iOther) { productRegistry_ = iOther; }
 
     /// Accessor for maximum number of events to be read.
     /// -1 is used for unlimited.
@@ -225,8 +230,8 @@ namespace edm {
     /// Accessor for global process identifier
     std::string const& processGUID() const { return processGUID_; }
 
-    /// Called by framework at beginning of job
-    void doBeginJob();
+    /// Called by framework at beginning of job. The argument is the full product registry
+    void doBeginJob(edm::ProductRegistry const&);
 
     /// Called by framework at end of job
     void doEndJob();
@@ -356,7 +361,7 @@ namespace edm {
     /// To set the current time, as seen by the input source
     void setTimestamp(Timestamp const& theTime) { time_ = theTime; }
 
-    ProductRegistry& productRegistryUpdate() { return *productRegistry_; }
+    ProductRegistry& productRegistryUpdate() { return productRegistry_; }
     ProcessHistoryRegistry& processHistoryRegistryForUpdate() { return *processHistoryRegistry_; }
     ItemTypeInfo state() const { return state_; }
     void setRunAuxiliary(RunAuxiliary* rp) {
@@ -396,7 +401,7 @@ namespace edm {
     void decreaseRemainingEventsBy(int iSkipped);
 
     ///Begin protected makes it easier to do template programming
-    virtual void beginJob();
+    virtual void beginJob(edm::ProductRegistry const&);
 
   private:
     bool eventLimitReached() const { return remainingEvents_ == 0; }
@@ -450,11 +455,10 @@ namespace edm {
     std::chrono::time_point<std::chrono::steady_clock> processingStart_;
     ProcessingMode processingMode_;
     ModuleDescription const moduleDescription_;
-    edm::propagate_const<std::shared_ptr<ProductRegistry>> productRegistry_;
+    ProductRegistry productRegistry_;
     edm::propagate_const<std::unique_ptr<ProcessHistoryRegistry>> processHistoryRegistry_;
     edm::propagate_const<std::shared_ptr<BranchIDListHelper>> branchIDListHelper_;
     edm::propagate_const<std::shared_ptr<ProcessBlockHelper>> processBlockHelper_;
-    edm::propagate_const<std::shared_ptr<ThinnedAssociationsHelper>> thinnedAssociationsHelper_;
     std::string processGUID_;
     Timestamp time_;
     mutable bool newRun_;
@@ -464,8 +468,6 @@ namespace edm {
     mutable std::shared_ptr<RunAuxiliary> runAuxiliary_;
     mutable std::shared_ptr<LuminosityBlockAuxiliary> lumiAuxiliary_;
     std::string statusFileName_;
-
-    unsigned int numberOfEventsBeforeBigSkip_;
   };
 }  // namespace edm
 

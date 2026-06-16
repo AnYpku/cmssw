@@ -29,7 +29,7 @@ namespace {
       return l1ct::TrackInputEmulator::Encoding::Stepping;
     else if (str == "biased")
       return l1ct::TrackInputEmulator::Encoding::Biased;
-    else if (str == "unbised")
+    else if (str == "unbiased")
       return l1ct::TrackInputEmulator::Encoding::Unbiased;
     else
       throw cms::Exception("Configuration", "TrackInputEmulator: Unsupported track word encoding '" + str + "'\n");
@@ -55,6 +55,7 @@ l1ct::TrackInputEmulator::TrackInputEmulator(const edm::ParameterSet &iConfig)
             region_ == Region::Endcap);
   configPhi(iConfig.getParameter<uint32_t>("phiBits"));
   configZ0(iConfig.getParameter<uint32_t>("z0Bits"));
+  configDxy(iConfig.getParameter<uint32_t>("dxyLUTBits"));
   if (region_ == Region::Barrel) {
     configDEtaBarrel(iConfig.getParameter<uint32_t>("dEtaBarrelBits"),
                      iConfig.getParameter<uint32_t>("dEtaBarrelZ0PreShift"),
@@ -90,8 +91,9 @@ edm::ParameterSetDescription l1ct::TrackInputEmulator::getParameterSetDescriptio
   description.add<bool>("etaSigned", true);
   description.add<uint32_t>("phiBits", 10u);
   description.add<uint32_t>("z0Bits", 12u);
+  description.add<uint32_t>("dxyLUTBits", 11u);
   description.ifValue(edm::ParameterDescription<std::string>("trackWordEncoding", "biased", true),
-                      edm::allowedValues<std::string>("biased", "unbised", "stepping"));
+                      edm::allowedValues<std::string>("biased", "unbiased", "stepping"));
   description.add<bool>("bitwiseAccurate", true);
   description.add<bool>("slimDataFormat", false);
   description.addUntracked<bool>("debug", false);
@@ -138,6 +140,7 @@ l1ct::TrackInputEmulator::TrackInputEmulator(Region region, Encoding encoding, b
       rInvToPt_(31199.5),
       phiScale_(0.00038349520),
       z0Scale_(0.00999469),
+      dxyScale_(0.00390625),
       dEtaBarrelParamZ0_(0.31735),
       dPhiBarrelParamC_(0.0056535),
       dEtaHGCalParamZ0_(-0.00655),
@@ -155,6 +158,7 @@ std::pair<l1ct::TkObjEmu, bool> l1ct::TrackInputEmulator::decodeTrack(ap_uint<96
   l1ct::TkObjEmu ret;
   ret.clear();
   auto z0 = signedZ0(tkword);
+  auto dxy = signedDxy(tkword);
   auto tanl = signedTanl(tkword);
   auto Rinv = signedRinv(tkword);
   auto phi = signedPhi(tkword);
@@ -196,6 +200,9 @@ std::pair<l1ct::TkObjEmu, bool> l1ct::TrackInputEmulator::decodeTrack(ap_uint<96
       ret.hwEta = vtxEta - ret.hwDEta;
       ret.hwPhi = vtxPhi - ret.hwDPhi * ret.intCharge();
       ret.hwZ0 = convZ0(z0);
+      ret.hwDxy = convDxy(dxy);  //Convert track dxy to sqrt(abs(dxy))
+      ret.hwRedChi2RPhi = tkword(67, 64);
+
     } else {
       ret.hwPt = l1ct::Scales::makePtFromFloat(floatPt(Rinv));
 
@@ -219,13 +226,14 @@ std::pair<l1ct::TkObjEmu, bool> l1ct::TrackInputEmulator::decodeTrack(ap_uint<96
       ret.hwEta = glbeta_t(std::round(fvtxEta)) - ret.hwDEta - sector.hwEtaCenter;
 
       ret.hwZ0 = l1ct::Scales::makeZ0(floatZ0(z0));
+      ret.hwDxy = l1ct::Scales::makeDxy(floatDxy(dxy));  //floatDxy performs sqrt(abs(dxy))
+      ret.hwRedChi2RPhi = tkword(67, 64);
     }
 
     if (!slim) {
       ap_uint<7> w_hitPattern = tkword(15, 9);
       ret.hwStubs = countSetBits(w_hitPattern);
       ret.hwRedChi2RZ = tkword(35, 32);
-      ret.hwRedChi2RPhi = tkword(67, 64);
       ret.hwRedChi2Bend = tkword(18, 16);
     }
 
@@ -363,9 +371,35 @@ void l1ct::TrackInputEmulator::configPhi(int bits) {
 
 float l1ct::TrackInputEmulator::floatZ0(ap_int<12> z0) const { return z0Scale_ * toFloat_(z0); }
 
+float l1ct::TrackInputEmulator::floatDxy(ap_int<13> dxy) const {
+  float physcoord_ = dxyScale_ * toFloat_(dxy);
+  physcoord_ = std::sqrt(std::abs(physcoord_));
+  return physcoord_;
+}
+
 l1ct::z0_t l1ct::TrackInputEmulator::convZ0(ap_int<12> z0) const {
   int offs = z0 >= 0 ? z0OffsPos_ : z0OffsNeg_;
   return (z0.to_int() * z0Mult_ + offs) >> z0BitShift_;
+}
+
+l1ct::dxy_t l1ct::TrackInputEmulator::convDxy(ap_int<13> dxy) const {
+  bool negative = dxy[12];
+  // use saturation in this cast to properly handle the most negative value (i.e. |-4096| -> +4095 )
+  ap_fixed<13, 13, AP_TRN, AP_SAT> absDxy =
+      negative ? ap_fixed<13, 13, AP_TRN, AP_SAT>(-dxy) : ap_fixed<13, 13, AP_TRN, AP_SAT>(dxy);
+  unsigned int index = absDxy >> dxyLUTShift_;
+
+  if (index >= dxyLUT_.size()) {
+    dbgPrintf("WARN: dxy %d, absDxy %d, index %d, size %lu, shift %d\n",
+              dxy.to_int(),
+              absDxy.to_int(),
+              index,
+              dxyLUT_.size(),
+              dxyLUTShift_);
+    index = dxyLUT_.size() - 1;
+  }
+  l1ct::dxy_t sqrtAbsDxy = dxyLUT_.at(index);
+  return sqrtAbsDxy;
 }
 
 void l1ct::TrackInputEmulator::configZ0(int bits) {
@@ -395,6 +429,21 @@ void l1ct::TrackInputEmulator::configZ0(int bits) {
               bits,
               z0OffsPos_,
               z0OffsNeg_);
+}
+
+void l1ct::TrackInputEmulator::configDxy(int lutBits) {
+  dxyLUTShift_ = 12 - lutBits;
+  dxyLUT_.resize(1 << lutBits);
+  for (unsigned int u = 0, n = dxyLUT_.size(); u < n; ++u) {
+    float dxy_l = u * (1 << dxyLUTShift_) * l1ct::Scales::DXY_LSB;
+    float dxy_h = (u + 1) * (1 << dxyLUTShift_) * l1ct::Scales::DXY_LSB;
+    float sqrtDxy_l = std::sqrt(dxy_l);
+    float sqrtDxy_h = std::sqrt(dxy_h);
+    float sqrtDxy = (sqrtDxy_l + sqrtDxy_h) / 2;
+    dxyLUT_[u] = l1ct::Scales::makeDxy(sqrtDxy);
+  }
+  if (debug_)
+    dbgPrintf("Configured dxy with LSB %d in a %d bit LUT\n", l1ct::Scales::DXY_LSB, lutBits);
 }
 
 float l1ct::TrackInputEmulator::floatDEtaBarrel(ap_int<12> z0, ap_int<15> Rinv, ap_int<16> tanl) const {

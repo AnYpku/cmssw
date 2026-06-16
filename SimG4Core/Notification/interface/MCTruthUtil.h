@@ -13,7 +13,8 @@ class G4Track;
 class MCTruthUtil {
 public:
   static void primary(G4Track* aPrimary);
-  static void secondary(G4Track* aSecondary, const G4Track& mother, int);
+  static void secondary(G4Track* aSecondary, const G4Track* mother, int);
+  static void updateSecondary(G4Track* aSecondary);
   static bool isInBTL(const G4Track*);
 };
 

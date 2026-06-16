@@ -19,8 +19,10 @@ private:
   const double originHalfLength;
   const double originRadius;
   const bool useProtoTrackKinematics;
+  const bool sortAndFilterProtoTracks_;
   const bool useEventsWithNoVertex;
   const bool usePV_;
+  const bool removeOTRechits_;
   const bool includeFourthHit_;
   const bool produceComplement_;
   const edm::EDGetTokenT<reco::TrackCollection> theInputCollectionTag;

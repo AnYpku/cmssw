@@ -19,6 +19,10 @@
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 
+#include "FWCore/Concurrency/interface/WaitingTaskHolder.h"
+
+#include "DataFormats/Provenance/interface/BranchID.h"
+
 using namespace edm::stream;
 //
 // constants, enums and typedefs
@@ -69,7 +73,7 @@ void EDProducerBase::fillDescriptions(ConfigurationDescriptions& descriptions) {
   descriptions.addDefault(desc);
 }
 
-size_t EDProducerBase::transformIndex_(edm::BranchDescription const& iBranch) const noexcept { return -1; }
+size_t EDProducerBase::transformIndex_(edm::ProductDescription const& iBranch) const noexcept { return -1; }
 edm::ProductResolverIndex EDProducerBase::transformPrefetch_(std::size_t iIndex) const noexcept { return 0; }
 void EDProducerBase::transformAsync_(WaitingTaskHolder iTask,
                                      std::size_t iIndex,

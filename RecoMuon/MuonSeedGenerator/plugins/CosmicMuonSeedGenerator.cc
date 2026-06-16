@@ -11,7 +11,7 @@
 #include "DataFormats/TrajectorySeed/interface/TrajectorySeedCollection.h"
 #include "DataFormats/Common/interface/Handle.h"
 
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
 
 #include "RecoMuon/TrackingTools/interface/MuonPatternRecoDumper.h"
 
@@ -540,3 +540,19 @@ TrajectorySeed CosmicMuonSeedGenerator::tsosToSeed(const TrajectoryStateOnSurfac
   TrajectorySeed seed(seedTSOS, container, alongMomentum);
   return seed;
 }
+
+void CosmicMuonSeedGenerator::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+  edm::ParameterSetDescription desc;
+  desc.add<bool>("EnableDTMeasurement", true);
+  desc.add<bool>("EnableCSCMeasurement", true);
+  desc.add<InputTag>("DTRecSegmentLabel", edm::InputTag("dt4DSegments"));
+  desc.add<InputTag>("CSCRecSegmentLabel", edm::InputTag("cscSegments"));
+  desc.add<int>("MaxSeeds", 1000);
+  desc.add<double>("MaxDTChi2", 300.0);
+  desc.add<double>("MaxCSCChi2", 300.0);
+  desc.add<bool>("ForcePointDown", true);
+  descriptions.addWithDefaultLabel(desc);
+}
+
+#include "FWCore/Framework/interface/MakerMacros.h"
+DEFINE_FWK_MODULE(CosmicMuonSeedGenerator);

@@ -71,7 +71,7 @@ There are specific local input and output containers that should be used in prod
 Here, `T` is a primitive type, and the two aliases listed below are passed to `TritonInputData::toServer()`
 and returned by `TritonOutputData::fromServer()`, respectively:
 * `TritonInputContainer<T> = std::shared_ptr<TritonInput<T>> = std::shared_ptr<std::vector<std::vector<T>>>`
-* `TritonOutput<T> = std::vector<edm::Span<const T*>>`
+* `TritonOutput<T> = std::vector<std::span<const T>>`
 
 The `TritonInputContainer` object should be created using the helper function described below.
 It expects one vector per batch entry (i.e. the size of the outer vector is the batch size (rectangular case) or number of entries (ragged case)).
@@ -135,8 +135,9 @@ The script has three operations (`start`, `stop`, `check`) and the following opt
 * `-d [exe]`: container choice: apptainer, docker, podman, podman-hpc (default: apptainer)
 * `-E [path]`: include extra path(s) for executables (default: /cvmfs/oasis.opensciencegrid.org/mis/apptainer/current/bin)
 * `-f`: force reuse of (possibly) existing container instance
+* `-G`: accept connections globally (default: only accept connections from localhost)
 * `-g [device]`: device choice: auto (try to detect GPU), CPU, GPU (default: auto)
-* `-i [name]`: server image name (default: fastml/triton-torchgeo:22.07-py3-geometric)
+* `-i [name]`: server image name (default: fastml/triton-torchgeo:26.04-py3-geometric)
 * `-I [num]`: number of model instances (default: 0 -> means no local editing of config files)
 * `-M [dir]`: model repository (can be given more than once)
 * `-m [dir]`: specific model directory (can be given more than one)
@@ -144,7 +145,7 @@ The script has three operations (`start`, `stop`, `check`) and the following opt
 * `-P [port]`: base port number for services (-1: automatically find an unused port range) (default: 8000)
 * `-p [pid]`: automatically shut down server when process w/ specified PID ends (-1: use parent process PID)
 * `-r [num]`: number of retries when starting container (default: 3)
-* `-s [dir]`: apptainer sandbox directory (default: /cvmfs/unpacked.cern.ch/registry.hub.docker.com/fastml/triton-torchgeo:22.07-py3-geometric)
+* `-s [dir]`: apptainer sandbox directory (default: /cvmfs/unpacked.cern.ch/registry.hub.docker.com/fastml/triton-torchgeo:26.04-py3-geometric)
 * `-t [dir]`: non-default hidden temporary dir
 * `-v`: (verbose) start: activate server debugging info; stop: keep server logs
 * `-w [time]`: maximum time to wait for server to start (default: 300 seconds)

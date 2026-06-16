@@ -8,8 +8,8 @@
 
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
-#include "Geometry/CommonDetUnit/interface/GeomDetType.h"
+#include "Geometry/CommonTopologies/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/GeomDetType.h"
 #include "Geometry/CommonTopologies/interface/RadialStripTopology.h"
 
 #include "TrackingTools/TrackFitters/interface/TrajectoryStateCombiner.h"
@@ -427,8 +427,7 @@ void TrackerValidationVariables::fillHitQuantities(const Trajectory* trajectory,
 void TrackerValidationVariables::fillTrackQuantities(const edm::Event& event,
                                                      const edm::EventSetup& eventSetup,
                                                      std::vector<AVTrackStruct>& v_avtrackout) {
-  fillTrackQuantities(
-      event, eventSetup, [](const reco::Track&) -> bool { return true; }, v_avtrackout);
+  fillTrackQuantities(event, eventSetup, [](const reco::Track&) -> bool { return true; }, v_avtrackout);
 }
 
 void TrackerValidationVariables::fillTrackQuantities(const edm::Event& event,
